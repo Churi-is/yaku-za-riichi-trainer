@@ -11,6 +11,7 @@ import type {
   ScoreResult, TileId, TileKind, Meld, Wind,
 } from './types';
 import { shanten as shantenImpl, waits as waitsImpl, ukeire as ukeireImpl } from './shanten';
+import { scoreHand as scoreHandImpl, isLegalWin, basePoints, computePayments } from './scoring';
 
 export * from './types';
 export {
@@ -60,6 +61,11 @@ export interface ScoreInput {
   loserSeat?: SeatIndex | null;
   /** Pao seat, for daisangen / daisuushii liability. */
   paoSeat?: SeatIndex | null;
+  /**
+   * Seat holding the dealership, so a tsumo can charge the dealer double.
+   * Defaults to the winner's seat when omitted.
+   */
+  dealerSeat?: SeatIndex | null;
 }
 
 /** Create a fresh match (deals the first hand). `seed` makes runs reproducible. */
@@ -111,5 +117,11 @@ export function waits(hand: TileId[], melds: Meld[]): number[] {
 
 /** Score a complete hand. Used by the engine and by replay grading. */
 export function scoreHand(input: ScoreInput): ScoreResult {
-  return TODO('scoreHand');
+  return scoreHandImpl(input);
 }
+
+export { isLegalWin, basePoints, computePayments };
+export type { YakuFlags, YakuContext } from './yaku';
+export { YAKU_NAMES, YAKU_HAN, detectYaku } from './yaku';
+export type { WinShape, Decomposition, SetInfo, WaitType } from './decompose';
+export { enumerateWinShapes } from './decompose';
