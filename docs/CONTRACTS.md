@@ -44,3 +44,21 @@ from them, don't invent parallel shapes.
 ## Change log
 
 - 2026-09-03 — Initial contracts scaffolded (skeleton commit).
+- 2026-09-03 — **Worker A, day-one contract corrections.** All additive (no
+  exported name removed or retyped); pull and rebase freely.
+  - `GameState` gains `seed`, `handNumber`, `callWindow`, `paoSeat`. Only the
+    engine constructs a `GameState`, so readers are unaffected.
+  - New exported interface `CallWindow` (`src/engine/types.ts`): the open call
+    window on a discard (`tile`, `from`, `passed`, `ronSeats`, `chankan`).
+  - `ScoreInput` gains optional `winnerSeat`, `loserSeat`, `paoSeat` so
+    `scoreHand` can fill `ScoreResult.payments` (pao splits need the seats).
+    Omit them and payments default to winner = seat 0.
+  - `HandResult` gains optional `doraIndicators` / `uraIndicators` so the
+    replay log can show the dora reveal without reading `GameState`.
+  - Clarified, not changed: `ScoreInput.hand` is the winner's *concealed* tiles
+    and **includes** `winningTile`; open melds go in `melds`.
+  - Red-five convention fixed: the red five is **copy index 0** of m5/p5/s5,
+    i.e. `TileId` 16, 52, 88. `isRed(id)` from `engine/tiles.ts`.
+  - `isRed` takes a `TileId`; `isHonor` / `isTerminal` / `isSimple` take a
+    `TileKind` (0..33). Don't mix them.
+

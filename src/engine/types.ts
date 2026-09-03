@@ -47,13 +47,13 @@ export type MeldType = 'chi' | 'pon' | 'ankan' | 'minkan' | 'kakan';
 
 export interface Meld {
   type: MeldType;
-  /** Tiles composing the meld (3 for chi/pon, 4 for kans). */
+  /** Tiles composing the meld (3 for chi/pon, 4 for kans), sorted by kind. */
   tiles: TileId[];
   /** Seat the called tile came from; null for ankan. */
   calledFrom: SeatIndex | null;
   /** The specific tile that was called; null for ankan. */
   calledTile: TileId | null;
-  /** True for ankan (and for kakan built from a concealed-ish pon? no — kakan is open). */
+  /** True for ankan only. Kakan (added kan) is open — it began as a pon. */
   concealed: boolean;
 }
 
@@ -142,8 +142,30 @@ export type HandPhase =
   | 'handOver'
   | 'matchOver';
 
+/**
+ * An open call window on a discard. The engine creates this the moment a tile
+ * hits the river and at least one seat could call it; it is cleared once every
+ * candidate has acted.
+ */
+export interface CallWindow {
+  /** The tile sitting in the river that may be called. */
+  tile: TileId;
+  /** Who discarded it. */
+  from: SeatIndex;
+  /** Candidates that have already passed. Pending = candidates minus these. */
+  passed: SeatIndex[];
+  /** Seats that could ron this tile (before furiten / head-bump gating). */
+  ronSeats: SeatIndex[];
+  /** True when the tile is an added kan being called for chankan. */
+  chankan: boolean;
+}
+
 export interface GameState {
   settings: TableSettings;
+  /** Root seed; every hand's shuffle derives from `seed` + `handNumber`. */
+  seed: number;
+  /** 1-based index of the current hand within the match. */
+  handNumber: number;
   roundWind: Wind;
   /** 1-4 within the round wind. */
   roundNumber: number;
@@ -155,7 +177,13 @@ export interface GameState {
   players: [PlayerState, PlayerState, PlayerState, PlayerState];
   /** Live wall tiles remaining to draw (excludes dead wall). */
   wall: TileId[];
-  /** 14-tile dead wall: replacement draws + dora indicators. */
+  /**
+   * Dead wall. Fixed layout for the first 14 entries:
+   * `[0..4]` dora indicator slots, `[5..9]` ura indicator slots,
+   * `[10..13]` kan replacement tiles (drawn in index order).
+   * One extra entry is appended per kan: the live-wall tile moved in to keep
+   * the dead wall whole, which is what shrinks `wall` by one per kan.
+   */
   deadWall: TileId[];
   /** Face-up dora indicators (grows with kan). */
   doraIndicators: TileId[];
@@ -167,10 +195,17 @@ export interface GameState {
   turnNumber: number;
   /** The tile most recently discarded, pending call resolution. */
   lastDiscard: { tile: TileId; from: SeatIndex } | null;
+  /** Open call window, when a discard is awaiting call decisions. */
+  callWindow: CallWindow | null;
   /** True while the current draw came from the dead wall (rinshan). */
   rinshanPending: boolean;
   /** Set during a kakan tile's call window, for chankan. */
   chankanTile: TileId | null;
+  /**
+   * Pao (liability) seat: whoever fed the third dragon or fourth wind meld.
+   * Settled at scoring time for daisangen / daisuushii.
+   */
+  paoSeat: SeatIndex | null;
   handOver: HandResult | null;
   matchOver: MatchResult | null;
 }
@@ -260,6 +295,10 @@ export interface HandResult {
   revealedHands: Record<SeatIndex, TileId[]>;
   /** Pao (liability) seat, if any. */
   paoSeat: SeatIndex | null;
+  /** Dora indicators in play at hand end. */
+  doraIndicators?: TileId[];
+  /** Ura indicators, populated only when a riichi winner exists. */
+  uraIndicators?: TileId[];
 }
 
 export interface MatchResult {

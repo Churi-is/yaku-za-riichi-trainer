@@ -18,6 +18,11 @@ const TODO = (fn: string): never => {
 };
 
 export interface ScoreInput {
+  /**
+   * The winner's CONCEALED tiles, and it must INCLUDE `winningTile`
+   * (14 tiles for a closed hand, 14 - 3*melds otherwise). Open melds are
+   * passed separately and must not appear here.
+   */
   hand: TileId[];
   melds: Meld[];
   winningTile: TileId;
@@ -38,6 +43,12 @@ export interface ScoreInput {
   doraIndicators: TileId[];
   uraIndicators: TileId[];
   settings: TableSettings;
+  /** Winner's seat. Needed for `payments`; defaults to seat 0 when omitted. */
+  winnerSeat?: SeatIndex | null;
+  /** Seat that discarded the winning tile (ron only; null/omitted for tsumo). */
+  loserSeat?: SeatIndex | null;
+  /** Pao seat, for daisangen / daisuushii liability. */
+  paoSeat?: SeatIndex | null;
 }
 
 /** Create a fresh match (deals the first hand). `seed` makes runs reproducible. */
