@@ -61,6 +61,27 @@ from them, don't invent parallel shapes.
     i.e. `TileId` 16, 52, 88. `isRed(id)` from `engine/tiles.ts`.
   - `isRed` takes a `TileId`; `isHonor` / `isTerminal` / `isSimple` take a
     `TileKind` (0..33). Don't mix them.
+- 2026-09-04 — **Worker B (AI) implemented.** No exported *shape* changes —
+  `PERSONALITIES`, `paramsFor`, `createAI`, `AIPlayer.decide(view, legal)` keep
+  their frozen signatures; bodies filled. Notes for integrators:
+  - Personality ids are `kenta` (aggressive), `sada` (balanced),
+    `tsuru` (defensive). `aiPersonalityId` on a seat is one of these or null.
+  - `decide` returns only actions present in the `legal` array passed in (fuzz-
+    tested: zero illegal actions across seeded self-play). Win actions
+    (`ron`/`tsumo`) are always taken.
+  - The AI consumes `PublicView` exclusively (firewall test asserts no import
+    of `GameState` from any non-test `src/ai` module). It reads the engine's
+    pure `shanten` / `waits` / `ukeire` through `@engine/index`; Worker D
+    should keep those re-exported.
+  - `AIParams` uses the six frozen knobs; no additions were needed.
+  - Rebased onto the finished engine (2026-09-04): the AI now models the real
+    `PublicView` shape — `hand` is the 13-tile concealed hand and the draw is
+    separate in `drawnTile`; riichi is the engine's separate `riichi: true`
+    discard action (the AI never synthesizes the flag). An integration test
+    drives `createMatch`/`applyAction`/`getLegalActions`/`toPublicView` with
+    four AIs through whole matches with zero illegal actions. `scoreHand`
+    scores only completed hands, so in-progress riichi/call value still uses
+    the internal coarse `estimateHan` proxy.
 - 2026-09-03 — **Worker A, engine implementation landed.** Two more additive
   fields; nothing renamed or retyped.
   - `PlayerState` gains `forbiddenDiscards: TileKind[]` — the kuikae kinds this
