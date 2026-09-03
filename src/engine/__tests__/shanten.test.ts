@@ -233,51 +233,6 @@ describe('shanten — properties', () => {
   });
 
   /**
-   * Random hands are almost never tenpai, so build tenpai hands directly:
-   * 3 sets + 1 partial + 1 pair = 13 tiles, which is tenpai by construction
-   * (and cannot be -1: a 13-tile hand is never a complete hand).
-   */
-  function tenpaiHand(): number[] {
-    const pickSet = (): number[] => {
-      if (rng() < 0.5) {
-        const k = Math.floor(rng() * 34);
-        return [k, k, k];
-      }
-      const suit = Math.floor(rng() * 3) * 9;
-      const r = Math.floor(rng() * 7);
-      return [suit + r, suit + r + 1, suit + r + 2];
-    };
-    const pickPartial = (): number[] => {
-      const t = rng();
-      const suit = Math.floor(rng() * 3) * 9;
-      if (t < 0.4) {
-        const r = Math.floor(rng() * 8);
-        return [suit + r, suit + r + 1];
-      }
-      if (t < 0.7) {
-        const r = Math.floor(rng() * 7);
-        return [suit + r, suit + r + 2];
-      }
-      const k = Math.floor(rng() * 34);
-      return [k, k];
-    };
-    for (let attempt = 0; attempt < 200; attempt++) {
-      const counts = new Array(34).fill(0);
-      const k = Math.floor(rng() * 34);
-      const groups = [pickSet(), pickSet(), pickSet(), pickPartial(), [k, k]];
-      let ok = true;
-      for (const g of groups) {
-        for (const k of g) {
-          if (counts[k] >= 4) ok = false;
-          counts[k]++;
-        }
-      }
-      if (ok) return counts;
-    }
-    return parseCounts('123m456m789m11p23s');
-  }
-
-  /**
    * Independent agari checker: plain backtracking over pair/triplet/run, no
    * shanten formula involved. Used as the reference `waits` is graded against.
    */
