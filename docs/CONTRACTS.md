@@ -61,4 +61,20 @@ from them, don't invent parallel shapes.
     i.e. `TileId` 16, 52, 88. `isRed(id)` from `engine/tiles.ts`.
   - `isRed` takes a `TileId`; `isHonor` / `isTerminal` / `isSimple` take a
     `TileKind` (0..33). Don't mix them.
+- 2026-09-04 — **Worker B (AI) implemented.** No exported *shape* changes —
+  `PERSONALITIES`, `paramsFor`, `createAI`, `AIPlayer.decide(view, legal)` keep
+  their frozen signatures; bodies filled. Notes for integrators:
+  - Personality ids are `kenta` (aggressive), `sada` (balanced),
+    `tsuru` (defensive). `aiPersonalityId` on a seat is one of these or null.
+  - `decide` returns only actions present in the `legal` array passed in (fuzz-
+    tested: zero illegal actions across seeded self-play). Win actions
+    (`ron`/`tsumo`) are always taken.
+  - The AI consumes `PublicView` exclusively (firewall test asserts no import
+    of `GameState` or engine stateful modules). It reads the engine's pure
+    `shanten` / `waits` / `ukeire` through `@engine/index`; Worker D should
+    keep those re-exported.
+  - `AIParams` uses the six frozen knobs; no additions were needed.
+  - `scoreHand` is still an engine stub, so the AI uses an internal coarse
+    `estimateHan` proxy for riichi/call value judgments; it will read real
+    value naturally once `scoreHand` lands (no contract change required).
 
