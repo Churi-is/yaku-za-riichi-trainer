@@ -7,10 +7,11 @@
  * seat's concealed tiles.
  *
  * Shanten / waits / ukeire are Worker A's engine implementations (re-exported
- * through the engine's public surface), so the AI and the game agree on
- * hand structure exactly. The extra logic here — waiting-size handling,
- * yaku-path signals, and a coarse han/value proxy — is what the engine does
- * not yet expose (scoreHand is still a stub as of this writing).
+ * through the engine's public surface), so the AI and the game agree on hand
+ * structure exactly. The extra logic here is what the engine does not expose
+ * in a form the AI can ask cheaply mid-decision: yaku-path signals for calls,
+ * and a coarse han proxy for riichi/call value (the engine's full `scoreHand`
+ * scores a completed hand, not an in-progress one).
  */
 import {
   shanten as engineShanten,
@@ -144,6 +145,20 @@ export function meldTriplets(melds: Meld[]): number {
 /** Whether the seat's hand is closed (no open melds). Ankan counts as closed. */
 export function isHandClosed(melds: Meld[]): boolean {
   return melds.every((m) => m.concealed);
+}
+
+// ---------------------------------------------------------------------------
+// PublicView tile access
+// ---------------------------------------------------------------------------
+
+/**
+ * The viewer's full concealed tile pool as exposed by a PublicView: the 13-tile
+ * hand PLUS the just-drawn tile (which the engine keeps separate in
+ * `drawnTile`). On a discard decision this is the 14-tile post-draw set; during
+ * a call window `drawnTile` is null and this is just the waiting hand.
+ */
+export function ownTiles(view: { hand: TileId[]; drawnTile: TileId | null }): TileId[] {
+  return view.drawnTile !== null ? [...view.hand, view.drawnTile] : view.hand;
 }
 
 // ---------------------------------------------------------------------------

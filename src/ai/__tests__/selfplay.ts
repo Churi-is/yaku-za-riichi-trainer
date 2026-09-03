@@ -44,7 +44,10 @@ interface RiverEntry {
 }
 
 interface SimSeat {
+  /** Concealed hand EXCLUDING the just-drawn tile (mirrors PlayerState.hand). */
   hand: TileId[];
+  /** Just-drawn tile awaiting discard, or null (mirrors PlayerState.drawnTile). */
+  drawnTile: TileId | null;
   melds: Meld[];
   river: RiverEntry[];
   points: number;
@@ -97,23 +100,36 @@ const SETTINGS: TableSettings = {
 
 function newSeat(): SimSeat {
   return {
-    hand: [], melds: [], river: [], points: 25000,
+    hand: [], drawnTile: null, melds: [], river: [], points: 25000,
     riichi: false, riichiTurn: null, ippatsu: false,
     calls: 0, riichiCount: 0, dealIn: 0, ronWins: 0, tsumoWins: 0,
     pointsDelta: 0, decisions: 0,
   };
 }
 
+/** Full concealed pool (hand + drawnTile) for a sim seat. */
+function seatPool(s: SimSeat): TileId[] {
+  return s.drawnTile !== null ? [...s.hand, s.drawnTile] : s.hand;
+}
+
+/**
+ * Build the viewer's PublicView. `drawnTile` is the freshly drawn tile (held
+ * separately from the 13-tile hand, exactly like the real engine), or null in
+ * a call window. Mirrors Worker A's `toPublicView` shape.
+ */
 function buildView(
   viewer: SeatIndex,
   seats: SimSeat[],
   wall: TileId[],
   doraIndicators: TileId[],
   lastDiscard: { tile: TileId; from: SeatIndex } | null,
-  turnNumber: number,
+  _turnNumber: number,
+  drawnTile: TileId | null,
 ): PublicView {
+  const me = seats[viewer];
   const visible = new Array(34).fill(0);
-  for (const t of seats[viewer].hand) visible[kindOf(t)]++;
+  for (const t of me.hand) visible[kindOf(t)]++;
+  if (drawnTile !== null) visible[kindOf(drawnTile)]++;
   for (let s = 0; s < 4; s++) {
     for (const m of seats[s].melds) for (const t of m.tiles) visible[kindOf(t)]++;
     for (const e of seats[s].river) if (e.calledBy === null) visible[kindOf(e.tile)]++;
@@ -131,13 +147,13 @@ function buildView(
       riichi: seats[s].riichi,
       riichiTurn: seats[s].riichiTurn,
       ippatsu: seats[s].ippatsu,
-      concealedCount: seats[s].hand.length,
+      concealedCount: s === viewer ? me.hand.length + (drawnTile !== null ? 1 : 0) : seats[s].hand.length,
       isClosed: isHandClosed(seats[s].melds),
       aiPersonalityId: null,
     };
   }
 
-  const hand = seats[viewer].hand.slice().sort((a, b) => a - b);
+  const hand = me.hand.slice().sort((a, b) => a - b);
   return {
     viewer,
     settings: SETTINGS,
@@ -149,7 +165,7 @@ function buildView(
     turn: viewer,
     phase: 'awaitingDiscard',
     hand,
-    drawnTile: hand.length % 3 === 2 ? hand[hand.length - 1] : null,
+    drawnTile,
     seats: seatsView,
     doraIndicators: doraIndicators.slice(),
     tilesRemaining: wall.length,
@@ -158,25 +174,36 @@ function buildView(
   };
 }
 
+/** Legal discards on the viewer's own turn, shaped like the real engine:
+ *  one action per distinct tile kind over hand+drawnTile, plus a separate
+ *  riichi-flagged action when discarding it leaves a closed tenpai hand. */
 function legalDiscards(view: PublicView): LegalAction[] {
   const seat = view.viewer;
+  const melds = view.seats[seat].melds;
+  const pool: TileId[] = view.drawnTile !== null ? [...view.hand, view.drawnTile] : view.hand;
   const out: LegalAction[] = [];
   const seen = new Set<number>();
-  for (const tile of view.hand) {
+  const closed = melds.every((m) => m.concealed);
+  for (const tile of pool) {
     const k = kindOf(tile);
     if (seen.has(k)) continue;
     seen.add(k);
-    out.push({
-      action: { type: 'discard', seat, tile },
-      label: `discard ${k}`,
-    });
+    out.push({ action: { type: 'discard', seat, tile }, label: `discard ${k}` });
+    // Riichi variant: closed, not already riichi, and this discard leaves tenpai.
+    if (closed && !view.seats[seat].riichi && view.tilesRemaining >= 4) {
+      const rest = pool.filter((t) => t !== tile);
+      if (shanten(rest, melds) === 0 && waits(rest, melds).length > 0) {
+        out.push({ action: { type: 'discard', seat, tile, riichi: true }, label: `riichi ${k}` });
+      }
+    }
   }
   return out;
 }
 
 function legalAnkans(view: PublicView): LegalAction[] {
   const seat = view.viewer;
-  const counts = countsOf(view.hand);
+  const pool: TileId[] = view.drawnTile !== null ? [...view.hand, view.drawnTile] : view.hand;
+  const counts = countsOf(pool);
   const out: LegalAction[] = [];
   for (let k = 0; k < 34; k++) {
     if (counts[k] >= 4 && !view.seats[seat].riichi) {
@@ -262,14 +289,16 @@ function removeTiles(hand: TileId[], pred: (t: TileId) => boolean, n: number): T
   });
 }
 
+/** Discard `tile` from the seat's full pool (hand + drawnTile), returning the
+ *  drawn tile to the hand and clearing drawnTile (mirrors the engine discard). */
 function discardTile(seat: SimSeat, tile: TileId, turnNumber: number, riichi: boolean): void {
   const k = kindOf(tile);
-  const idx = seat.hand.findIndex((t) => t === tile);
-  if (idx >= 0) seat.hand.splice(idx, 1);
-  else {
-    const j = seat.hand.findIndex((t) => kindOf(t) === k);
-    if (j >= 0) seat.hand.splice(j, 1);
-  }
+  const pool = seatPool(seat);
+  let idx = pool.findIndex((t) => t === tile);
+  if (idx < 0) idx = pool.findIndex((t) => kindOf(t) === k);
+  if (idx >= 0) pool.splice(idx, 1);
+  seat.hand = pool;
+  seat.drawnTile = null;
   seat.river.push({ tile, tsumogiri: false, riichiDeclaration: riichi, calledBy: null, turnNumber });
 }
 
@@ -306,99 +335,100 @@ export function playHands(ais: AiLike[], seed: number, hands: number): SimResult
     let guard = 0;
 
     while (!done && guard++ < 6000) {
-      // --- Active seat draws (unless they just called) ---
+      const seat = active;
+      const me = seats[seat];
+      // --- Draw (normal turn only; a call turn skips the draw) ---
       if (drawsThisTurn) {
         if (wall.length <= 0) { done = true; break; }
-        seats[active].hand.push(wall.pop()!);
+        me.drawnTile = wall.pop()!;
       }
-      drawsThisTurn = true; // a normal turn draws; only an immediate call skips it
+      drawsThisTurn = true;
 
       // --- Active seat: tsumo / ankan / discard ---
-      const view = buildView(active, seats, wall, doraIndicators, lastDiscard, turnNumber);
+      const view = buildView(seat, seats, wall, doraIndicators, lastDiscard, turnNumber, me.drawnTile);
       let legal: LegalAction[];
-      if (shanten(view.hand, seats[active].melds) === -1) {
-        legal = [{ action: { type: 'tsumo', seat: active }, label: 'tsumo' }];
+      const full = seatPool(me);
+      if (shanten(full, me.melds) === -1) {
+        legal = [{ action: { type: 'tsumo', seat }, label: 'tsumo' }];
       } else {
         legal = legalAnkans(view).concat(legalDiscards(view));
       }
-      seats[active].decisions++;
-      let decision = ais[active].decide(view, legal).action;
+      me.decisions++;
+      let decision = ais[seat].decide(view, legal).action;
       if (!legal.some((l) => actionsEqual(l.action, decision))) {
-        result.perSeat[active].illegal++;
-        decision = { type: 'discard', seat: active, tile: view.hand[view.hand.length - 1] };
+        result.perSeat[seat].illegal++;
+        decision = { type: 'discard', seat, tile: me.drawnTile ?? full[full.length - 1] };
       }
 
       if (decision.type === 'tsumo') {
-        seats[active].tsumoWins++;
-        seats[active].pointsDelta += 2000;
-        for (let s = 0; s < 4; s++) if (s !== active) seats[s].pointsDelta -= 667;
+        me.tsumoWins++;
+        me.pointsDelta += 2000;
+        for (let s = 0; s < 4; s++) if (s !== seat) seats[s].pointsDelta -= 667;
         done = true;
         break;
       }
 
       if (decision.type === 'ankan') {
-        const kind = decision.kind;
-        seats[active].hand = removeTiles(seats[active].hand, (t) => kindOf(t) === kind, 4);
-        const tiles: TileId[] = [kind * 4, kind * 4 + 1, kind * 4 + 2, kind * 4 + 3];
-        seats[active].melds.push({ type: 'ankan', tiles, calledFrom: null, calledTile: null, concealed: true });
-        if (wall.length > 0) seats[active].hand.push(wall.pop()!); // rinshan
+        const k = decision.kind;
+        me.hand = seatPool(me);
+        me.drawnTile = null;
+        me.hand = removeTiles(me.hand, (t) => kindOf(t) === k, 4);
+        const tiles: TileId[] = [k * 4, k * 4 + 1, k * 4 + 2, k * 4 + 3];
+        me.melds.push({ type: 'ankan', tiles, calledFrom: null, calledTile: null, concealed: true });
+        if (wall.length > 0) me.drawnTile = wall.pop()!; // rinshan draw
         // Now discard.
-        const v2 = buildView(active, seats, wall, doraIndicators, lastDiscard, turnNumber);
-        const legal2 = legalDiscards(v2);
-        seats[active].decisions++;
-        let d2 = ais[active].decide(v2, legal2).action;
+        const v2 = buildView(seat, seats, wall, doraIndicators, lastDiscard, turnNumber, me.drawnTile);
+        const legal2 = legalDiscards(v2).concat(legalAnkans(v2));
+        me.decisions++;
+        let d2 = ais[seat].decide(v2, legal2).action;
         if (!legal2.some((l) => actionsEqual(l.action, d2))) {
-          result.perSeat[active].illegal++;
-          d2 = { type: 'discard', seat: active, tile: v2.hand[v2.hand.length - 1] };
+          result.perSeat[seat].illegal++;
+          d2 = { type: 'discard', seat, tile: me.drawnTile ?? me.hand[me.hand.length - 1] };
         }
-        if (d2.type === 'discard') {
-          decision = d2;
-        }
+        decision = d2;
       }
 
       if (decision.type === 'discard') {
-        // The AI sets riichi=true on the discard action when it declares. The
-        // sim honors it only when the hand is closed and not already riichi.
         const wantRiichi =
           decision.riichi === true &&
-          isHandClosed(seats[active].melds) &&
-          !seats[active].riichi &&
+          isHandClosed(me.melds) &&
+          !me.riichi &&
           wall.length >= 4;
-        discardTile(seats[active], decision.tile, turnNumber, wantRiichi);
+        discardTile(me, decision.tile, turnNumber, wantRiichi);
         if (wantRiichi) {
-          seats[active].riichi = true;
-          seats[active].riichiTurn = turnNumber;
-          seats[active].riichiCount++;
-          seats[active].pointsDelta -= 1000;
+          me.riichi = true;
+          me.riichiTurn = turnNumber;
+          me.riichiCount++;
+          me.pointsDelta -= 1000;
         }
-        lastDiscard = { tile: decision.tile, from: active };
+        lastDiscard = { tile: decision.tile, from: seat };
         turnNumber++;
       } else {
         // Non-discard from draw phase (shouldn't happen) — force a discard.
-        const v = buildView(active, seats, wall, doraIndicators, lastDiscard, turnNumber);
-        const t = v.hand[v.hand.length - 1];
-        discardTile(seats[active], t, turnNumber, false);
-        lastDiscard = { tile: t, from: active };
+        const t = me.drawnTile ?? me.hand[me.hand.length - 1];
+        discardTile(me, t, turnNumber, false);
+        lastDiscard = { tile: t, from: seat };
         turnNumber++;
       }
 
       // --- Call window on the new discard (turn order, head bump) ---
-      const discarder = active;
+      const discarder = seat;
       let caller = -1;
       let callAction: Action | null = null;
       for (let step = 1; step <= 3; step++) {
-        const seat = ((discarder + step) % 4) as SeatIndex;
-        const cview = buildView(seat, seats, wall, doraIndicators, lastDiscard, turnNumber);
-        const clegal = legalCalls(seat, seats, lastDiscard!, wall.length);
-        seats[seat].decisions++;
-        let cdec = ais[seat].decide(cview, clegal).action;
+        const rseat = ((discarder + step) % 4) as SeatIndex;
+        // Call windows: the seat holds its waiting hand, no drawn tile.
+        const cview = buildView(rseat, seats, wall, doraIndicators, lastDiscard, turnNumber, seats[rseat].drawnTile);
+        const clegal = legalCalls(rseat, seats, lastDiscard!, wall.length);
+        seats[rseat].decisions++;
+        let cdec = ais[rseat].decide(cview, clegal).action;
         if (!clegal.some((l) => actionsEqual(l.action, cdec))) {
-          result.perSeat[seat].illegal++;
-          cdec = { type: 'pass', seat };
+          result.perSeat[rseat].illegal++;
+          cdec = { type: 'pass', seat: rseat };
         }
         if (cdec.type === 'ron') {
-          seats[seat].ronWins++;
-          seats[seat].pointsDelta += 3000;
+          seats[rseat].ronWins++;
+          seats[rseat].pointsDelta += 3000;
           seats[discarder].pointsDelta -= 3000;
           seats[discarder].dealIn++;
           done = true;
@@ -407,7 +437,7 @@ export function playHands(ais: AiLike[], seed: number, hands: number): SimResult
         }
         if (cdec.type === 'pon' || cdec.type === 'chi' || cdec.type === 'minkan') {
           callAction = cdec;
-          caller = seat;
+          caller = rseat;
           break; // first claim in turn order wins
         }
       }
@@ -415,7 +445,12 @@ export function playHands(ais: AiLike[], seed: number, hands: number): SimResult
       if (done) break;
 
       if (caller >= 0 && callAction) {
-        // Apply the call.
+        const callerSeat = caller as SeatIndex;
+        const cme = seats[callerSeat];
+        // Flush any held drawn tile back into the hand before applying a call
+        // (callers react before their own draw, so this is normally null).
+        let hand = seatPool(cme);
+        cme.drawnTile = null;
         const calledTile = lastDiscard!.tile;
         const from = lastDiscard!.from;
         let type: Meld['type'];
@@ -423,51 +458,53 @@ export function playHands(ais: AiLike[], seed: number, hands: number): SimResult
         if (callAction.type === 'pon') {
           type = 'pon';
           contrib = callAction.tiles.slice();
-          seats[caller].hand = removeTiles(seats[caller].hand, (t) => kindOf(t) === kindOf(calledTile), 2);
+          hand = removeTiles(hand, (t) => kindOf(t) === kindOf(calledTile), 2);
         } else if (callAction.type === 'chi') {
           type = 'chi';
           contrib = callAction.tiles.slice();
           const k1 = kindOf(contrib[0]);
           const k2 = kindOf(contrib[1]);
-          seats[caller].hand = removeTiles(seats[caller].hand, (t) => kindOf(t) === k1, 1);
-          seats[caller].hand = removeTiles(seats[caller].hand, (t) => kindOf(t) === k2, 1);
+          hand = removeTiles(hand, (t) => kindOf(t) === k1, 1);
+          hand = removeTiles(hand, (t) => kindOf(t) === k2, 1);
         } else {
           type = 'minkan';
           contrib = callAction.tiles.slice();
-          seats[caller].hand = removeTiles(seats[caller].hand, (t) => kindOf(t) === kindOf(calledTile), 3);
+          hand = removeTiles(hand, (t) => kindOf(t) === kindOf(calledTile), 3);
         }
+        cme.hand = hand;
         const river = seats[from].river;
         for (let i = river.length - 1; i >= 0; i--) {
           if (river[i].tile === calledTile && river[i].calledBy === null) {
-            river[i].calledBy = caller as SeatIndex;
+            river[i].calledBy = callerSeat;
             break;
           }
         }
-        seats[caller].melds.push({
+        cme.melds.push({
           type,
           tiles: contrib.concat(calledTile).sort((a, b) => a - b),
           calledFrom: from,
           calledTile,
           concealed: false,
         });
-        seats[caller].calls++;
+        cme.calls++;
 
-        // Caller discards without drawing (they hold one extra tile).
-        const dview = buildView(caller as SeatIndex, seats, wall, doraIndicators, lastDiscard, turnNumber);
+        // Caller discards WITHOUT drawing: they hold one extra tile (drawnTile
+        // stays null and their hand is one above waiting size until they shed).
+        const dview = buildView(callerSeat, seats, wall, doraIndicators, lastDiscard, turnNumber, null);
         const dlegal = legalDiscards(dview);
-        seats[caller].decisions++;
-        let ddec = ais[caller].decide(dview, dlegal).action;
+        cme.decisions++;
+        let ddec = ais[callerSeat].decide(dview, dlegal).action;
         if (!dlegal.some((l) => actionsEqual(l.action, ddec))) {
-          result.perSeat[caller].illegal++;
-          ddec = { type: 'discard', seat: caller as SeatIndex, tile: dview.hand[dview.hand.length - 1] };
+          result.perSeat[callerSeat].illegal++;
+          ddec = { type: 'discard', seat: callerSeat, tile: cme.hand[cme.hand.length - 1] };
         }
         if (ddec.type === 'discard') {
-          discardTile(seats[caller], ddec.tile, turnNumber, false);
-          lastDiscard = { tile: ddec.tile, from: caller as SeatIndex };
+          discardTile(cme, ddec.tile, turnNumber, false);
+          lastDiscard = { tile: ddec.tile, from: callerSeat };
           turnNumber++;
         }
-        // Next active seat is the one AFTER the caller.
-        active = ((caller + 1) % 4) as SeatIndex;
+        // Next active seat is the one AFTER the caller; they draw normally.
+        active = ((callerSeat + 1) % 4) as SeatIndex;
         drawsThisTurn = true;
       } else {
         active = ((discarder + 1) % 4) as SeatIndex;

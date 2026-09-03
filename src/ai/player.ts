@@ -17,7 +17,7 @@ import { Rng } from './rng';
 import {
   shanten,
   isHandClosed,
-  waits,
+  ownTiles,
   kindOf,
 } from './handEval';
 import { tableThreat } from './defense';
@@ -117,7 +117,8 @@ export function decideAction(
 
   // 3) Our discard (post-draw). Consider ankan/kakan first, then riichi/discard.
   const seat = view.seats[view.viewer];
-  const ownShanten = shanten(view.hand, seat.melds);
+  const pool = ownTiles(view); // concealed hand + drawn tile (14 tiles)
+  const ownShanten = shanten(pool, seat.melds);
   const folding = shouldFold(view, params, ownShanten);
 
   // Self kan is rare and gated; only when not folding and actually offered.
@@ -135,51 +136,47 @@ export function decideAction(
   // Choose the discard tile (efficiency when pushing, safety when folding).
   const disc = chooseDiscard(view, params, rng, folding);
 
-  // Riichi is only declared when the engine actually offers a riichi-capable
-  // discard. We detect that: a legal discard whose `riichi` flag the engine
-  // would accept. The action carries riichi?: boolean; the engine enforces
-  // tenpai/closed/min-tiles, but we guard too.
+  // Find the legal plain-discard action for the chosen tile (match id, then
+  // kind for identical copies). The engine offers discards over the whole pool
+  // (hand + drawnTile), minus kuikae-forbidden kinds.
+  const findDiscard = (wantRiichi: boolean): Action | null => {
+    const k = kindOf(disc.tile);
+    const match = legal.find(
+      (l) =>
+        l.action.type === 'discard' &&
+        l.action.seat === view.viewer &&
+        (l.action.tile === disc.tile || kindOf(l.action.tile) === k) &&
+        (l.action.riichi === true) === wantRiichi,
+    );
+    return match ? match.action : null;
+  };
+
+  // Riichi: the engine exposes a separate riichi-flagged discard ONLY when the
+  // hand is closed and this tile leaves it tenpai. Declaring riichi therefore
+  // means selecting that exact offered action — we never synthesize the flag.
+  const riichiAction = findDiscard(true);
   const closed = isHandClosed(seat.melds);
-  const riichiOffered = legal.some(
-    (l) => l.action.type === 'discard' && l.action.seat === view.viewer,
-  );
-  const tenpai = waits(view.hand, seat.melds).length > 0;
   let declareRiichi = false;
-  if (closed && tenpai && !folding && riichiOffered) {
-    declareRiichi = shouldRiichi(view, params, rng).riichi;
+  if (riichiAction && closed && !folding) {
+    declareRiichi = shouldRiichi(view, params, rng, disc.tile).riichi;
   }
 
-  // Resolve the chosen tile to an actual legal discard action. Match by tile
-  // id first, then by kind (identical copies). Guarantee legality.
-  let baseAction: Action | null =
-    legal.find(
-      (l) => l.action.type === 'discard' && l.action.seat === view.viewer && l.action.tile === disc.tile,
-    )?.action ?? null;
-  if (!baseAction) {
-    const kind = kindOf(disc.tile as TileId);
-    baseAction =
-      legal.find(
-        (l) => l.action.type === 'discard' && l.action.seat === view.viewer && kindOf(l.action.tile) === kind,
-      )?.action ?? null;
-  }
-  if (!baseAction) {
-    // Last resort: any legal discard.
-    const fallback = legal.find((l) => l.action.type === 'discard');
-    if (fallback) baseAction = fallback.action;
-  }
-  if (!baseAction) {
+  const chosen: Action | null = declareRiichi
+    ? riichiAction
+    : findDiscard(false) ??
+      // riichi-flagged actions also count as valid discards if no plain one exists
+      riichiAction ??
+      legal.find((l) => l.action.type === 'discard')?.action ??
+      null;
+
+  if (!chosen) {
     // No discard available in this window — pass or first legal.
     const pass = passAction(legal);
     return { action: pass ? pass.action : legal[0].action, rationale: 'no discard available' };
   }
 
-  const action: Action =
-    declareRiichi && baseAction.type === 'discard'
-      ? { ...baseAction, riichi: true }
-      : baseAction;
-
   return {
-    action,
+    action: chosen,
     rationale: `${folding ? 'fold' : 'push'}: ${disc.rationale}${declareRiichi ? ' + riichi' : ''}`,
   };
 }

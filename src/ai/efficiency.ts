@@ -8,6 +8,7 @@ import type { AIParams } from './types';
 import { Rng } from './rng';
 import {
   evaluateDiscards,
+  ownTiles,
   kindOf,
   isHonor,
   isDragon,
@@ -43,10 +44,11 @@ export function indicatedDoraKinds(view: PublicView): Set<TileKind> {
 function discardReluctance(
   kind: TileKind,
   view: PublicView,
+  pool: TileId[],
   doraKinds: Set<TileKind>,
 ): number {
   const seat = ownSeat(view);
-  const counts = countsOf(view.hand);
+  const counts = countsOf(pool);
   const seatWind: Wind = seat.seatWind;
   const roundWind: Wind = view.roundWind;
   const valueKinds = new Set(yakuhaiKinds(seatWind, roundWind));
@@ -79,10 +81,11 @@ export function chooseDiscard(
 ): DiscardChoice {
   const seat = ownSeat(view);
   const melds = seat.melds;
-  const evals = evaluateDiscards(view.hand, melds, view.visibleCounts);
+  const tilePool = ownTiles(view); // 14 post-draw (13 + drawnTile), or 13 in a window
+  const evals = evaluateDiscards(tilePool, melds, view.visibleCounts);
   if (evals.length === 0) {
     // Fallback (should never happen with a legal discard set).
-    return { tile: view.hand[0], kind: kindOf(view.hand[0]), rationale: 'fallback' };
+    return { tile: tilePool[0], kind: kindOf(tilePool[0]), rationale: 'fallback' };
   }
 
   const safety: SafetyContext = buildSafetyContext(view);
@@ -92,7 +95,7 @@ export function chooseDiscard(
   const reluctance = new Map<TileKind, number>();
   for (const e of evals) {
     danger.set(e.kind, dangerOf(e.kind, safety));
-    reluctance.set(e.kind, discardReluctance(e.kind, view, doraKinds));
+    reluctance.set(e.kind, discardReluctance(e.kind, view, tilePool, doraKinds));
   }
 
   // -- Folding: safe tile first, then least shape damage. -------------------

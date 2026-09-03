@@ -20,6 +20,7 @@ import {
   isHandClosed,
   kindOf,
   yakuhaiKinds,
+  countsOf,
 } from './handEval';
 
 export interface CallChoice {
@@ -42,20 +43,29 @@ function ownSeat(view: PublicView) {
   return view.seats[view.viewer];
 }
 
-/**
- * Concealed tile ids after declaring `meld` (the tiles we contributed are
- * removed from the hand; the called tile was never in it).
- */
-function concealedAfterCall(view: PublicView, meld: Meld): TileId[] {
-  const removed = new Set<TileId>();
-  for (const t of meld.tiles) {
-    if (meld.calledTile !== null && t === meld.calledTile) continue;
-    removed.add(t);
+/** Expand a count array into representative tile ids (lowest copies first). */
+function countsToIds(counts: readonly number[]): TileId[] {
+  const ids: TileId[] = [];
+  for (let k = 0; k < counts.length; k++) {
+    for (let c = 0; c < counts[k]; c++) ids.push(k * 4 + c);
   }
-  // Remove our contributed tiles by id (they are real ids in view.hand for
-  // pon/chi; minkan contributes three of our four copies).
-  const hand = view.hand.filter((t) => !removed.has(t));
-  return hand;
+  return ids;
+}
+
+/**
+ * Per-kind counts of our concealed hand after declaring `meld`: the called
+ * tile is removed from the meld (it was never ours) and our contributed
+ * copies are removed from the hand. Count-based, so it is robust to the action
+ * tiles being representative ids rather than our exact physical copies.
+ */
+function postCallCounts(view: PublicView, meld: Meld): number[] {
+  const counts = countsOf(view.hand);
+  for (const t of meld.tiles) {
+    const k = kindOf(t);
+    const isCalled = meld.calledTile !== null && t === meld.calledTile;
+    if (!isCalled) counts[k] = Math.max(0, counts[k] - 1);
+  }
+  return counts;
 }
 
 /**
@@ -70,20 +80,22 @@ function bestDiscardAfterCall(
 ): { tile: TileId; shanten: number } | null {
   const seat = ownSeat(view);
   const afterMelds = seat.melds.concat(meld);
-  const afterHand = concealedAfterCall(view, meld);
+  const counts = postCallCounts(view, meld);
+  const forbid = new Set(forbidden);
 
   let best: { tile: TileId; shanten: number } | null = null;
-  const forbid = new Set(forbidden);
-  const seen = new Set<TileKind>();
-  for (let i = 0; i < afterHand.length; i++) {
-    const tile = afterHand[i];
-    const kind = kindOf(tile);
-    if (seen.has(kind)) continue;
-    seen.add(kind);
-    if (forbid.has(kind)) continue; // kuikae: this discard would be illegal
-    const rest = afterHand.filter((_, j) => j !== i);
-    const sh = shanten(rest, afterMelds);
-    if (best === null || sh < best.shanten) best = { tile, shanten: sh };
+  for (let k = 0; k < counts.length; k++) {
+    if (counts[k] === 0) continue;
+    if (forbid.has(k)) continue; // kuikae: this discard would be illegal
+    counts[k]--;
+    const hand = countsToIds(counts);
+    const sh = shanten(hand, afterMelds);
+    counts[k]++;
+    if (best === null || sh < best.shanten) {
+      // Representative tile id for this kind from our current hand.
+      const tile = view.hand.find((t) => kindOf(t) === k) ?? k * 4;
+      best = { tile, shanten: sh };
+    }
   }
   return best;
 }
@@ -91,7 +103,8 @@ function bestDiscardAfterCall(
 /** Shanten now (the waiting shape) — what we improve from. */
 function currentShanten(view: PublicView): number {
   const seat = ownSeat(view);
-  // On a call window we hold a waiting-size hand (just discarded last turn).
+  // On a call window we hold a waiting-size hand (just discarded last turn),
+  // and drawnTile is null.
   return shanten(view.hand, seat.melds);
 }
 
@@ -164,7 +177,7 @@ export function chooseCall(
     if (!follow) continue;
 
     const gain = preShanten - follow.shanten;
-    const afterHand = concealedAfterCall(view, meld);
+    const afterHand = countsToIds(postCallCounts(view, meld));
     // Yaku path over the post-call state: afterHand (contributed tiles removed)
     // plus the new meld's tiles (including the called tile).
     const yakuPath = hasOpenYakuPath(

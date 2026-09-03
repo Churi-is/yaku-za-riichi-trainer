@@ -13,7 +13,7 @@
  * wall. That append is what shrinks the live wall by one per kan.
  */
 import { createRng, seedForHand, shuffle } from './rng';
-import { allTileIds } from './tiles';
+import { allTileIds, SEATS } from './tiles';
 import type { SeatIndex, TableSettings, TileId } from './types';
 
 export const DORA_SLOTS = 5;
@@ -51,12 +51,12 @@ export function dealHand(seed: number, handNumber: number, _settings: TableSetti
   const hands: [TileId[], TileId[], TileId[], TileId[]] = [[], [], [], []];
   let cursor = 0;
   for (let round = 0; round < 4; round++) {
-    for (let seat = 0 as SeatIndex; seat < 4; seat = ((seat + 1) % 4) as SeatIndex) {
+    for (const seat of SEATS) {
       hands[seat].push(...rest.slice(cursor, cursor + 3));
       cursor += 3;
     }
   }
-  for (let seat = 0 as SeatIndex; seat < 4; seat = ((seat + 1) % 4) as SeatIndex) {
+  for (const seat of SEATS) {
     hands[seat].push(rest[cursor]);
     cursor += 1;
   }

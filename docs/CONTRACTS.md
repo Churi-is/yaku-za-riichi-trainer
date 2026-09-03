@@ -70,11 +70,50 @@ from them, don't invent parallel shapes.
     tested: zero illegal actions across seeded self-play). Win actions
     (`ron`/`tsumo`) are always taken.
   - The AI consumes `PublicView` exclusively (firewall test asserts no import
-    of `GameState` or engine stateful modules). It reads the engine's pure
-    `shanten` / `waits` / `ukeire` through `@engine/index`; Worker D should
-    keep those re-exported.
+    of `GameState` from any non-test `src/ai` module). It reads the engine's
+    pure `shanten` / `waits` / `ukeire` through `@engine/index`; Worker D
+    should keep those re-exported.
   - `AIParams` uses the six frozen knobs; no additions were needed.
-  - `scoreHand` is still an engine stub, so the AI uses an internal coarse
-    `estimateHan` proxy for riichi/call value judgments; it will read real
-    value naturally once `scoreHand` lands (no contract change required).
+  - Rebased onto the finished engine (2026-09-04): the AI now models the real
+    `PublicView` shape — `hand` is the 13-tile concealed hand and the draw is
+    separate in `drawnTile`; riichi is the engine's separate `riichi: true`
+    discard action (the AI never synthesizes the flag). An integration test
+    drives `createMatch`/`applyAction`/`getLegalActions`/`toPublicView` with
+    four AIs through whole matches with zero illegal actions. `scoreHand`
+    scores only completed hands, so in-progress riichi/call value still uses
+    the internal coarse `estimateHan` proxy.
+- 2026-09-03 — **Worker A, engine implementation landed.** Two more additive
+  fields; nothing renamed or retyped.
+  - `PlayerState` gains `forbiddenDiscards: TileKind[]` — the kuikae kinds this
+    seat may not discard right now. Set by a call, cleared by its next discard.
+  - `ScoreInput` gains optional `dealerSeat` so a tsumo can charge the dealer
+    double. Defaults to the winner's seat when omitted.
+  - Clarified, not changed: `PublicView.hand` is the viewer's concealed hand and
+    EXCLUDES `drawnTile`, exactly like `PlayerState.hand`.
+  - `scoreHand` returns zero points and zero payments for a yakuless hand, so a
+    caller that forgets `isLegalWin` cannot pay out on an illegal win.
 
+- 2026-09-04 — **Worker A, game loop landed.** No exported shape changed; these
+  are behavioural guarantees Workers B/C/D can now rely on.
+  - `applyAction` is pure (safe on a deep-frozen state) and **throws** on an
+    illegal action. Always pick from `getLegalActions(state, seat)` first.
+  - Drive a hand with `pendingSeats(state)`: when it is non-empty the state is
+    `awaitingCalls` and those are the seats to ask, in turn order from the
+    discarder. Otherwise it is `state.turn`'s move.
+  - Priority is enforced inside `getLegalActions`, not by the caller: ron beats
+    pon/kan beats chi, and a seat that cannot ron does not head-bump a later
+    seat that can (a furiten seat is excluded from `CallWindow.ronSeats`).
+  - Kuikae is reported per action as `LegalAction.forbiddenDiscards` and kept on
+    `PlayerState.forbiddenDiscards`; the banned kinds are simply absent from the
+    discard options.
+  - Riichi needs a closed hand, 1000 points, a discard that leaves tenpai, and
+    at least 4 live wall tiles. Afterwards the drawn tile is the only legal
+    discard. Any call cancels everybody's ippatsu.
+  - `nextHand(state)` advances the hand (renchan keeps the dealer and bumps
+    honba); it returns a state whose `phase` is `matchOver` once the hanchan is
+    done, with `matchOver.ranking` / `finalPoints` filled in.
+  - Point deltas are always zero-sum across the four seats, honba and riichi
+    sticks included.
+  - Internal (not contract): `rinshanDraw` no longer takes a kan ordinal, and it
+    now splices the replacement tile out of the dead wall so a tile is never in
+    two places at once.

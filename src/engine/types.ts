@@ -126,6 +126,11 @@ export interface PlayerState {
   riichiFuriten: boolean;
   /** No calls made yet this hand (menzen). */
   isClosed: boolean;
+  /**
+   * Kinds this seat may not discard right now (kuikae). Set by a call and
+   * cleared by the seat's next discard.
+   */
+  forbiddenDiscards: TileKind[];
   /** AI seats only: assigned personality id (see @ai/types). */
   aiPersonalityId: string | null;
 }

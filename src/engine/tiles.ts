@@ -11,7 +11,21 @@
  * the predicate helpers (`isHonor`, `isTerminal`, `isSimple`, ...) take a
  * **TileKind** (0..33). They are not interchangeable — don't mix them.
  */
-import type { Suit, Tile, TileId, TileKind, Wind } from './types';
+import type { SeatIndex, Suit, Tile, TileId, TileKind, Wind } from './types';
+
+/** Seats in turn order. Iterate this instead of doing modular arithmetic on
+ *  a `SeatIndex` — `(3 + 1) % 4` is 0, which silently never terminates a loop. */
+export const SEATS: SeatIndex[] = [0, 1, 2, 3];
+
+/** The seat that acts after `seat`. */
+export function nextSeat(seat: SeatIndex): SeatIndex {
+  return SEATS[(seat + 1) % 4];
+}
+
+/** Seats in call-priority order after `from` (turn order from the discarder). */
+export function seatsAfter(from: SeatIndex): SeatIndex[] {
+  return [SEATS[(from + 1) % 4], SEATS[(from + 2) % 4], SEATS[(from + 3) % 4]];
+}
 
 export const KIND_COUNT = 34;
 export const TILE_COUNT = 136;

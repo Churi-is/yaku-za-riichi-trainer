@@ -6,6 +6,7 @@
  */
 import type { PublicView } from '@engine/types';
 import type { AIParams } from './types';
+import type { TileId } from '@engine/types';
 import { Rng } from './rng';
 import {
   waits,
@@ -13,6 +14,8 @@ import {
   estimateHan,
   isHandClosed,
   doraCount,
+  ownTiles,
+  kindOf,
 } from './handEval';
 import { tableThreat } from './defense';
 
@@ -23,20 +26,33 @@ export interface RiichiEval {
 
 /**
  * Decide whether to declare riichi on the current (closed, tenpai) hand.
- * The legal discard has already been chosen; this only sets the riichi flag.
+ * `discardTile` is the tile chosen to discard; the riichi is evaluated on the
+ * resulting tenpai waiting hand. Called only when the engine offers a riichi
+ * discard, so the hand is closed and the discard leaves it tenpai.
  */
 export function shouldRiichi(
   view: PublicView,
   params: AIParams,
   rng: Rng,
+  discardTile: TileId,
 ): RiichiEval {
   const seat = view.seats[view.viewer];
 
   // Engine only offers riichi to closed hands; double-guard here.
   if (!isHandClosed(seat.melds)) return { riichi: false, rationale: 'open hand' };
 
-  // Must actually be tenpai (the engine guarantees this when riichi is legal).
-  const waitKinds = waits(view.hand, seat.melds);
+  // The tenpai waiting hand after the riichi discard.
+  const dk = kindOf(discardTile);
+  let removed = false;
+  const waiting = ownTiles(view).filter((t) => {
+    if (!removed && kindOf(t) === dk) {
+      removed = true;
+      return false;
+    }
+    return true;
+  });
+
+  const waitKinds = waits(waiting, seat.melds);
   if (waitKinds.length === 0) return { riichi: false, rationale: 'not tenpai' };
 
   const threat = tableThreat(view);
@@ -45,10 +61,10 @@ export function shouldRiichi(
   // us to pushing; fold-prone archetypes lean away unless aggressive.
   const someoneRiichi = threat.level >= 0.85;
 
-  const acceptance = ukeireAcceptance(view.hand, seat.melds, view.visibleCounts);
+  const acceptance = ukeireAcceptance(waiting, seat.melds, view.visibleCounts);
   const wideWait = acceptance.tiles;
 
-  const value = estimateHan(view.hand, seat.melds, {
+  const value = estimateHan(waiting, seat.melds, {
     seatWind: seat.seatWind,
     roundWind: view.roundWind,
     kuitan: view.settings.kuitan,
@@ -58,7 +74,7 @@ export function shouldRiichi(
     doraIndicators: view.doraIndicators,
     redDora: view.settings.redDora,
   });
-  const dora = doraCount(view.hand, seat.melds, view.doraIndicators, view.settings.redDora);
+  const dora = doraCount(waiting, seat.melds, view.doraIndicators, view.settings.redDora);
 
   // Patience is the core axis: low patience (aggressive) → always declare.
   let p = 1 - params.riichiPatience;
