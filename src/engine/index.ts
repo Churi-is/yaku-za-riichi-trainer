@@ -8,10 +8,21 @@
  */
 import type {
   Action, GameState, LegalAction, PublicView, SeatIndex, TableSettings,
-  ScoreResult, TileId, Meld, Wind,
+  ScoreResult, TileId, TileKind, Meld, Wind,
 } from './types';
+import { shanten as shantenImpl, waits as waitsImpl, ukeire as ukeireImpl } from './shanten';
 
 export * from './types';
+export {
+  kindOf, suitOf, rankOf, isRed, isHonor, isTerminal, isSimple, isTerminalOrHonor,
+  isDragon, isWind, isGreen, countsFromIds, idsFromCounts, tileName, tileNameOfId,
+  tileLabel, kindsLabel, doraKindForIndicator, kindOfWind, windOfKind, yakuhaiKinds,
+  sortIds, makeTile, allTileIds, RED_FIVE_IDS, KIND_COUNT, TILE_COUNT,
+} from './tiles';
+export {
+  shantenFromCounts, isTenpai, isAgari, ukeireTotal, improvingKinds,
+  waitingHandSize, clearShantenCache,
+} from './shanten';
 
 const TODO = (fn: string): never => {
   throw new Error(`engine.${fn} not implemented yet (Worker A)`);
@@ -81,21 +92,21 @@ export function nextHand(state: GameState): GameState {
   return TODO('nextHand');
 }
 
-/** Shanten number. 0 = tenpai, -1 = complete. */
+/** Shanten number. 0 = tenpai, -1 = complete. Never below -1. */
 export function shanten(hand: TileId[], melds: Meld[]): number {
-  return TODO('shanten');
+  return shantenImpl(hand, melds);
 }
 
 /** Tiles that improve shanten (ukeire), with remaining-count weights. */
 export function ukeire(
   hand: TileId[], melds: Meld[], visibleCounts: number[],
 ): { kind: number; count: number }[] {
-  return TODO('ukeire');
+  return ukeireImpl(hand, melds, visibleCounts);
 }
 
 /** Winning tile kinds for a tenpai hand (empty if not tenpai). */
 export function waits(hand: TileId[], melds: Meld[]): number[] {
-  return TODO('waits');
+  return waitsImpl(hand, melds);
 }
 
 /** Score a complete hand. Used by the engine and by replay grading. */
