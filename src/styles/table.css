@@ -94,19 +94,19 @@
 .board[data-orient='portrait'] {
   --bw: 380px; --bh: 470px;
   --rv-w: 14px; --rv-h: 20px; --bk-w: 14px; --bk-h: 20px;
-  --wall: 11px; --cube: 62px; --plate-fs: 9px; --gap: 5px; --rim: 42px;
+  --wall: 11px; --cube: 62px; --plate-fs: 9px; --gap: 5px; --rim: 48px;
 }
 .board[data-orient='landscape'] {
   --bw: 1000px; --bh: 560px;
   --rv-w: 22px; --rv-h: 30px; --bk-w: 22px; --bk-h: 30px;
-  --wall: 15px; --cube: 92px; --plate-fs: 11px; --gap: 8px; --rim: 58px;
+  --wall: 15px; --cube: 92px; --plate-fs: 11px; --gap: 8px; --rim: 64px;
 }
 
 /* phones sideways: same geometry, tighter coordinates */
 .board[data-orient='landscape'][data-compact='true'] {
   --bw: 760px; --bh: 430px;
   --rv-w: 17px; --rv-h: 23px; --bk-w: 17px; --bk-h: 23px;
-  --wall: 12px; --cube: 70px; --plate-fs: 10px; --gap: 6px; --rim: 47px;
+  --wall: 12px; --cube: 70px; --plate-fs: 10px; --gap: 6px; --rim: 52px;
 }
 
 /* a riichi stick laid on the cloth in front of a declared seat */
@@ -165,10 +165,11 @@
   gap: var(--gap);
 }
 .zone { display: flex; align-items: center; justify-content: center; gap: var(--gap); min-width: 0; min-height: 0; }
-.zone-top { grid-area: top; flex-direction: column; }
-.zone-bottom { grid-area: bottom; flex-direction: column; }
-.zone-left { grid-area: left; align-self: center; }
-.zone-right { grid-area: right; align-self: center; }
+/* each zone hugs its own rim so the pond/hand/wall spacing never drifts */
+.zone-top { grid-area: top; flex-direction: column; justify-content: flex-start; }
+.zone-bottom { grid-area: bottom; flex-direction: column; justify-content: flex-end; }
+.zone-left { grid-area: left; align-self: center; justify-content: flex-start; }
+.zone-right { grid-area: right; align-self: center; justify-content: flex-end; }
 .zone-center { grid-area: center; }
 
 .side-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
@@ -194,14 +195,17 @@
 .plate-v { writing-mode: vertical-rl; text-orientation: mixed; padding: 6px 2px; }
 .plate-v .dot { display: inline-block; }
 
-/* rivers */
-.river { display: grid; grid-template-columns: repeat(6, auto); gap: 2px; justify-content: center; align-content: start; }
-.river.side { grid-template-columns: repeat(3, auto); }
-.river-empty {
-  border: 1px dashed rgba(255, 255, 255, 0.12); border-radius: 4px;
-  width: calc(var(--rv-w) * 6 + 12px); height: calc(var(--rv-h) * 1 + 6px);
+/* rivers — fixed 6x3 pond grids so growth never shifts the table */
+.river {
+  display: grid; gap: 2px;
+  grid-template-columns: repeat(6, var(--rv-w));
+  grid-template-rows: repeat(3, var(--rv-h));
 }
-.river.side .river-empty { width: calc(var(--rv-h) * 3 + 10px); height: calc(var(--rv-w) * 2 + 8px); }
+.river.side {
+  grid-template-columns: repeat(3, var(--rv-h));
+  grid-template-rows: repeat(6, var(--rv-w));
+}
+.river-cell { display: grid; place-items: center; }
 
 /* centre: round wind cube + dead wall + sticks */
 .center-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -262,7 +266,7 @@
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; gap: 6px;
 }
-.hand-melds { display: flex; gap: 10px; justify-content: flex-end; align-items: center; min-height: 0; padding-right: 2px; }
+.hand-melds { display: flex; gap: 10px; justify-content: flex-end; align-items: center; min-height: 0; padding-right: 2px; flex-wrap: wrap; max-width: 100%; }
 .hand-melds:empty { display: none; }
 .hand-row { display: flex; gap: 2px; justify-content: center; align-items: flex-end; }
 .drawn-sep { width: clamp(6px, calc((100% - 26px) / var(--hand-n, 15) * 0.3), 14px); flex: none; }

@@ -7,7 +7,8 @@ export interface MeldAreaProps {
   size?: TileSize;
   /** Rotation matching the owning seat on the top-down table. */
   rotation?: TileRotation;
-  /** Stack melds in a column (side seats). */
+  /** Side seats: melds stack along their edge and each meld's tiles run
+   *  along that same edge (a column on screen), matching their hand row. */
   vertical?: boolean;
 }
 
@@ -20,7 +21,7 @@ export default function MeldArea({ melds, size = 'sm', rotation = 0, vertical = 
       style={vertical ? { flexDirection: 'column', alignItems: 'center' } : undefined}
     >
       {melds.map((m, i) => (
-        <div className="meld" key={i} style={{ display: 'flex', gap: 1 }}>
+        <div className="meld" key={i} style={{ display: 'flex', gap: 1, flexDirection: vertical ? 'column' : 'row' }}>
           {m.tiles.map((t, j) => (
             <Tile
               key={j}
