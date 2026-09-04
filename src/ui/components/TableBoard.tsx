@@ -1,38 +1,17 @@
 /**
- * TableBoard — the top-down table: each seat's concealed backs and melds
- * along their edge at the rim, discard ponds inside those, round info in the
- * middle. Designed at fixed coordinates per orientation and scaled to
- * fit, so portrait phones and wide desktops get the same real-table geometry.
+ * TableBoard — renders the deterministic layout from @ui/table/layout:
+ * every plate, back, discard and meld tile is absolutely positioned in board
+ * coordinates inside a uniformly scaled board. No flex/grid/percentage layout
+ * touches the table, so it is pixel-identical across browsers and viewports.
  */
 import { useRef, type CSSProperties } from 'react';
 import type { PublicView, SeatIndex } from '@engine/types';
 import Tile, { type TileRotation } from './Tile';
-import DiscardRiver from './DiscardRiver';
-import MeldArea from './MeldArea';
 import SeatPlate from './SeatPlate';
 import TableCenter from './TableCenter';
 import { useFitScale } from '@ui/hooks/useFitScale';
 import type { Orientation } from '@ui/hooks/useOrientation';
-
-const DIMS: Record<string, { w: number; h: number }> = {
-  portrait: { w: 380, h: 470 },
-  landscape: { w: 1000, h: 560 },
-  'landscape-compact': { w: 760, h: 430 },
-};
-
-function Backs({ count, rotation, vertical }: { count: number; rotation: TileRotation; vertical?: boolean }) {
-  const n = Math.min(count, 13);
-  return (
-    <div
-      aria-label={`${count} concealed tiles`}
-      style={{ display: 'flex', flexDirection: vertical ? 'column' : 'row', gap: 1 }}
-    >
-      {Array.from({ length: n }).map((_, i) => (
-        <Tile key={i} id={0} size="bk" faceDown rotation={rotation} />
-      ))}
-    </div>
-  );
-}
+import { layoutBoard, type BoardVariant, type PlacedTile } from '@ui/table/layout';
 
 export interface TableBoardProps {
   view: PublicView;
@@ -44,22 +23,27 @@ export interface TableBoardProps {
 
 export default function TableBoard({ view, seatName, aiThinking, orient, compact = false }: TableBoardProps) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const variant = orient === 'landscape' && compact ? 'landscape-compact' : orient;
-  const scale = useFitScale(hostRef, DIMS[variant].w, DIMS[variant].h);
+  const variant: BoardVariant = orient === 'portrait' ? 'portrait' : compact ? 'compact' : 'landscape';
+  const L = layoutBoard(view, variant);
+  const scale = useFitScale(hostRef, L.m.W, L.m.H);
 
-  const me = view.seats[0];
-  const right = view.seats[1];
-  const top = view.seats[2];
-  const left = view.seats[3];
+  const pos = (t: { x: number; y: number }): CSSProperties => ({
+    left: t.x,
+    top: t.y,
+    '--tw': `${L.m.tile.w}px`,
+    '--th': `${L.m.tile.h}px`,
+  }) as CSSProperties;
 
-  const plate = (s: SeatIndex, vertical?: boolean) => (
-    <SeatPlate
-      seat={view.seats[s]}
-      name={seatName(s)}
-      isTurn={view.turn === s}
-      isDealer={view.dealer === s}
-      thinking={aiThinking}
-      vertical={vertical}
+  const renderTile = (t: PlacedTile) => (
+    <Tile
+      key={t.key}
+      id={t.id}
+      size="rv"
+      className="abs"
+      style={pos(t)}
+      faceDown={t.faceDown}
+      rotation={t.rot as TileRotation}
+      dimmed={t.dimmed}
     />
   );
 
@@ -68,53 +52,48 @@ export default function TableBoard({ view, seatName, aiThinking, orient, compact
       <div
         className="board"
         data-orient={orient}
-        data-compact={orient === 'landscape' && compact ? 'true' : 'false'}
-        style={{ '--s': scale } as CSSProperties}
+        style={{ width: L.m.W, height: L.m.H, transform: `translate(-50%, -50%) scale(${scale})` }}
       >
-        <div className="board-grid">
-          {/* across (seat 2) */}
-          <div className="zone zone-top">
-            {plate(2)}
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <MeldArea melds={top.melds} size="bk" rotation={180} rotateCalled />
-              <Backs count={top.concealedCount} rotation={180} />
-            </div>
-            <DiscardRiver river={top.river} rotation={180} />
-            {top.riichi && <span className="table-stick" aria-label="riichi stick" />}
+        {L.plates.map((p) => (
+          <div
+            key={p.seat}
+            className="abs plate-box"
+            style={{ left: p.x, top: p.y, width: p.w, height: p.h }}
+          >
+            <SeatPlate
+              seat={view.seats[p.seat]}
+              name={seatName(p.seat)}
+              isTurn={view.turn === p.seat}
+              isDealer={view.dealer === p.seat}
+              thinking={aiThinking}
+              vertical={p.vertical}
+            />
           </div>
+        ))}
 
-          {/* left (seat 3) */}
-          <div className="zone zone-left">
-            {plate(3, true)}
-            <div className="side-col">
-              <Backs count={left.concealedCount} rotation={90} vertical />
-              <MeldArea melds={left.melds} size="bk" rotation={90} rotateCalled vertical />
-            </div>
-            <DiscardRiver river={left.river} rotation={90} side />
-            {left.riichi && <span className="table-stick vert" aria-label="riichi stick" />}
-          </div>
+        {L.backs.map(renderTile)}
+        {L.melds.map(renderTile)}
+        {([0, 1, 2, 3] as SeatIndex[]).flatMap((s) => L.ponds[s]).map(renderTile)}
 
-          {/* centre: round wind, dora, sticks */}
-          <div className="zone zone-center">
-            <TableCenter view={view} />
-          </div>
+        {L.sticks.map((s) => (
+          <span
+            key={`stick${s.seat}`}
+            className={`table-stick abs${s.vertical ? ' vert' : ''}`}
+            aria-label="riichi stick"
+            style={{
+              left: s.x,
+              top: s.y,
+              width: s.vertical ? L.m.stick.h : L.m.stick.w,
+              height: s.vertical ? L.m.stick.w : L.m.stick.h,
+            }}
+          />
+        ))}
 
-          {/* right (seat 1) */}
-          <div className="zone zone-right">
-            {right.riichi && <span className="table-stick vert" aria-label="riichi stick" />}
-            <DiscardRiver river={right.river} rotation={270} side />
-            <div className="side-col">
-              <MeldArea melds={right.melds} size="bk" rotation={270} rotateCalled vertical />
-              <Backs count={right.concealedCount} rotation={270} vertical />
-            </div>
-            {plate(1, true)}
-          </div>
-
-          {/* own river */}
-          <div className="zone zone-bottom">
-            {me.riichi && <span className="table-stick" aria-label="riichi stick" />}
-            <DiscardRiver river={me.river} rotation={0} />
-          </div>
+        <div
+          className="board-center abs"
+          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+        >
+          <TableCenter view={view} />
         </div>
       </div>
     </div>

@@ -51,7 +51,7 @@ export default function HandView({
     <div className="hand-dock" style={{ '--hand-n': count } as CSSProperties}>
       {melds.length > 0 && (
         <div className="hand-melds">
-          <MeldArea melds={melds} size="meld" />
+          <MeldArea melds={melds} size="sm" />
         </div>
       )}
       <div className="hand-row">

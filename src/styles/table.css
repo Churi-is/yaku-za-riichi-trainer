@@ -1,9 +1,9 @@
 /* ---------------------------------------------------------------------------
    The table — a top-down riichi board.
    .match is a column: score strip / main (felt + trainer dock) / hand + calls.
-   The felt holds a fixed-coordinate board that is scaled to fit, so the
-   layout is identical on every viewport: hands at the rim, ponds inside
-   them, round info in the middle, exactly like looking down at a real table.
+   The felt holds a fixed-coordinate board (see src/ui/table/layout.ts) that is
+   scaled to fit: every tile is absolutely positioned, so the layout is
+   identical on every viewport and every browser engine.
 --------------------------------------------------------------------------- */
 .match {
   height: 100%;
@@ -85,75 +85,23 @@
   box-shadow: inset 0 0 0 1px var(--hairline), inset 0 0 24px rgba(0, 0, 0, 0.6);
 }
 
+.abs { position: absolute; }
 .board-host { position: absolute; inset: 0; }
-.board {
-  position: absolute; left: 50%; top: 50%;
-  width: var(--bw); height: var(--bh);
-  transform: translate(-50%, -50%) scale(var(--s, 1));
-}
-.board[data-orient='portrait'] {
-  --bw: 380px; --bh: 470px;
-  --rv-w: 14px; --rv-h: 20px; --bk-w: 14px; --bk-h: 20px;
-  --cube: 62px; --plate-fs: 9px; --gap: 5px; --rim: 48px;
-}
-.board[data-orient='landscape'] {
-  --bw: 1000px; --bh: 560px;
-  --rv-w: 22px; --rv-h: 30px; --bk-w: 22px; --bk-h: 30px;
-  --cube: 92px; --plate-fs: 11px; --gap: 8px; --rim: 64px;
-}
+.board { position: absolute; left: 50%; top: 50%; }
 
-/* phones sideways: same geometry, tighter coordinates */
-.board[data-orient='landscape'][data-compact='true'] {
-  --bw: 760px; --bh: 430px;
-  --rv-w: 17px; --rv-h: 23px; --bk-w: 17px; --bk-h: 23px;
-  --cube: 70px; --plate-fs: 10px; --gap: 6px; --rim: 52px;
-}
-
-/* a riichi stick laid on the cloth in front of a declared seat */
-.table-stick {
-  width: 44px; height: 6px; border-radius: 3px; flex: none;
-  background:
-    radial-gradient(circle at 50% 50%, var(--red-hi) 0 1.6px, rgba(0, 0, 0, 0) 1.9px),
-    linear-gradient(180deg, #f6ecd0, #d8c69a);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-}
-.table-stick.vert { width: 6px; height: 44px;
-  background:
-    radial-gradient(circle at 50% 50%, var(--red-hi) 0 1.6px, rgba(0, 0, 0, 0) 1.9px),
-    linear-gradient(90deg, #f6ecd0, #d8c69a);
-}
-
-/* seat zones + centre */
-.board-grid {
-  position: absolute;
-  inset: 8px;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas: '. top .' 'left center right' '. bottom .';
-  gap: var(--gap);
-}
-.zone { display: flex; align-items: center; justify-content: center; gap: var(--gap); min-width: 0; min-height: 0; }
-/* each zone hugs its own rim so pond/hand spacing never drifts */
-.zone-top { grid-area: top; flex-direction: column; justify-content: flex-start; }
-.zone-bottom { grid-area: bottom; flex-direction: column; justify-content: flex-end; }
-.zone-left { grid-area: left; align-self: center; justify-content: flex-start; }
-.zone-right { grid-area: right; align-self: center; justify-content: flex-end; }
-.zone-center { grid-area: center; }
-
-.side-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-
-/* seat plates on the felt */
+/* seat plates on the felt (positioned by the layout model) */
+.plate-box { display: flex; }
+.plate-box .seat-plate { width: 100%; height: 100%; justify-content: center; }
 .seat-plate {
   display: flex; align-items: center; gap: 5px;
-  font-size: var(--plate-fs);
+  font-size: 10px;
   padding: 2px 6px;
   background: rgba(10, 8, 5, 0.55);
   border: 1px solid rgba(216, 180, 90, 0.22);
   border-radius: 4px;
   color: var(--ink);
   white-space: nowrap;
-  max-width: 100%;
+  overflow: hidden;
 }
 .seat-plate .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
 .seat-plate .wd { color: var(--gold); font-family: var(--font-jp); }
@@ -162,21 +110,8 @@
 .seat-plate.riichi { border-color: var(--red-hi); }
 .seat-plate.riichi .nm { color: #f0b6b6; }
 .plate-v { writing-mode: vertical-rl; text-orientation: mixed; padding: 6px 2px; }
-.plate-v .dot { display: inline-block; }
 
-/* rivers — fixed 6x3 pond grids so growth never shifts the table */
-.river {
-  display: grid; gap: 2px;
-  grid-template-columns: repeat(6, var(--rv-w));
-  grid-template-rows: repeat(3, var(--rv-h));
-}
-.river.side {
-  grid-template-columns: repeat(3, var(--rv-h));
-  grid-template-rows: repeat(6, var(--rv-w));
-}
-.river-cell { display: grid; place-items: center; }
-
-/* centre: round wind cube + dead wall + sticks */
+/* centre: round wind cube + dead wall + sticks (a self-contained card) */
 .center-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .dora-tray {
   display: flex; gap: 3px; padding: 5px 6px;
@@ -190,15 +125,15 @@
   color: var(--gold); text-transform: uppercase; align-self: center;
 }
 .wind-cube {
-  width: var(--cube); height: var(--cube);
+  width: var(--cube, 70px); height: var(--cube, 70px);
   display: grid; place-items: center; position: relative;
   background: linear-gradient(145deg, #2b2013, #140e07 70%);
   border: 1px solid var(--gold-dim); border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-.wind-cube .big { font-family: var(--font-jp); font-size: calc(var(--cube) * 0.42); color: var(--gold-hi); line-height: 1; }
-.wind-cube .rnd { position: absolute; bottom: 5px; font-size: calc(var(--cube) * 0.14); color: var(--muted); letter-spacing: 0.08em; }
-.wind-cube .corner { position: absolute; font-family: var(--font-jp); font-size: calc(var(--cube) * 0.15); color: rgba(216, 180, 90, 0.4); }
+.wind-cube .big { font-family: var(--font-jp); font-size: calc(var(--cube, 70px) * 0.42); color: var(--gold-hi); line-height: 1; }
+.wind-cube .rnd { position: absolute; bottom: 5px; font-size: calc(var(--cube, 70px) * 0.14); color: var(--muted); letter-spacing: 0.08em; }
+.wind-cube .corner { position: absolute; font-family: var(--font-jp); font-size: calc(var(--cube, 70px) * 0.15); color: rgba(216, 180, 90, 0.4); }
 .wind-cube .corner.on { color: var(--gold-hi); text-shadow: 0 0 6px rgba(240, 211, 138, 0.6); }
 .wind-cube .corner.tl { top: 3px; left: 5px; } .wind-cube .corner.tr { top: 3px; right: 5px; }
 .wind-cube .corner.bl { bottom: 3px; left: 5px; } .wind-cube .corner.br { bottom: 3px; right: 5px; }
@@ -225,6 +160,17 @@
   font-size: 9px; letter-spacing: 0.1em; color: rgba(240, 236, 220, 0.75);
   background: rgba(6, 30, 21, 0.7); border: 1px solid rgba(216, 180, 90, 0.25);
   padding: 1px 7px; border-radius: 999px; font-variant-numeric: tabular-nums;
+}
+
+/* a riichi stick laid on the cloth in front of a declared seat */
+.table-stick {
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f6ecd0, #d8c69a);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.table-stick::after {
+  content: ''; position: absolute; inset: 0; margin: auto;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--red-hi);
 }
 
 /* ---------- hand dock + calls (real UI pixels, big tap targets) ---------- */

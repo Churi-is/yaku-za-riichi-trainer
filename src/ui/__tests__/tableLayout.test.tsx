@@ -25,15 +25,20 @@ function startMatch() {
 }
 
 describe('top-down table layout', () => {
-  it('renders four seat zones, fixed ponds, centre info and the score strip', () => {
+  it('renders a deterministically positioned board with centre info and score strip', () => {
     const { container } = startMatch();
-    const board = container.querySelector('.board');
+    const board = container.querySelector('.board') as HTMLElement;
     expect(board).toBeTruthy();
     expect(['portrait', 'landscape']).toContain(board!.getAttribute('data-orient'));
-    expect(container.querySelectorAll('.zone').length).toBe(5);
-    // one fixed-grid pond per seat; no decorative wall ring
-    expect(container.querySelectorAll('.river').length).toBe(4);
-    expect(container.querySelectorAll('.wall').length).toBe(0);
+    // every felt object is absolutely positioned by the layout model
+    const placed = Array.from(board!.children).filter((el) => el.classList.contains('abs'));
+    expect(placed.length).toBeGreaterThan(40);
+    placed.forEach((el) => {
+      const st = (el as HTMLElement).style;
+      expect(st.left !== '' || st.transform !== '').toBe(true);
+      expect(st.top !== '' || st.transform !== '').toBe(true);
+    });
+    expect(container.querySelectorAll('.plate-box').length).toBe(3);
     expect(container.querySelector('.wind-cube')).toBeTruthy();
     expect(container.querySelector('.dora-tray')).toBeTruthy();
     expect(container.querySelectorAll('.score-plate').length).toBe(4);
@@ -47,18 +52,11 @@ describe('top-down table layout', () => {
     expect(dock!.querySelector('.hand-status')).toBeNull();
   });
 
-  it('keeps every opponent concealed: only backs on the felt', () => {
+  it('keeps every opponent concealed: only backs for concealed tiles', () => {
     const { container } = startMatch();
-    const zones = container.querySelectorAll('.zone-top .tile, .zone-left .tile, .zone-right .tile');
-    expect(zones.length).toBeGreaterThan(0);
-    zones.forEach((z) => {
-      // river/meld tiles are faces; concealed tiles must be backs with no art
-      if (z.querySelector('.tile-art')) {
-        expect(z.className).not.toContain('tile-back');
-      }
-    });
-    const backs = container.querySelectorAll('.zone-top .tile-back, .zone-left .tile-back, .zone-right .tile-back');
+    const backs = container.querySelectorAll('.board .tile-back');
     expect(backs.length).toBeGreaterThanOrEqual(39);
+    backs.forEach((b) => expect(b.textContent).toBe(''));
   });
 
   it('docks the trainer overlays instead of floating them over the table', () => {

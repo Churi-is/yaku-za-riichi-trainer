@@ -29,19 +29,14 @@
 .tile-sm   { --tw: 30px; --th: 41px; }
 .tile-md   { --tw: 40px; --th: 54px; }
 .tile-lg   { --tw: 54px; --th: 73px; }
-.tile-rv   { --tw: var(--rv-w, 20px); --th: var(--rv-h, 27px); }
-.tile-bk   { --tw: var(--bk-w, 20px); --th: var(--bk-h, 28px); }
-/* Hand + meld tiles size fluidly from the dock width. NOTE: the percentage
-   lives directly in `width` (never inside a custom property — Safari drops
-   those) and the height follows via aspect-ratio. */
+.tile-rv   { --tw: var(--rv-w, 16px); --th: var(--rv-h, 22px); }
+.tile-bk   { --tw: var(--bk-w, 16px); --th: var(--bk-h, 22px); }
+/* Hand tiles size fluidly from the dock width. NOTE: the percentage lives
+   directly in `width` (never inside a custom property — Safari drops those)
+   and the height follows via aspect-ratio. */
 .tile-hand {
   --tw: 30px; --th: 41px;
   width: clamp(18px, calc((100% - 26px) / var(--hand-n, 15)), 46px);
-  height: auto; aspect-ratio: 60 / 84;
-}
-.tile-meld {
-  --tw: 24px; --th: 33px;
-  width: clamp(14px, calc((100% - 26px) / var(--hand-n, 15) * 0.74), 34px);
   height: auto; aspect-ratio: 60 / 84;
 }
 
@@ -50,17 +45,6 @@
 .tile.rot90  .tile-art { transform: rotate(90deg); }
 .tile.rot180 .tile-art { transform: rotate(180deg); }
 .tile.rot270 .tile-art { transform: rotate(270deg); }
-
-/* fluid sizes rotated sideways: swap via the same clamp, inverse aspect
-   (the generic rot swap can't know a container-derived size) */
-.tile-meld.rot90, .tile-meld.rot270 {
-  width: calc(clamp(14px, calc((100% - 26px) / var(--hand-n, 15) * 0.74), 34px) * 1.4);
-  height: auto; aspect-ratio: 84 / 60;
-}
-.tile-hand.rot90, .tile-hand.rot270 {
-  width: calc(clamp(18px, calc((100% - 26px) / var(--hand-n, 15)), 46px) * 1.4);
-  height: auto; aspect-ratio: 84 / 60;
-}
 
 /* face-down tile backs */
 .tile-back {

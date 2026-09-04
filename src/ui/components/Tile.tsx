@@ -1,4 +1,5 @@
 /** Tile — renders a single mahjong tile face or back. Owned by Worker D. */
+import type { CSSProperties } from 'react';
 import type { TileId } from '@engine/types';
 import { isRedFiveId, tileFace } from '@ui/tiles';
 import TileFace from './TileFace';
@@ -20,11 +21,13 @@ export interface TileProps {
   onClick?: () => void;
   title?: string;
   ariaLabel?: string;
+  className?: string;
+  style?: CSSProperties;
 }
 
 export default function Tile({
   id, faceDown = false, size = 'md', rotation = 0, dimmed = false,
-  selected = false, disabled = false, onClick, title, ariaLabel,
+  selected = false, disabled = false, onClick, title, ariaLabel, className, style,
 }: TileProps) {
   const red = !faceDown && isRedFiveId(id);
   const cls = [
@@ -37,10 +40,11 @@ export default function Tile({
     disabled ? 'tile-disabled' : '',
     faceDown ? 'tile-back' : '',
     red ? 'tile-red' : '',
+    className ?? '',
   ].filter(Boolean).join(' ');
 
   if (faceDown) {
-    return <div className={cls} aria-hidden="true" title={title} />;
+    return <div className={cls} aria-hidden="true" title={title} style={style} />;
   }
 
   const face = tileFace(id);
@@ -57,6 +61,7 @@ export default function Tile({
         title={title ?? label}
         aria-label={label}
         aria-pressed={selected}
+        style={style}
       >
         {content}
       </button>
@@ -64,7 +69,7 @@ export default function Tile({
   }
 
   return (
-    <div className={cls} role="img" aria-label={label} title={title ?? label}>
+    <div className={cls} role="img" aria-label={label} title={title ?? label} style={style}>
       {content}
     </div>
   );
