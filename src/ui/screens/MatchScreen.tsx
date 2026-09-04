@@ -148,6 +148,7 @@ export default function MatchScreen() {
           seatName={seatName}
           onContinue={advanceHand}
           continueLabel="Next hand"
+          meldsOf={(s) => view.seats[s].melds}
         />
       )}
 

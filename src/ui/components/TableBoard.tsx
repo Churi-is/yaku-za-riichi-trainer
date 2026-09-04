@@ -1,7 +1,7 @@
 /**
- * TableBoard — the top-down table: walls at the rim, each seat's concealed
- * backs and melds along their edge, rivers inside the walls, round info in
- * the middle. Designed at fixed coordinates per orientation and scaled to
+ * TableBoard — the top-down table: each seat's concealed backs and melds
+ * along their edge at the rim, discard ponds inside those, round info in the
+ * middle. Designed at fixed coordinates per orientation and scaled to
  * fit, so portrait phones and wide desktops get the same real-table geometry.
  */
 import { useRef, type CSSProperties } from 'react';
@@ -52,8 +52,6 @@ export default function TableBoard({ view, seatName, aiThinking, orient, compact
   const top = view.seats[2];
   const left = view.seats[3];
 
-  const used = `${Math.round((1 - Math.min(1, view.tilesRemaining / 70)) * 100)}%`;
-
   const plate = (s: SeatIndex, vertical?: boolean) => (
     <SeatPlate
       seat={view.seats[s]}
@@ -73,18 +71,12 @@ export default function TableBoard({ view, seatName, aiThinking, orient, compact
         data-compact={orient === 'landscape' && compact ? 'true' : 'false'}
         style={{ '--s': scale } as CSSProperties}
       >
-        {/* the four walls; the used portion fades back into the felt */}
-        <div className="wall wall-h top"><span className="wall-used" style={{ width: used }} /></div>
-        <div className="wall wall-h bottom"><span className="wall-used" style={{ width: used }} /></div>
-        <div className="wall wall-v left"><span className="wall-used" style={{ height: used }} /></div>
-        <div className="wall wall-v right"><span className="wall-used" style={{ height: used }} /></div>
-
         <div className="board-grid">
           {/* across (seat 2) */}
           <div className="zone zone-top">
             {plate(2)}
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <MeldArea melds={top.melds} size="bk" rotation={180} />
+              <MeldArea melds={top.melds} size="bk" rotation={180} rotateCalled />
               <Backs count={top.concealedCount} rotation={180} />
             </div>
             <DiscardRiver river={top.river} rotation={180} />
@@ -96,7 +88,7 @@ export default function TableBoard({ view, seatName, aiThinking, orient, compact
             {plate(3, true)}
             <div className="side-col">
               <Backs count={left.concealedCount} rotation={90} vertical />
-              <MeldArea melds={left.melds} size="bk" rotation={90} vertical />
+              <MeldArea melds={left.melds} size="bk" rotation={90} rotateCalled vertical />
             </div>
             <DiscardRiver river={left.river} rotation={90} side />
             {left.riichi && <span className="table-stick vert" aria-label="riichi stick" />}
@@ -112,7 +104,7 @@ export default function TableBoard({ view, seatName, aiThinking, orient, compact
             {right.riichi && <span className="table-stick vert" aria-label="riichi stick" />}
             <DiscardRiver river={right.river} rotation={270} side />
             <div className="side-col">
-              <MeldArea melds={right.melds} size="bk" rotation={270} vertical />
+              <MeldArea melds={right.melds} size="bk" rotation={270} rotateCalled vertical />
               <Backs count={right.concealedCount} rotation={270} vertical />
             </div>
             {plate(1, true)}

@@ -1,6 +1,7 @@
 /** ReplayScreen — graded timeline of every human turn + per-round reveals. Owned by Worker D. */
 import { useMemo, useState } from 'react';
-import type { SeatIndex } from '@engine/types';
+import type { Meld, SeatIndex, TileId } from '@engine/types';
+import type { HandLog } from '@replay/types';
 import { useSession } from '@state/session';
 import { gradeMatch } from '@state/analysisAdapter';
 import type { GradedTurn } from '@analysis/types';
@@ -45,6 +46,47 @@ function TurnCard({ turn }: { turn: GradedTurn }) {
       )}
     </div>
   );
+}
+
+/** The discard a call was made on (the closest preceding discard entry). */
+function calledTileOf(hand: HandLog, seq: number): TileId | null {
+  for (let i = hand.entries.length - 1; i >= 0; i--) {
+    const e = hand.entries[i];
+    if (e.seq >= seq) continue;
+    if (e.action.type === 'discard') return e.action.tile;
+  }
+  return null;
+}
+
+/**
+ * Rebuild each seat's called sets from the hand's action log so the reveal
+ * shows COMPLETE hands (the log schema only stores concealed tiles).
+ */
+function meldsFromHand(hand: HandLog): Record<SeatIndex, Meld[]> {
+  const out: Record<SeatIndex, Meld[]> = { 0: [], 1: [], 2: [], 3: [] };
+  for (const e of hand.entries) {
+    const a = e.action;
+    if (a.type === 'chi' || a.type === 'pon' || a.type === 'minkan') {
+      const called = calledTileOf(hand, e.seq);
+      const tiles = sortTiles(called === null ? [...a.tiles] : [...a.tiles, called]);
+      out[e.seat].push({ type: a.type, tiles, calledFrom: null, calledTile: called, concealed: false });
+    } else if (a.type === 'ankan') {
+      out[e.seat].push({
+        type: 'ankan',
+        tiles: [a.kind * 4, a.kind * 4 + 1, a.kind * 4 + 2, a.kind * 4 + 3],
+        calledFrom: null, calledTile: null, concealed: true,
+      });
+    } else if (a.type === 'kakan') {
+      const kind = Math.floor(a.tile / 4);
+      const others = [0, 1, 2, 3].map((c) => kind * 4 + c).filter((id) => id !== a.tile).slice(0, 3);
+      out[e.seat].push({
+        type: 'kakan',
+        tiles: sortTiles([a.tile, ...others]),
+        calledFrom: null, calledTile: null, concealed: false,
+      });
+    }
+  }
+  return out;
 }
 
 function fmtSh(n: number): string {
@@ -146,6 +188,13 @@ export default function ReplayScreen() {
                     </span>
                     <div className="reveal-tiles">
                       {sortTiles(hand.revealedHands[s] ?? []).map((t, i) => <Tile key={i} id={t} size="xs" />)}
+                      {meldsFromHand(hand)[s].map((m, mi) => (
+                        <span className="reveal-meld" key={`m${mi}`}>
+                          {m.tiles.map((t, j) => (
+                            <Tile key={j} id={t} size="xs" faceDown={m.type === 'ankan' && (j === 0 || j === 3)} />
+                          ))}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 ))}

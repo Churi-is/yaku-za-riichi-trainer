@@ -1,5 +1,5 @@
 /** HandEndBanner — result of a finished hand with the reveal. Owned by Worker D. */
-import type { HandResult, SeatIndex } from '@engine/types';
+import type { HandResult, Meld, SeatIndex } from '@engine/types';
 import Tile from './Tile';
 import { sortTiles } from '@ui/tiles';
 
@@ -9,9 +9,11 @@ export interface HandEndBannerProps {
   seatName: (seat: SeatIndex) => string;
   onContinue: () => void;
   continueLabel: string;
+  /** Public called sets per seat, so the reveal shows complete hands. */
+  meldsOf?: (seat: SeatIndex) => Meld[];
 }
 
-export default function HandEndBanner({ result, roundLabel, seatName, onContinue, continueLabel }: HandEndBannerProps) {
+export default function HandEndBanner({ result, roundLabel, seatName, onContinue, continueLabel, meldsOf }: HandEndBannerProps) {
   const { reason, winner, loser, score } = result;
 
   return (
@@ -64,6 +66,11 @@ export default function HandEndBanner({ result, roundLabel, seatName, onContinue
                 </span>
                 <div className="reveal-tiles">
                   {sortTiles(result.revealedHands[s] ?? []).map((t, i) => <Tile key={i} id={t} size="xs" />)}
+                  {(meldsOf?.(s) ?? []).map((m, mi) => (
+                    <span className="reveal-meld" key={`m${mi}`}>
+                      {m.tiles.map((t, j) => <Tile key={j} id={t} size="xs" />)}
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}

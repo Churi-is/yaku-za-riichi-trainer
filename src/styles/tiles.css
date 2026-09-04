@@ -51,6 +51,17 @@
 .tile.rot180 .tile-art { transform: rotate(180deg); }
 .tile.rot270 .tile-art { transform: rotate(270deg); }
 
+/* fluid sizes rotated sideways: swap via the same clamp, inverse aspect
+   (the generic rot swap can't know a container-derived size) */
+.tile-meld.rot90, .tile-meld.rot270 {
+  width: calc(clamp(14px, calc((100% - 26px) / var(--hand-n, 15) * 0.74), 34px) * 1.4);
+  height: auto; aspect-ratio: 84 / 60;
+}
+.tile-hand.rot90, .tile-hand.rot270 {
+  width: calc(clamp(18px, calc((100% - 26px) / var(--hand-n, 15)), 46px) * 1.4);
+  height: auto; aspect-ratio: 84 / 60;
+}
+
 /* face-down tile backs */
 .tile-back {
   background: linear-gradient(160deg, #47926a 0%, #236044 55%, #17452f 100%);

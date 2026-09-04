@@ -80,7 +80,8 @@
 .reveal-seat.winner { border-color: var(--gold-dim); background: rgba(216, 180, 90, 0.08); }
 .reveal-seat .who { font-weight: 700; font-size: 13px; min-width: 84px; }
 .reveal-seat .delta { font-size: 12px; color: var(--muted); min-width: 62px; font-variant-numeric: tabular-nums; }
-.reveal-seat .reveal-tiles { display: flex; gap: 2px; flex-wrap: wrap; }
+.reveal-seat .reveal-tiles { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; }
+.reveal-meld { display: inline-flex; gap: 2px; margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--panel-border); }
 .yaku-list { display: flex; flex-direction: column; gap: 3px; }
 .score-line { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
 

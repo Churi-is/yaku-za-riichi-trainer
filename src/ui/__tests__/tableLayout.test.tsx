@@ -25,13 +25,15 @@ function startMatch() {
 }
 
 describe('top-down table layout', () => {
-  it('renders walls, four seat zones, centre info and the score strip', () => {
+  it('renders four seat zones, fixed ponds, centre info and the score strip', () => {
     const { container } = startMatch();
     const board = container.querySelector('.board');
     expect(board).toBeTruthy();
     expect(['portrait', 'landscape']).toContain(board!.getAttribute('data-orient'));
-    expect(container.querySelectorAll('.wall').length).toBe(4);
     expect(container.querySelectorAll('.zone').length).toBe(5);
+    // one fixed-grid pond per seat; no decorative wall ring
+    expect(container.querySelectorAll('.river').length).toBe(4);
+    expect(container.querySelectorAll('.wall').length).toBe(0);
     expect(container.querySelector('.wind-cube')).toBeTruthy();
     expect(container.querySelector('.dora-tray')).toBeTruthy();
     expect(container.querySelectorAll('.score-plate').length).toBe(4);

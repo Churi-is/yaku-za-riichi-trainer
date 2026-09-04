@@ -10,9 +10,11 @@ export interface MeldAreaProps {
   /** Side seats: melds stack along their edge and each meld's tiles run
    *  along that same edge (a column on screen), matching their hand row. */
   vertical?: boolean;
+  /** Lay the called tile sideways (only safe for fixed-px tile sizes). */
+  rotateCalled?: boolean;
 }
 
-export default function MeldArea({ melds, size = 'sm', rotation = 0, vertical = false }: MeldAreaProps) {
+export default function MeldArea({ melds, size = 'sm', rotation = 0, vertical = false, rotateCalled = false }: MeldAreaProps) {
   if (melds.length === 0) return null;
   return (
     <div
@@ -28,7 +30,7 @@ export default function MeldArea({ melds, size = 'sm', rotation = 0, vertical = 
               id={t}
               size={size}
               faceDown={m.type === 'ankan' && (j === 0 || j === 3)}
-              rotation={((rotation + (m.calledTile === t && m.calledFrom !== null ? 90 : 0)) % 360) as TileRotation}
+              rotation={((rotation + (rotateCalled && m.calledTile === t && m.calledFrom !== null ? 90 : 0)) % 360) as TileRotation}
             />
           ))}
         </div>
