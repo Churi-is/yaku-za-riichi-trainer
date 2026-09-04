@@ -27,6 +27,27 @@ export interface YakuSuggestion {
   methodNote: string;
 }
 
+/** How the advisor was run, and what its numbers therefore mean. */
+export type AdvisorMode = 'quick' | 'full';
+
+/** Full-game mode only: what happened to the hand across the simulated games. */
+export interface AdvisorSummary {
+  runs: number;
+  wins: number;
+  dealIns: number;
+  draws: number;
+  meanPoints: number;
+}
+
+export interface AdvisorOutcome {
+  mode: AdvisorMode;
+  /** Runs requested, so the UI can show progress against it. */
+  requested: number;
+  suggestions: YakuSuggestion[];
+  /** Present in full-game mode. */
+  summary?: AdvisorSummary;
+}
+
 // --- Overlay B: opponent reading ------------------------------------------
 
 export interface ReadSignal {

@@ -77,14 +77,55 @@ is exactly the thing this rewrite deleted. So the budget is spent in stages:
    left is provably dead — so this pass is cheap.
 4. **Full** (60 runs): the six survivors. Those are the numbers shown.
 
+## Depth, and the second mode
+
+The pause menu exposes two knobs, both under **Simulation**.
+
+**Depth — 60 / 120 / 200 runs.** More runs, tighter numbers: the standard error
+near 30% goes from ±6 points at 60 runs to ±3 at 200. Each option shows its own
+estimated wall-clock cost, and those estimates are not constants — every
+completed run folds its real cost back into an exponential moving average
+(`simCost` in the session store, 60/40 towards history), so after a run or two
+the menu is quoting *this device's* numbers rather than the development
+machine's. `SIM_COST_PRIOR` only seeds the very first render.
+
+**Full game simulation (off by default).** The quick mode asks "could this hand
+get there?". This one asks "what actually happens from here?" — and answers it
+by playing complete hands out against the three AI opponents, from tables
+determinized out of the unseen pool. It lives in `src/sim/fullGameSim.ts`.
+
+Each run deals the opponents' concealed hands, the wall and the dead wall from
+the unseen pool, so every run faces a different plausible table consistent with
+everything on display: melds, discards, dora, riichi, seat winds, points and
+each seat's tile count. Then all four seats — including yours — are played by
+the real AI until the hand ends. What comes back is not reachability but
+outcomes: how often you won, dealt in or drew, and which yaku were in the hands
+you won. The panel labels the mode `full games`, leads with the win/deal-in/draw
+summary, and drops the band word entirely (a band that called 10% "High" in one
+mode and "Low" in the other would be worse than no band at all).
+
+The determinizer is held to a hard invariant, tested: the table it builds
+contains all 136 tiles exactly once, matches every public fact in the view, and
+never places a tile the viewer has already seen into a hidden hand. Its outcome
+distribution is also checked against replaying the *true* position with only
+the wall reshuffled — if the invented tables did not behave like the real one,
+the mode would be measuring a different game.
+
+Full-game runs are restarted whenever the position changes, and since a worker
+cannot be interrupted mid-loop, a superseded job has its worker terminated
+outright rather than being allowed to finish work nobody wants. Progress is
+streamed, so the panel fills in as hands complete rather than freezing.
+
 ## Cost
 
-Roughly 100-350 ms per position, dominated by ~30,000 shanten evaluations at
-about 10 µs each. That is too slow for the render path, so the whole job runs
-in a Web Worker (`src/ui/workers/yakuAdvisor.worker.ts`); the panel keeps
-showing the previous position's answer, with a pulse in the header, until the
-new one lands. Only the newest request counts. Where `Worker` is unavailable
-(tests) the hook computes synchronously.
+Quick mode is roughly 100-350 ms per position at depth 60, dominated by ~30,000
+shanten evaluations at about 10 µs each. Full-game mode costs one complete hand
+per run — 70 ms in desktop Chromium, ~230 ms under Node — so depth 200 is tens
+of seconds. Both are far too slow for the render path, so the whole job runs in
+a Web Worker (`src/ui/workers/yakuAdvisor.worker.ts`); the panel keeps showing
+the previous position's answer, with a pulse in the header, until the new one
+lands. Only the newest request counts. Where `Worker` is unavailable (tests) the
+hook computes quick mode synchronously.
 
 Replay grading calls the advisor too, on riichi and call turns. It passes
 `FAST_BUDGET` (6/6/3/12), about a tenth of the cost, because it only needs the
@@ -147,6 +188,9 @@ predictions into a 40-59% bucket that comes true 1.5% of the time.
   belongs to the opponent-reading overlay.
 - **`ronRate` and `callRate` are guesses**, currently 0.5 and 0.6. They could be
   measured from real games with the same harness.
+- **Full-game mode inherits the AI's strength.** These opponents draw a lot of
+  hands (roughly two thirds of simulated hands run to exhaustion), so its
+  numbers describe this table, not professional play.
 - **Yakuman suppression is honest but surprising**: a hand that completes as
   nine gates does not count as chinitsu, because the engine would not award
   chinitsu. The yakuman shows up as its own candidate instead.

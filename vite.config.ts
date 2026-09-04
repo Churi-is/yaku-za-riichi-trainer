@@ -15,6 +15,7 @@ export default defineConfig({
       '@ui': r('./src/ui'),
       '@replay': r('./src/replay'),
       '@state': r('./src/state'),
+      '@sim': r('./src/sim'),
     },
   },
   server: {

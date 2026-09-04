@@ -16,7 +16,8 @@
 import * as analysis from '@analysis/index';
 import type { PublicView } from '@engine/types';
 import type {
-  GradedTurn, OpponentRead, OpponentWaitRead, WaitGuessRecord, YakuSuggestion,
+  AdvisorMode, AdvisorOutcome, GradedTurn, OpponentRead, OpponentWaitRead,
+  WaitGuessRecord, YakuSuggestion,
 } from '@analysis/types';
 import type { ActionLogEntry } from '@replay/types';
 import * as fb from './fallbackAnalysis';
@@ -47,6 +48,22 @@ function probeReal(view: PublicView): boolean {
  */
 export function suggestYaku(view: PublicView): YakuSuggestion[] {
   return analysis.suggestYaku(view);
+}
+
+/**
+ * Overlay A, with the player's chosen depth and mode. Quick mode asks whether
+ * each yaku is REACHABLE if committed to; full-game mode plays whole hands out
+ * against simulated opponents and reports what actually happened.
+ */
+export function advise(
+  view: PublicView,
+  mode: AdvisorMode,
+  runs: number,
+  onProgress?: (done: number, total: number, partial: AdvisorOutcome) => void,
+): AdvisorOutcome {
+  return mode === 'full'
+    ? analysis.fullGameAdvisor(view, runs, onProgress)
+    : analysis.quickAdvisor(view, runs);
 }
 
 export function readOpponents(view: PublicView): OpponentRead[] {

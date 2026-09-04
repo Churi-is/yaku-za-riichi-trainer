@@ -53,6 +53,21 @@ describe('public-information firewall (Worker D)', () => {
     }
   });
 
+  it('the full-game simulator builds a state, but is never handed one', () => {
+    const src = read('src/sim/fullGameSim.ts');
+    // It is allowed to name GameState — it constructs one — but every entry
+    // point must take a PublicView, and it must never reach into the live game.
+    expect(src).not.toMatch(/from '@state/);
+    expect(src).not.toMatch(/useMatch|useSession/);
+    for (const m of src.matchAll(/export function (\w+)\(([^)]*)\)/g)) {
+      const [, name, args] = m;
+      if (name === 'simulateFullGames' || name === 'determinize') {
+        expect(args).toMatch(/view: PublicView/);
+      }
+      expect(args).not.toMatch(/: GameState/);
+    }
+  });
+
   it('the yaku simulator reads nothing but the public view', () => {
     const src = read('src/analysis/yakuSim.ts');
     expect(src).not.toMatch(/\bGameState\b/);

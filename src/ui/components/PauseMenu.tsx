@@ -1,5 +1,6 @@
-/** PauseMenu — mid-match menu; can change overlay toggles. Owned by Worker D. */
-import { useSession, type OverlayToggles } from '@state/session';
+/** PauseMenu — mid-match menu; overlay toggles, simulation depth, table legend. */
+import { SIM_DEPTHS, useSession, type OverlayToggles, type SimDepth } from '@state/session';
+import { formatDuration } from '@ui/hooks/useYakuAdvisor';
 
 export interface PauseMenuProps {
   onResume: () => void;
@@ -17,6 +18,14 @@ export default function PauseMenu({ onResume, onQuitToMenu }: PauseMenuProps) {
   const overlays = useSession((s) => s.overlays);
   const toggle = useSession((s) => s.toggleOverlay);
   const settings = useSession((s) => s.settings);
+  const sim = useSession((s) => s.sim);
+  const simCost = useSession((s) => s.simCost);
+  const setSim = useSession((s) => s.setSim);
+
+  // Estimates come from what this device has actually managed, not from a
+  // constant: every completed run folds its real cost back into simCost.
+  const costOf = (depth: SimDepth, full = sim.fullGame) =>
+    formatDuration((full ? simCost.full : simCost.quick) * depth);
 
   return (
     <div className="modal-backdrop" onClick={onResume}>
@@ -43,6 +52,53 @@ export default function PauseMenu({ onResume, onQuitToMenu }: PauseMenuProps) {
               </button>
             </div>
           ))}
+        </div>
+
+        <div className="stack" style={{ gap: 6 }}>
+          <h4 style={{ margin: 0, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+            Simulation
+          </h4>
+          <div className="setting-row seg-row" style={{ padding: '4px 0' }}>
+            <span className="lab">
+              Depth
+              <small className="sub">Runs per yaku. More runs, steadier numbers.</small>
+            </span>
+            <div className="seg" role="group" aria-label="Simulation depth">
+              {SIM_DEPTHS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  className={sim.depth === d ? 'on' : ''}
+                  aria-pressed={sim.depth === d}
+                  onClick={() => setSim({ depth: d })}
+                >
+                  {d}
+                  <small className="cost">{costOf(d)}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="setting-row" style={{ padding: '6px 0' }}>
+            <span className="lab">
+              Full game simulation
+              <small className="sub">
+                Plays whole hands out against the opponents instead of asking whether a
+                yaku is reachable — a different, harder question, and a far slower one:
+                {' '}{costOf(sim.depth, true)} at depth {sim.depth}, restarted whenever
+                the position changes.
+              </small>
+            </span>
+            <button
+              type="button"
+              className={`toggle${sim.fullGame ? ' on' : ''}`}
+              role="switch"
+              aria-checked={sim.fullGame}
+              aria-label="Full game simulation"
+              onClick={() => setSim({ fullGame: !sim.fullGame })}
+            >
+              <span className="knob" />
+            </button>
+          </div>
         </div>
 
         <div className="stack" style={{ gap: 6 }}>

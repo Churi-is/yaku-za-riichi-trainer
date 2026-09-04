@@ -14,7 +14,7 @@ import type {
   YakuSuggestion, OpponentRead, OpponentWaitRead, GradedTurn, WaitGuessRecord,
 } from './types';
 import type { ActionLogEntry } from '@replay/types';
-import { yakuAdvisor } from './yakuAdvisor';
+import { fullGameAdvisor, quickAdvisor, yakuAdvisor } from './yakuAdvisor';
 import { readOpponents as readOpponentsImpl } from './opponentRead';
 import { guessWaits as guessWaitsImpl, resolveWaitGuesses as resolveGuesses } from './waitGuess';
 import { gradeMatch as grade } from './grading';
@@ -25,6 +25,9 @@ export * from './types';
 export function suggestYaku(view: PublicView): YakuSuggestion[] {
   return yakuAdvisor(view);
 }
+
+/** Overlay A, deep mode: complete hands played out against simulated opponents. */
+export { fullGameAdvisor, quickAdvisor };
 
 /** Overlay B. One read per opponent seat. */
 export function readOpponents(view: PublicView): OpponentRead[] {

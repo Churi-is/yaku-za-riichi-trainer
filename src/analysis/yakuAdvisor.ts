@@ -21,13 +21,14 @@
  *   4. spend the rest of the budget on the survivors and report those.
  */
 import type { PublicView, TileKind, YakuId } from '@engine/types';
-import type { ProbabilityBand, YakuSuggestion } from './types';
+import type { AdvisorOutcome, ProbabilityBand, YakuSuggestion } from './types';
 import { YAKU_DEFS } from './yakuDefs';
 import {
   DEFAULT_SIM, discoverCandidates, drawsRemaining, simulateYaku, unseenPool,
   type SimOptions,
 } from './yakuSim';
 import { countsFromIds, kindOf } from './tileUtil';
+import { simulateFullGames, type FullGameResult } from '@sim/fullGameSim';
 
 export interface AdvisorBudget {
   /** Speed-play runs used to discover which yaku the hand stumbles into. */
@@ -188,3 +189,75 @@ function methodNote(view: PublicView, hits: number, runs: number, draws: number)
 }
 
 export { DEFAULT_SIM };
+
+// ---------------------------------------------------------------------------
+// full-game mode
+// ---------------------------------------------------------------------------
+
+/**
+ * The deep mode. Instead of asking whether a yaku is reachable if you chase
+ * it, play the whole rest of the hand out — three AI opponents included — from
+ * tables determinized out of the unseen pool, and report what actually
+ * happened. Far slower, and it answers a different question, so the UI labels
+ * it differently: these are hands that FINISHED with the yaku, against
+ * opponents who were racing you.
+ */
+export function fullGameAdvisor(
+  view: PublicView,
+  runs: number,
+  onProgress?: (done: number, total: number, partial: AdvisorOutcome) => void,
+): AdvisorOutcome {
+  const seed = positionSeed(view);
+  const pack = (r: FullGameResult): AdvisorOutcome => ({
+    mode: 'full',
+    requested: runs,
+    summary: {
+      runs: r.runs, wins: r.wins, dealIns: r.dealIns, draws: r.draws,
+      meanPoints: r.meanPoints,
+    },
+    suggestions: r.yaku
+      .map((y) => {
+        const def = YAKU_DEFS.find((d) => d.id === y.id);
+        if (!def || r.runs === 0) return null;
+        const rate = y.hits / r.runs;
+        return {
+          id: y.id,
+          name: def.name,
+          hanLabel: def.hanLabel,
+          description: def.description,
+          // The UI does not show a band word in this mode — see the panel —
+          // but the field is part of the contract, so keep it meaningful by
+          // scaling against how often the hand was won at all.
+          band: bandOf(r.wins > 0 ? y.hits / r.wins : 0),
+          approxPercent: Math.round(rate * 100),
+          hits: y.hits,
+          runs: r.runs,
+          methodNote: `Out of ${r.runs} complete hands played from here — opponents `
+            + 'included, dealt from the tiles you cannot see — this yaku was in the '
+            + `hand you won ${y.hits} times. Unlike the quick mode this is not "can I `
+            + 'reach it": it is how often the hand actually finished this way, with '
+            + 'three players trying to finish first.',
+        } as YakuSuggestion;
+      })
+      .filter((x): x is YakuSuggestion => x !== null)
+      .slice(0, 5),
+  });
+
+  const result = simulateFullGames(view, {
+    runs,
+    seed,
+    onProgress: onProgress
+      ? (done, total, partial) => onProgress(done, total, pack(partial))
+      : undefined,
+  });
+  return pack(result);
+}
+
+/** Quick mode, wrapped in the same envelope as the full-game mode. */
+export function quickAdvisor(view: PublicView, runs: number): AdvisorOutcome {
+  return {
+    mode: 'quick',
+    requested: runs,
+    suggestions: yakuAdvisor(view, {}, { ...ADVISOR_BUDGET, full: runs }),
+  };
+}

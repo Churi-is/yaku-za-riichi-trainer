@@ -14,7 +14,7 @@ import { makeView, kindOfShort } from './fixtures';
 import {
   discoverCandidates, drawsRemaining, simulateYaku, unseenPool,
 } from '../yakuSim';
-import { yakuAdvisor, positionSeed, FAST_BUDGET } from '../yakuAdvisor';
+import { yakuAdvisor, positionSeed, FAST_BUDGET, quickAdvisor } from '../yakuAdvisor';
 
 /**
  * Distinct ids, copy by copy. The shared `ids()` helper hands out copy 0 for
@@ -243,4 +243,41 @@ describe('the sim only ever sees public information', () => {
     expect(yakuAdvisor(a)).toEqual(yakuAdvisor(b));
     expect(countsFromIds(a.hand)).toEqual(countsFromIds(b.hand));
   });
+});
+
+describe('advisor modes', () => {
+  it('quick mode honours the requested depth', () => {
+    const t = alloc();
+    const view = makeView({
+      hand: t('2m', '3m', '4m', '5m', '6m', '2p', '3p', '7p', '7p', '4s', '5s', 'H', 'H'),
+      tilesRemaining: 50,
+    });
+    const shallow = quickAdvisor(view, 20);
+    const deep = quickAdvisor(view, 60);
+    expect(shallow.mode).toBe('quick');
+    expect(shallow.requested).toBe(20);
+    expect(deep.requested).toBe(60);
+    for (const s of shallow.suggestions) expect(s.runs).toBe(20);
+    for (const s of deep.suggestions) expect(s.runs).toBe(60);
+    // more runs means a finer-grained answer, not a different question
+    expect(deep.suggestions.length).toBeGreaterThan(0);
+  });
+
+  it('deeper runs give a steadier answer', () => {
+    const t = alloc();
+    const view = makeView({
+      hand: t('2m', '3m', '4m', '5m', '6m', '7m', '3p', '4p', '5p', '6s', '7s', '8s', '2s'),
+      tilesRemaining: 40,
+    });
+    // Same position, different seeds: the spread between runs must shrink as
+    // the sample grows. That is the whole reason the depth setting exists.
+    const spread = (runs: number) => {
+      const rates = [1, 2, 3].map((seed) => {
+        const r = simulateYaku(view, ['tanyao'], { runs, seed })[0];
+        return r ? r.rate : 0;
+      });
+      return Math.max(...rates) - Math.min(...rates);
+    };
+    expect(spread(120)).toBeLessThanOrEqual(spread(15) + 0.02);
+  }, 30000);
 });
