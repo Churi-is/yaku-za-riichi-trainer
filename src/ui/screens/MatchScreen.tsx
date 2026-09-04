@@ -1,28 +1,23 @@
-/** MatchScreen — the live table. Owned by Worker D. */
+/** MatchScreen — the live table, top-down. Owned by Worker D. */
 import { useEffect, useMemo, useState } from 'react';
 import type { Action, SeatIndex, TileId } from '@engine/types';
 import { useSession } from '@state/session';
 import { useMatch, getLogBuilder } from '@state/gameLoop';
 import { usingFallback } from '@state/engineAdapter';
+import { useOrientation } from '@ui/hooks/useOrientation';
 
-import ScoreBoard from '@ui/components/ScoreBoard';
-import DoraDisplay from '@ui/components/DoraDisplay';
-import DiscardRiver from '@ui/components/DiscardRiver';
-import SeatInfo from '@ui/components/SeatInfo';
-import HandView from '@ui/components/HandView';
-import CallButtons from '@ui/components/CallButtons';
+import ScoreStrip from '@ui/components/ScoreStrip';
+import TableBoard from '@ui/components/TableBoard';
+import CallBar from '@ui/components/CallBar';
 import PauseMenu from '@ui/components/PauseMenu';
 import HandEndBanner from '@ui/components/HandEndBanner';
 import PersonalitiesIntro from '@ui/components/PersonalitiesIntro';
 
 import OverlayToggleBar from '@ui/overlays/OverlayToggleBar';
-import YakuAdvisorPanel from '@ui/overlays/YakuAdvisorPanel';
-import OpponentReadingPanel from '@ui/overlays/OpponentReadingPanel';
-import WaitGuessingPanel from '@ui/overlays/WaitGuessingPanel';
+import OverlayDock from '@ui/overlays/OverlayDock';
 
 export default function MatchScreen() {
   const go = useSession((s) => s.go);
-  const overlays = useSession((s) => s.overlays);
   const setMatchLog = useSession((s) => s.setMatchLog);
 
   const state = useMatch((s) => s.state);
@@ -34,6 +29,8 @@ export default function MatchScreen() {
   const matchResult = useMatch((s) => s.matchResult);
   const humanAct = useMatch((s) => s.humanAct);
   const advanceHand = useMatch((s) => s.advanceHand);
+
+  const { orient, compact } = useOrientation();
 
   const [paused, setPaused] = useState(false);
   const [riichiMode, setRiichiMode] = useState(false);
@@ -79,107 +76,66 @@ export default function MatchScreen() {
   const canAct = humanTurn && !paused;
 
   const me = view.seats[0];
-  const opp1 = view.seats[1]; // right
-  const opp2 = view.seats[2]; // top
-  const opp3 = view.seats[3]; // left
 
   const noDiscardsYet = ([0, 1, 2, 3] as SeatIndex[]).every((s) => view.seats[s].river.length === 0);
   const showIntro = !introDismissed && !handEnd && !matchResult && noDiscardsYet
     && seatPersonalities.length > 0;
 
-  const anyOverlayOn = overlays.yakuAdvisor || overlays.opponentReading || overlays.waitGuessing;
-
   return (
-    <div className="match">
-      <div className="match-top">
-        <div className="row" style={{ gap: 8 }}>
-          <button className="btn btn-sm" onClick={() => setPaused(true)}>☰ Pause</button>
-          {usingFallback() && <span className="pill" title="Worker A's engine has not merged yet; using Worker D's built-in fallback rules engine.">demo engine</span>}
-        </div>
-        <div className="row" style={{ gap: 6 }}>
-          <span className="muted" style={{ fontSize: 12 }}>You: {me.points.toLocaleString()}</span>
-        </div>
-        <OverlayToggleBar />
-      </div>
-
-      <div className="table-wrap">
-        <div className="table">
-          {/* Top opponent (seat 2) */}
-          <div className="seat-top">
-            <SeatInfo seat={opp2} personalityName={seatName(2)} isTurn={view.turn === 2} isDealer={view.dealer === 2} thinking={aiThinking} />
-            <DiscardRiver river={opp2.river} orientation="top" />
-          </div>
-
-          {/* Left opponent (seat 3) */}
-          <div className="seat-left">
-            <SeatInfo seat={opp3} personalityName={seatName(3)} isTurn={view.turn === 3} isDealer={view.dealer === 3} thinking={aiThinking} />
-            <DiscardRiver river={opp3.river} orientation="left" />
-          </div>
-
-          {/* Center */}
-          <div className="center-area">
-            <div className="center-info">
-              <ScoreBoard view={view} />
-              <DoraDisplay indicators={view.doraIndicators} tilesRemaining={view.tilesRemaining} />
-            </div>
-          </div>
-
-          {/* Right opponent (seat 1) */}
-          <div className="seat-right">
-            <SeatInfo seat={opp1} personalityName={seatName(1)} isTurn={view.turn === 1} isDealer={view.dealer === 1} thinking={aiThinking} />
-            <DiscardRiver river={opp1.river} orientation="right" />
-          </div>
-
-          {/* Human (seat 0) river */}
-          <div className="seat-bottom">
-            <DiscardRiver river={me.river} orientation="bottom" />
-          </div>
-        </div>
-
-        {/* Overlay layer — floats top-right, scrolls, never covers rivers on wide screens */}
-        {anyOverlayOn && (
-          <div className="overlay-layer">
-            {overlays.yakuAdvisor && <YakuAdvisorPanel view={view} />}
-            {overlays.opponentReading && <OpponentReadingPanel view={view} seatName={seatName} />}
-            {overlays.waitGuessing && <WaitGuessingPanel view={view} seatName={seatName} />}
-          </div>
+    <div className="match" data-orient={orient}>
+      <ScoreStrip
+        view={view}
+        seatName={seatName}
+        tools={(
+          <>
+            {usingFallback() && (
+              <span className="pill" title="Worker A's engine has not merged yet; using Worker D's built-in fallback rules engine.">demo</span>
+            )}
+            {!humanTurn && !handEnd && !matchResult && (
+              <span className="pill turn-status" role="status">
+                {aiThinking ? 'Opponents playing…' : 'Waiting…'}
+              </span>
+            )}
+            <OverlayToggleBar />
+            <button
+              type="button"
+              className="tab-btn"
+              aria-label="Pause menu"
+              title="Pause"
+              onClick={() => setPaused(true)}
+            >
+              ☰
+            </button>
+          </>
         )}
-      </div>
-
-      {/* Call / action bar */}
-      <CallButtons
-        legal={humanLegal}
-        riichiMode={riichiMode}
-        onEnterRiichiMode={() => setRiichiMode(true)}
-        onCancelRiichi={() => setRiichiMode(false)}
-        onAct={act}
       />
 
-      {/* Human hand dock */}
-      <div className="hand-dock">
-        <div className="row center" style={{ justifyContent: 'center', marginBottom: 4 }}>
-          <span className="opp-name">You</span>
-          <span className="opp-meta">
-            Seat {me.seatWind[0].toUpperCase()} · {me.points.toLocaleString()} pts
-            {me.riichi && <span style={{ color: 'var(--accent-red)' }}> · RIICHI</span>}
-            {view.dealer === 0 && <span className="pill" style={{ marginLeft: 6, fontSize: 10 }}>Dealer</span>}
-          </span>
+      <div className="match-main">
+        <div className="felt-wrap">
+          <TableBoard
+            view={view}
+            seatName={seatName}
+            aiThinking={aiThinking}
+            orient={orient}
+            compact={compact}
+            discardActions={humanLegal.filter((l) => l.action.type === 'discard')}
+            onDiscard={onDiscard}
+            riichiMode={riichiMode}
+            locked={!canAct || isCallWindow}
+          />
         </div>
-        <HandView
-          hand={view.hand}
-          drawnTile={view.drawnTile}
-          melds={me.melds}
-          discardActions={humanLegal.filter((l) => l.action.type === 'discard')}
-          onDiscard={onDiscard}
-          riichiMode={riichiMode}
-          locked={!canAct || isCallWindow}
-        />
-        {!humanTurn && !handEnd && !matchResult && (
-          <div className="center muted" style={{ fontSize: 12, marginTop: 4 }}>
-            {aiThinking ? 'Opponents are playing…' : 'Waiting…'}
-          </div>
-        )}
+        <OverlayDock view={view} seatName={seatName} callWindow={isCallWindow && canAct} />
       </div>
+
+      <footer className="dock-bottom">
+        <CallBar
+          legal={humanLegal}
+          riichiMode={riichiMode}
+          onEnterRiichiMode={() => setRiichiMode(true)}
+          onCancelRiichi={() => setRiichiMode(false)}
+          onAct={act}
+        />
+      </footer>
 
       {showIntro && (
         <PersonalitiesIntro personalities={seatPersonalities} onStart={() => setIntroDismissed(true)} />
@@ -192,6 +148,7 @@ export default function MatchScreen() {
           seatName={seatName}
           onContinue={advanceHand}
           continueLabel="Next hand"
+          meldsOf={(s) => view.seats[s].melds}
         />
       )}
 

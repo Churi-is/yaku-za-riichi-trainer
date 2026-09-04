@@ -1,5 +1,5 @@
 /** HandEndBanner — result of a finished hand with the reveal. Owned by Worker D. */
-import type { HandResult, SeatIndex } from '@engine/types';
+import type { HandResult, Meld, SeatIndex } from '@engine/types';
 import Tile from './Tile';
 import { sortTiles } from '@ui/tiles';
 
@@ -9,9 +9,11 @@ export interface HandEndBannerProps {
   seatName: (seat: SeatIndex) => string;
   onContinue: () => void;
   continueLabel: string;
+  /** Public called sets per seat, so the reveal shows complete hands. */
+  meldsOf?: (seat: SeatIndex) => Meld[];
 }
 
-export default function HandEndBanner({ result, roundLabel, seatName, onContinue, continueLabel }: HandEndBannerProps) {
+export default function HandEndBanner({ result, roundLabel, seatName, onContinue, continueLabel, meldsOf }: HandEndBannerProps) {
   const { reason, winner, loser, score } = result;
 
   return (
@@ -23,7 +25,7 @@ export default function HandEndBanner({ result, roundLabel, seatName, onContinue
             {reason === 'ron' && `${seatName(winner!)} — Ron`}
             {reason === 'exhaustiveDraw' && 'Exhaustive Draw'}
           </h2>
-          <span className="pill">{roundLabel}</span>
+          <span className="pill gold">{roundLabel}</span>
         </div>
 
         {reason !== 'exhaustiveDraw' && score && (
@@ -42,7 +44,7 @@ export default function HandEndBanner({ result, roundLabel, seatName, onContinue
             </div>
             <div className="score-line" style={{ fontWeight: 700, borderTop: '1px solid var(--panel-border)', paddingTop: 6 }}>
               <span>{score.limitName ? score.limitName.toUpperCase() : `${score.han} han ${score.fu} fu`}</span>
-              <span className="accent" style={{ color: 'var(--accent)' }}>{score.points.toLocaleString()} pts</span>
+              <span style={{ color: 'var(--gold)' }}>{score.points.toLocaleString()} pts</span>
             </div>
           </div>
         )}
@@ -55,15 +57,20 @@ export default function HandEndBanner({ result, roundLabel, seatName, onContinue
 
         <div>
           <h4>Reveal</h4>
-          <div className="reveal-grid">
+          <div className="reveal-table">
             {([0, 1, 2, 3] as SeatIndex[]).map((s) => (
-              <div className="reveal-seat" key={s}>
-                <strong>{seatName(s)}</strong>{' '}
-                <span className="muted" style={{ fontSize: 12 }}>
+              <div className={`reveal-seat${winner === s ? ' winner' : ''}`} key={s}>
+                <span className="who">{seatName(s)}</span>
+                <span className="delta">
                   {result.deltas[s] >= 0 ? '+' : ''}{result.deltas[s].toLocaleString()}
                 </span>
                 <div className="reveal-tiles">
                   {sortTiles(result.revealedHands[s] ?? []).map((t, i) => <Tile key={i} id={t} size="xs" />)}
+                  {(meldsOf?.(s) ?? []).map((m, mi) => (
+                    <span className="reveal-meld" key={`m${mi}`}>
+                      {m.tiles.map((t, j) => <Tile key={j} id={t} size="xs" />)}
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}

@@ -1,4 +1,5 @@
-/** PersonalitiesIntro — shown at match start so the player learns each seat. Owned by Worker D. */
+/** PersonalitiesIntro — shown at match start so the player learns each seat.
+ *  The three opponents are introduced in their table positions. */
 import type { SeatPersonality } from '@state/gameLoop';
 
 export interface PersonalitiesIntroProps {
@@ -6,24 +7,24 @@ export interface PersonalitiesIntroProps {
   onStart: () => void;
 }
 
-const ARCHETYPE_HINT: Record<string, string> = {};
+const AREA: Record<number, string> = { 1: 's1', 2: 's2', 3: 's3' };
+/** Position names relative to you: right, across, left. */
+const POSITION: Record<number, string> = { 1: '下家 · right', 2: '対面 · across', 3: '上家 · left' };
 
 export default function PersonalitiesIntro({ personalities, onStart }: PersonalitiesIntroProps) {
   return (
     <div className="scrim">
       <div className="card handend-card stack">
-        <h2 style={{ margin: 0 }}>Your table</h2>
+        <h2 style={{ margin: 0 }}>Your table<span className="kan jp" style={{ color: 'var(--gold-dim)', fontSize: '0.7em', marginLeft: 8 }}>対面</span></h2>
         <p className="muted" style={{ margin: 0 }}>
           Three opponents, three styles. Start building a read on each before the first discard.
         </p>
-        <div className="stack">
+        <div className="intro-table">
           {personalities.map((p) => (
-            <div className="card" key={p.seat} style={{ padding: 12 }}>
-              <div className="row spread">
-                <strong>{p.name}</strong>
-                <span className="pill">Seat {p.seat}</span>
-              </div>
-              <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{p.tagline}{ARCHETYPE_HINT[p.id] ?? ''}</div>
+            <div className={`card intro-seat ${AREA[p.seat] ?? 's2'}`} key={p.seat} style={{ padding: 10 }}>
+              <div className="nm">{p.name}</div>
+              <div className="wd jp">{POSITION[p.seat] ?? ''}</div>
+              <div className="tl">{p.tagline}</div>
             </div>
           ))}
         </div>

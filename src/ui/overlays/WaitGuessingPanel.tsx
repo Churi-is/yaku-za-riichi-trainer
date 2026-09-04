@@ -17,6 +17,8 @@ import Tile from '@ui/components/Tile';
 export interface WaitGuessingPanelProps {
   view: PublicView;
   seatName: (seat: SeatIndex) => string;
+  open?: boolean;
+  onToggleOpen?: () => void;
 }
 
 const CONF_CLASS: Record<string, string> = {
@@ -39,7 +41,7 @@ function KindPicker({ selected, onToggle }: { selected: Set<TileKind>; onToggle:
           {g.kinds.map((k) => (
             <Tile
               key={k}
-              id={k * 4}
+              id={k * 4 + 1}
               size="xs"
               onClick={() => onToggle(k)}
               selected={selected.has(k)}
@@ -51,8 +53,7 @@ function KindPicker({ selected, onToggle }: { selected: Set<TileKind>; onToggle:
   );
 }
 
-export default function WaitGuessingPanel({ view, seatName }: WaitGuessingPanelProps) {
-  const [open, setOpen] = useState(true);
+export default function WaitGuessingPanel({ view, seatName, open = true, onToggleOpen }: WaitGuessingPanelProps) {
   const overlays = useSession((s) => s.overlays);
   const toggleOverlay = useSession((s) => s.toggleOverlay);
   const practicePrompts = useMatch((s) => s.practicePrompts);
@@ -79,14 +80,13 @@ export default function WaitGuessingPanel({ view, seatName }: WaitGuessingPanelP
 
   return (
     <div className="overlay-panel">
-      <h4>
-        <span>Wait Guessing <span className="estimate-tag">estimate</span></span>
-        <button className="collapse-btn" aria-label={open ? 'Collapse' : 'Expand'} onClick={() => setOpen((o) => !o)}>
-          {open ? '−' : '+'}
-        </button>
-      </h4>
+      <button type="button" className="panel-head" onClick={onToggleOpen} aria-expanded={open}>
+        <h4>Wait Guessing <span className="estimate-tag">estimate</span></h4>
+        {activePractice.length > 0 && <span className="badge">guess!</span>}
+        <span className="chev">{open ? '−' : '+'}</span>
+      </button>
       {open && (
-        <div>
+        <div className="panel-body">
           <label className="row" style={{ fontSize: 12, gap: 6, marginBottom: 6 }}>
             <button
               type="button"

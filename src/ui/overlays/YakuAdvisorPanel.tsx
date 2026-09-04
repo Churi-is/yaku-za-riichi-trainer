@@ -3,7 +3,6 @@
  * Reads ONLY from @analysis (via the adapter). Renders nothing else: no tiles
  * to keep/seek, no waits, no reference to which tiles fit a yaku. Owned by D.
  */
-import { useState } from 'react';
 import type { PublicView } from '@engine/types';
 import { suggestYaku } from '@state/analysisAdapter';
 import Tooltip from '@ui/components/Tooltip';
@@ -11,45 +10,46 @@ import { bandClass } from './bandClass';
 
 export interface YakuAdvisorPanelProps {
   view: PublicView;
+  open?: boolean;
+  onToggleOpen?: () => void;
 }
 
-export default function YakuAdvisorPanel({ view }: YakuAdvisorPanelProps) {
-  const [open, setOpen] = useState(true);
+export default function YakuAdvisorPanel({ view, open = true, onToggleOpen }: YakuAdvisorPanelProps) {
   const suggestions = suggestYaku(view).slice(0, 5);
 
   return (
     <div className="overlay-panel">
-      <h4>
-        <span>Yaku Advisor <span className="estimate-tag">estimate</span></span>
-        <button className="collapse-btn" aria-label={open ? 'Collapse' : 'Expand'} onClick={() => setOpen((o) => !o)}>
-          {open ? '−' : '+'}
-        </button>
-      </h4>
+      <button type="button" className="panel-head" onClick={onToggleOpen} aria-expanded={open}>
+        <h4>Yaku Advisor <span className="estimate-tag">estimate</span></h4>
+        <span className="chev">{open ? '−' : '+'}</span>
+      </button>
       {open && (
-        suggestions.length === 0 ? (
-          <p className="muted" style={{ fontSize: 12, margin: 0 }}>
-            No clear direction yet — keep your options open.
-          </p>
-        ) : (
-          <div>
-            {suggestions.map((s) => (
-              <div className="yaku-item" key={s.id}>
-                <span className="yaku-name">{s.name}</span>
-                <span className="yaku-han">{s.hanLabel} han</span>
-                <div className="yaku-def">{s.description}</div>
-                <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
-                  <span className={bandClass(s.band)}>
-                    {s.band}{typeof s.approxPercent === 'number' ? ` · ~${s.approxPercent}%` : ''}
-                  </span>
-                  <Tooltip content={s.methodNote} />
-                </div>
-              </div>
-            ))}
-            <p className="muted" style={{ fontSize: 10.5, marginTop: 8, marginBottom: 0 }}>
-              Definitions and likelihoods only. This panel never tells you which tiles to keep or discard.
+        <div className="panel-body">
+          {suggestions.length === 0 ? (
+            <p className="muted" style={{ fontSize: 12, margin: 0 }}>
+              No clear direction yet — keep your options open.
             </p>
-          </div>
-        )
+          ) : (
+            <div>
+              {suggestions.map((s, i) => (
+                <div className="yaku-item" key={`${s.id}-${i}`}>
+                  <span className="yaku-name">{s.name}</span>
+                  <span className="yaku-han">{s.hanLabel} han</span>
+                  <div className="yaku-def">{s.description}</div>
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
+                    <span className={bandClass(s.band)}>
+                      {s.band}{typeof s.approxPercent === 'number' ? ` · ~${s.approxPercent}%` : ''}
+                    </span>
+                    <Tooltip content={s.methodNote} />
+                  </div>
+                </div>
+              ))}
+              <p className="muted" style={{ fontSize: 10.5, marginTop: 8, marginBottom: 0 }}>
+                Definitions and likelihoods only. This panel never tells you which tiles to keep or discard.
+              </p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

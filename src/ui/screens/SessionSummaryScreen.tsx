@@ -24,7 +24,7 @@ export default function SessionSummaryScreen() {
   if (!matchLog || !summary) {
     return (
       <div className="screen stack">
-        <h1>Session Summary</h1>
+        <div className="screen-head"><h1>Session Summary</h1></div>
         <p className="muted">No match recorded yet.</p>
         <button className="btn btn-primary" onClick={() => go('menu')}>Back to menu</button>
       </div>
@@ -38,8 +38,8 @@ export default function SessionSummaryScreen() {
 
   return (
     <div className="screen stack">
-      <div className="row spread">
-        <h1>Session Summary</h1>
+      <div className="screen-head">
+        <h1>Session Summary<span className="kan jp">戦績</span></h1>
         <button className="btn btn-ghost btn-sm" onClick={() => go('menu')}>Menu</button>
       </div>
 
