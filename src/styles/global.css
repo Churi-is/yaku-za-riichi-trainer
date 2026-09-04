@@ -1,9 +1,5 @@
 :root {
   color-scheme: dark;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
   --felt: #14532d;
   --felt-dark: #0e3a20;
   --ink: #f5f5f4;
@@ -26,8 +22,6 @@ body {
   color: var(--ink);
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation; /* kills double-tap zoom delay on touch */
-  overflow-x: clip; /* hard backstop against horizontal bleed (§11) */
 }
 button { font-family: inherit; }
 h1, h2, h3, h4 { font-weight: 700; margin: 0 0 0.4em; }
@@ -123,7 +117,6 @@ a { color: var(--accent); }
   display: inline-flex; align-items: center; justify-content: center;
   position: relative; padding: 0; color: #1a1a1a; user-select: none; flex: none;
 }
-.tile-xxs { --tw: 16px; --th: 22px; border-radius: 3px; }
 .tile-xs { --tw: 22px; --th: 30px; border-radius: 4px; }
 .tile-sm { --tw: 30px; --th: 41px; }
 .tile-md { --tw: 40px; --th: 54px; }
@@ -134,17 +127,7 @@ a { color: var(--accent); }
 .tile-md .tile-glyph { font-size: 22px; }
 .tile-sm .tile-glyph { font-size: 17px; }
 .tile-xs .tile-glyph { font-size: 12px; }
-.tile-xxs .tile-glyph { font-size: 9px; }
-.tile-xxs .tile-suit { display: none; }
 .tile-lg .tile-glyph { font-size: 28px; }
-
-/* Sideways seats: swap the layout box, rotate only the face (§5.2). */
-.tile-s-left, .tile-s-right { width: var(--th); height: var(--tw); }
-.tile-s-left .tile-face { transform: rotate(-90deg); }
-.tile-s-right .tile-face { transform: rotate(90deg); }
-/* Perpendicular marker (called tile / riichi declaration) reads upright (§5.3). */
-.tile-s-left.tile-marker .tile-face,
-.tile-s-right.tile-marker .tile-face { transform: none; }
 .tile-group-man .tile-glyph { color: #1e3a8a; }
 .tile-group-pin .tile-glyph { color: #065f46; }
 .tile-group-sou .tile-glyph { color: #7c2d12; }
@@ -184,13 +167,7 @@ a { color: var(--accent); }
 .center-area { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
 
 .river { display: grid; grid-template-columns: repeat(6, auto); gap: 2px; justify-content: center; }
-
-/* Side seats: vertical columns of 6; oldest column at the outer edge (§5.4).
-   1px gaps keep 3 xs columns (3×30+2=92px) inside the 96px portrait strip. */
-.river-side { display: flex; gap: 1px; justify-content: center; }
-.river-left { flex-direction: row; }
-.river-right { flex-direction: row-reverse; }
-.river-col { display: flex; flex-direction: column-reverse; gap: 1px; }
+.river-left, .river-right { grid-template-columns: repeat(3, auto); }
 
 .opp {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -204,8 +181,6 @@ a { color: var(--accent); }
 .opp-backs { display: flex; gap: 1px; }
 .opp-melds { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
 .meld { display: flex; gap: 1px; }
-.backs-grid.mini { display: grid; grid-template-columns: repeat(3, auto); gap: 1px; justify-content: center; }
-.backs-count { font-size: 10px; color: var(--muted); align-self: center; }
 
 .center-info { display: flex; gap: 18px; align-items: center; }
 .dora-box { display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -230,238 +205,6 @@ a { color: var(--accent); }
   padding: 8px; min-height: 52px;
 }
 .call-hint { color: var(--muted); font-size: 13px; align-self: center; }
-
-/* =====================================================================
-   Mobile match skeletons — PLAN-MOBILE-LAYOUT.md §4–§8.
-   Only applies when MatchScreen adds .match-portrait / .match-landscape
-   (via useViewport), so desktop ≥960px stays untouched.
-   ===================================================================== */
-
-/* Sideways marker tiles: perpendicular to the seat axis, so the box stays
-   upright too (called tile / riichi declaration, §5.3). */
-.tile-s-left.tile-marker, .tile-s-right.tile-marker { width: var(--tw); height: var(--th); }
-
-.match.match-portrait, .match.match-landscape {
-  position: relative;
-  height: 100vh; height: 100dvh; /* dvh tracks mobile browser chrome */
-  padding-top: var(--safe-top);
-  padding-right: var(--safe-right);
-  padding-bottom: var(--safe-bottom);
-  padding-left: var(--safe-left);
-}
-.match.match-portrait { --header-h: 44px; }
-.match.match-landscape { --header-h: 40px; }
-
-.match.match-portrait .match-top, .match.match-landscape .match-top {
-  flex-wrap: nowrap; gap: 6px; min-height: var(--header-h); padding: 6px 10px;
-}
-.match.match-portrait .match-top > .row, .match.match-landscape .match-top > .row {
-  flex-wrap: nowrap;
-}
-.match.match-portrait .overlay-toggle-bar, .match.match-landscape .overlay-toggle-bar {
-  flex-wrap: nowrap; margin-left: auto; max-width: 55%;
-  overflow-x: auto; scrollbar-width: none;
-}
-.match.match-portrait .overlay-toggle-bar::-webkit-scrollbar,
-.match.match-landscape .overlay-toggle-bar::-webkit-scrollbar { display: none; }
-
-/* Density tiers are keyed off the table container (container queries drive
-   tile sizes; media queries only pick the skeleton, §4.1). */
-.table-wrap { container-type: size; container-name: table; }
-
-/* ---------- Portrait skeleton (§6) ---------- */
-.match.match-portrait .table {
-  grid-template-columns: 96px minmax(0, 1fr) 96px;
-  grid-template-rows: 104px minmax(0, 1fr) 76px;
-  grid-template-areas:
-    "top  top  top"
-    "left center right"
-    "bot  bot  bot";
-  gap: 4px; padding: 6px;
-}
-.match.match-portrait .seat-top, .match.match-portrait .seat-bottom {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 2px; min-height: 0; min-width: 0;
-}
-.match.match-portrait .seat-top .opp {
-  flex-direction: row; flex-wrap: nowrap; min-width: 0; max-width: min(96%, 480px);
-  padding: 3px 10px; gap: 2px 10px; justify-content: center; overflow: hidden;
-}
-.match.match-portrait .seat-top .opp-melds {
-  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
-}
-.match.match-portrait .seat-top .river,
-.match.match-portrait .seat-bottom .river { grid-template-columns: repeat(9, auto); }
-.match.match-portrait .seat-top .backs-grid.mini .tile:nth-child(n+4) { display: none; }
-.match.match-portrait .center-info { flex-direction: column; gap: 6px; }
-.match.match-portrait .seat-left, .match.match-portrait .seat-right {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: flex-start; gap: 8px; min-width: 0; min-height: 0;
-  /* Degrades to scroll rather than ever clipping content. */
-  overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
-}
-.match.match-portrait .seat-left .opp, .match.match-portrait .seat-right .opp {
-  flex-direction: column; width: 88px; min-width: 0; padding: 5px 4px; gap: 3px;
-  overflow: hidden; max-width: 100%;
-}
-.match.match-portrait .seat-bottom {
-  display: flex; align-items: center; justify-content: center; min-height: 0;
-}
-.match.match-portrait .opp-name { font-size: 11px; white-space: nowrap; }
-.match.match-portrait .opp-meta { font-size: 9px; white-space: nowrap; }
-
-/* ---------- Landscape skeleton (§7) ---------- */
-.match.match-landscape .table {
-  grid-template-columns: 140px minmax(0, 1fr) 140px;
-  grid-template-rows: 80px minmax(0, 1fr) 52px;
-  grid-template-areas:
-    "left top   right"
-    "left center right"
-    "left bot   right";
-  gap: 4px; padding: 6px;
-}
-.match.match-landscape .seat-top {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 2px; min-height: 0; min-width: 0;
-}
-.match.match-landscape .seat-top .opp { max-width: 100%; overflow: hidden; }
-.match.match-landscape .seat-top .opp-melds {
-  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%;
-}
-.match.match-landscape .seat-top .river,
-.match.match-landscape .seat-bottom .river { grid-template-columns: repeat(10, auto); }
-.match.match-landscape .seat-bottom {
-  display: flex; align-items: center; justify-content: center; min-height: 0;
-}
-.match.match-landscape .seat-left, .match.match-landscape .seat-right {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: flex-start; gap: 4px; min-width: 0; min-height: 0;
-  overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
-}
-.match.match-landscape .seat-left .opp, .match.match-landscape .seat-right .opp {
-  flex-direction: column; width: 132px; min-width: 0; padding: 4px 6px; gap: 2px;
-  overflow: hidden; max-width: 100%;
-}
-.match.match-landscape .opp {
-  flex-direction: row; flex-wrap: nowrap; min-width: 0; max-width: 100%;
-  padding: 3px 10px; gap: 2px 8px; justify-content: center;
-}
-.match.match-landscape .opp-name { font-size: 11px; white-space: nowrap; }
-.match.match-landscape .opp-meta { font-size: 9px; white-space: nowrap; }
-
-/* ---------- Human hand dock: fluid one-row sizing (§4.2) ---------- */
-.match.match-portrait .hand-dock, .match.match-landscape .hand-dock {
-  container-type: inline-size; container-name: hand;
-}
-.match.match-portrait .hand-row, .match.match-landscape .hand-row { flex-wrap: nowrap; }
-/* 14 tiles + 13 gaps (3px) + 10px drawn separator must always fit one row. */
-.match.match-portrait .hand-row .tile {
-  --hand-tile: clamp(18px, calc((100cqw - 49px) / 14), 26px);
-  --tw: var(--hand-tile); --th: calc(var(--hand-tile) * 1.35);
-}
-.match.match-landscape .hand-row .tile {
-  --hand-tile: clamp(24px, calc((100cqw - 49px) / 14), 32px);
-  --tw: var(--hand-tile); --th: calc(var(--hand-tile) * 1.35);
-}
-/* Bigger touch area without changing the visual box. */
-.match.match-portrait .hand-row .tile-clickable,
-.match.match-landscape .hand-row .tile-clickable { margin: -4px -5px; }
-/* Hand melds stay a single scrollable line so the dock never grows vertically. */
-.match.match-portrait .hand-melds, .match.match-landscape .hand-melds {
-  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; justify-content: flex-start;
-}
-.match.match-portrait .hand-melds .tile, .match.match-landscape .hand-melds .tile {
-  --tw: 16px; --th: 22px;
-}
-.match.match-portrait .hand-melds .tile .tile-glyph,
-.match.match-landscape .hand-melds .tile .tile-glyph { font-size: 9px; }
-.match.match-portrait .hand-melds .tile .tile-suit,
-.match.match-landscape .hand-melds .tile .tile-suit { display: none; }
-/* Status line is redundant while the call bar is visible. */
-.match.match-portrait .call-bar ~ .hand-dock .hand-status,
-.match.match-landscape .call-bar ~ .hand-dock .hand-status { display: none; }
-
-/* ---------- Call bar: horizontal, never grows vertically (§8) ---------- */
-.match.match-portrait .call-bar, .match.match-landscape .call-bar {
-  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
-  min-height: 44px; padding: 6px 10px;
-}
-.match.match-portrait .call-bar::-webkit-scrollbar,
-.match.match-landscape .call-bar::-webkit-scrollbar { display: none; }
-
-/* ---------- Overlay pills (collapsed, in the header row) + sheet (§10) ---------- */
-.overlay-pills {
-  display: flex; gap: 4px; align-items: center; flex: none; min-width: 0;
-  max-width: 42%; overflow-x: auto; scrollbar-width: none;
-}
-.match.match-landscape .overlay-pills { max-width: 30%; }
-.overlay-pill {
-  flex: none; min-height: 32px; padding: 4px 10px; border-radius: 999px;
-  border: 1px solid var(--panel-border); background: rgba(0,0,0,0.3);
-  color: var(--ink); font-size: 12px; font-weight: 600; cursor: pointer;
-}
-.overlay-pill.on {
-  background: linear-gradient(180deg, #b8942f, #8a6f22);
-  color: #1a1206; border-color: var(--accent);
-}
-.overlay-sheet {
-  position: absolute; inset: 8px; z-index: 10;
-  display: flex; flex-direction: column;
-  background: var(--panel); border: 1px solid var(--panel-border);
-  border-radius: 12px; box-shadow: var(--shadow); overflow: hidden;
-}
-.sheet-tabs {
-  display: flex; gap: 4px; align-items: center; padding: 6px; flex: none;
-  border-bottom: 1px solid var(--panel-border); background: rgba(0,0,0,0.25);
-}
-.sheet-tab {
-  flex: none; min-height: 36px; padding: 4px 12px; border-radius: 8px;
-  border: 1px solid var(--panel-border); background: transparent;
-  color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer;
-}
-.sheet-tab.on { background: var(--accent); color: #1a1206; border-color: var(--accent); }
-.sheet-close {
-  margin-left: auto; min-height: 36px; min-width: 36px; border-radius: 8px;
-  border: 1px solid var(--panel-border); background: transparent;
-  color: var(--muted); cursor: pointer; font-size: 13px;
-}
-.sheet-body { overflow-y: auto; padding: 10px; min-height: 0; }
-.sheet-body .overlay-panel { border: 0; box-shadow: none; padding: 0; }
-
-/* ---------- Density tiers (container queries on the table) ---------- */
-/* standard tier: side rivers + melds drop to xxs, backs ladder to 6. */
-@container table (max-height: 559px) {
-  .river-side .tile { --tw: 16px; --th: 22px; }
-  .river-side .tile .tile-glyph { font-size: 9px; }
-  .river-side .tile .tile-suit { display: none; }
-  .river-side .tile.tile-marker .tile-glyph { font-size: 12px; }
-  .opp-melds .tile { --tw: 16px; --th: 22px; }
-  .opp-melds .tile .tile-glyph { font-size: 9px; }
-  .opp-melds .tile .tile-suit { display: none; }
-  .opp-melds .tile.tile-marker .tile-glyph { font-size: 12px; }
-  .backs-grid.mini .tile:nth-child(n+7) { display: none; }
-}
-/* compact tier: backs to a 3-mini fan, melds share lines, strips shrink. */
-@container table (max-height: 379px) {
-  .backs-grid.mini .tile:nth-child(n+4) { display: none; }
-  .opp-melds { flex-wrap: nowrap; }
-  .match.match-landscape .seat-top .river .tile,
-  .match.match-landscape .seat-bottom .river .tile {
-    --tw: 16px; --th: 22px;
-  }
-  .match.match-landscape .seat-top .river .tile .tile-glyph,
-  .match.match-landscape .seat-bottom .river .tile .tile-glyph { font-size: 9px; }
-  .match.match-landscape .seat-top .river .tile .tile-suit,
-  .match.match-landscape .seat-bottom .river .tile .tile-suit { display: none; }
-  .match.match-landscape .seat-left .opp, .match.match-landscape .seat-right .opp {
-    padding: 3px 5px; gap: 2px;
-  }
-}
-/* Below the minimum supported size (600×400), side strips become the single
-   sanctioned scroll region (§13). */
-@container table (max-width: 599px) and (max-height: 399px) {
-  .seat-left, .seat-right { overflow-y: auto; scrollbar-width: none; }
-}
 
 /* ---------- Overlays ---------- */
 .overlay-toggle-bar {
@@ -574,23 +317,15 @@ a { color: var(--accent); }
 .bar-fill { height: 100%; }
 
 /* ---------- Responsive / touch ---------- */
+@media (max-width: 680px) {
+  .overlay-layer { width: min(88vw, 340px); }
+  .tile-md { --tw: 32px; --th: 44px; }
+  .tile-md .tile-glyph { font-size: 17px; }
+  .opp { min-width: 92px; }
+  .match-top { flex-wrap: wrap; }
+}
 @media (hover: none) {
   .tile-clickable:hover { transform: none; }
   .tile-clickable:active { transform: translateY(-6px); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .overlay-sheet, .overlay-pill { transition: none; }
-}
-
-/* ---------- Non-match screens on small phones (§11) ---------- */
-@media (max-width: 680px) {
-  .screen {
-    padding: 16px calc(12px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(12px + var(--safe-left));
-  }
-  .menu-hero { min-height: 100dvh; padding-top: calc(40px + var(--safe-top)); }
-  .menu-actions { max-width: min(340px, calc(100vw - 32px)); }
-  .setting-row { flex-wrap: wrap; }
-  .handend-card { width: min(94vw, 560px); max-height: calc(100dvh - 32px); overflow-y: auto; }
-  .reveal-tiles { justify-content: center; }
 }
 .scrim { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 20; background: rgba(0,0,0,0.55); }
