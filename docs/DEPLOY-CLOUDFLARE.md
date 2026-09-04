@@ -8,10 +8,11 @@ This app is a static Vite Single Page Application (SPA) deployed on **Cloudflare
 |---|---|
 | `wrangler.jsonc` | Defines the worker name, static assets directory (`./dist`), SPA not-found handling (`single-page-application`), and custom domain route (`riichi.churi.net`) |
 | `public/_headers` | Security headers + long-lived cache for hashed `/assets/*`, `no-cache` for `index.html` |
-| `public/_redirects` | SPA fallback (`/* → /index.html 200`) |
 | `.nvmrc` | Pins Node 22 for build environments |
 
-Vite copies `public/` verbatim into `dist/`, so `_headers` and `_redirects` are included in the assets bundle uploaded by Wrangler.
+Vite copies `public/` verbatim into `dist/`, so `_headers` is included in the assets bundle uploaded by Wrangler.
+
+SPA fallback is handled natively by `not_found_handling: "single-page-application"` in `wrangler.jsonc`. Do **not** add a `public/_redirects` rule like `/* → /index.html 200` — Cloudflare rejects it as an infinite loop because it conflicts with the built-in SPA fallback.
 
 ## Setup & Deployment
 
