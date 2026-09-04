@@ -19,7 +19,9 @@
   overflow: hidden;
 }
 .tile-art {
-  position: absolute; inset: 0; width: 100%; height: 100%;
+  position: absolute; left: 50%; top: 50%;
+  width: var(--tw); height: var(--th);
+  transform: translate(-50%, -50%);
   pointer-events: none;
 }
 .tile-art svg { width: 100%; height: 100%; }
@@ -32,11 +34,14 @@
 .tile-rv   { --tw: var(--rv-w, 16px); --th: var(--rv-h, 22px); }
 .tile-bk   { --tw: var(--bk-w, 16px); --th: var(--bk-h, 22px); }
 
-/* orientation on the table (top-down: opponents' tiles are rotated) */
+/* orientation on the table (top-down: opponents' tiles are rotated).
+   The tile box is swapped to the rotated footprint, and the art is kept at the
+   upright face size, centred, so a sideways face renders at full size instead
+   of shrinking to fit the swapped box. */
 .tile.rot90, .tile.rot270 { width: var(--th); height: var(--tw); }
-.tile.rot90  .tile-art { transform: rotate(90deg); }
-.tile.rot180 .tile-art { transform: rotate(180deg); }
-.tile.rot270 .tile-art { transform: rotate(270deg); }
+.tile.rot90  .tile-art { transform: translate(-50%, -50%) rotate(90deg); }
+.tile.rot180 .tile-art { transform: translate(-50%, -50%) rotate(180deg); }
+.tile.rot270 .tile-art { transform: translate(-50%, -50%) rotate(270deg); }
 
 /* face-down tile backs */
 .tile-back {
@@ -67,6 +72,14 @@
   0 0 0 2px var(--gold), 0 10px 14px rgba(0, 0, 0, 0.5); }
 .tile-disabled { cursor: not-allowed; }
 .tile-disabled:hover { transform: none; }
+/* the tile the player just drew, set apart with a soft gold halo */
+.tile.hand-drawn {
+  box-shadow:
+    0 calc(var(--th) * 0.05) 0 #b0a486,
+    0 calc(var(--th) * 0.09) calc(var(--th) * 0.12) rgba(0, 0, 0, 0.45),
+    0 0 0 1.5px var(--gold-dim),
+    0 0 12px rgba(216, 180, 90, 0.35);
+}
 @media (hover: none) {
   .tile-clickable:hover { transform: none; }
   .tile-clickable:active { transform: translateY(-6px); }

@@ -20,9 +20,11 @@ export default function TableCenter({ view }: TableCenterProps) {
   return (
     <div className="center-block">
       <div className="dora-tray" aria-label="dora indicators">
+        <div className="dora-tiles">
+          {indicators.map((id, i) => <Tile key={i} id={id} size="rv" />)}
+          {Array.from({ length: hidden }).map((_, i) => <Tile key={`h${i}`} id={0} size="rv" faceDown />)}
+        </div>
         <span className="lbl">Dora</span>
-        {indicators.map((id, i) => <Tile key={i} id={id} size="rv" />)}
-        {Array.from({ length: hidden }).map((_, i) => <Tile key={`h${i}`} id={0} size="rv" faceDown />)}
       </div>
 
       <div className="wind-cube" aria-label={`${WIND_LABEL[view.roundWind]} ${view.roundNumber}`}>

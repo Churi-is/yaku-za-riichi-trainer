@@ -75,32 +75,44 @@
 .felt-wrap {
   flex: 1; min-height: 0; position: relative; overflow: hidden;
   background:
-    radial-gradient(75% 65% at 50% 46%, var(--felt) 0%, var(--felt-mid) 55%, var(--felt-dark) 100%);
-  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.55);
+    radial-gradient(120% 90% at 50% 42%, var(--felt) 0%, var(--felt-mid) 52%, var(--felt-dark) 100%);
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.6);
 }
-/* wooden rim around the felt */
+/* a soft sheen across the cloth; painted behind the tiles (board-host) so it
+   only touches the felt, never the tiles themselves */
 .felt-wrap::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 3;
-  border: 6px solid #241a10;
-  box-shadow: inset 0 0 0 1px var(--hairline), inset 0 0 24px rgba(0, 0, 0, 0.6);
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%),
+    radial-gradient(120% 90% at 50% 42%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.35) 100%);
+}
+/* a wooden rim around the felt */
+.felt-wrap::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  border: 7px solid transparent;
+  border-image: linear-gradient(145deg, #4a3620 0%, #241a10 60%, #180f08 100%) 1;
+  box-shadow: inset 0 0 0 1px rgba(216, 180, 90, 0.18), inset 0 0 26px rgba(0, 0, 0, 0.55);
 }
 
 .abs { position: absolute; }
 .board-host { position: absolute; inset: 0; }
 .board { position: absolute; left: 50%; top: 50%; }
 
-/* centre: round wind cube + dead wall + sticks (a self-contained card) */
-.center-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+/* centre: round wind cube + dead wall + sticks (a self-contained card).
+   Kept slim so the side rivers never run into it on a narrow phone board. */
+.center-block { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .dora-tray {
-  display: flex; gap: 3px; padding: 5px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 4px 5px 3px;
   background: rgba(6, 30, 21, 0.75);
   border: 1px solid rgba(216, 180, 90, 0.3);
   border-radius: 6px;
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
 }
+.dora-tiles { display: flex; gap: 3px; }
 .dora-tray .lbl {
-  writing-mode: vertical-rl; font-size: 8px; letter-spacing: 0.18em;
-  color: var(--gold); text-transform: uppercase; align-self: center;
+  font-size: 8px; letter-spacing: 0.22em; line-height: 1;
+  color: var(--gold); text-transform: uppercase;
 }
 .wind-cube {
   width: var(--cube, 70px); height: var(--cube, 70px);
@@ -116,7 +128,7 @@
 .wind-cube .corner.tl { top: 3px; left: 5px; } .wind-cube .corner.tr { top: 3px; right: 5px; }
 .wind-cube .corner.bl { bottom: 3px; left: 5px; } .wind-cube .corner.br { bottom: 3px; right: 5px; }
 
-.sticks-row { display: flex; align-items: center; gap: 8px; }
+.sticks-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; max-width: 140px; }
 .stick-group { display: flex; align-items: center; gap: 3px; }
 .stick-group .n { font-size: 9px; color: var(--muted); }
 .stick-honba {

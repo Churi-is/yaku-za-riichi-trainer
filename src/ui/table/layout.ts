@@ -35,7 +35,7 @@ export interface BoardMetrics {
 }
 
 export const METRICS: Record<BoardVariant, BoardMetrics> = {
-  portrait: { W: 360, H: 510, tile: { w: 18, h: 25 }, hand: { w: 22, h: 31 }, gap: 5, rim: 6, stick: { w: 40, h: 6 }, cube: 56 },
+  portrait: { W: 392, H: 560, tile: { w: 19, h: 24 }, hand: { w: 23, h: 30 }, gap: 5, rim: 8, stick: { w: 44, h: 6 }, cube: 54 },
   landscape: { W: 880, H: 560, tile: { w: 26, h: 35 }, hand: { w: 32, h: 43 }, gap: 8, rim: 10, stick: { w: 60, h: 8 }, cube: 64 },
   compact: { W: 640, H: 420, tile: { w: 20, h: 27 }, hand: { w: 24, h: 33 }, gap: 6, rim: 8, stick: { w: 48, h: 7 }, cube: 58 },
 };
@@ -128,8 +128,12 @@ export function layoutBoard(view: PublicView, variant: BoardVariant): BoardLayou
   const pondBoxes = {} as BoardLayout['pondBoxes'];
   const ponds = {} as BoardLayout['ponds'];
 
-  // own (seat 0): bottom, row 1 at the bottom edge
-  const p0 = { x: Math.round((W - pondW) / 2), y: H - rim - pondH };
+  // the human hand lives face-up along the bottom edge; its pond sits safely
+  // ABOVE it (between the hand and the centre), never underneath it
+  const hy = H - rim - m.hand.h;
+
+  // own (seat 0): bottom, pond lifted clear of the hand
+  const p0 = { x: Math.round((W - pondW) / 2), y: Math.round(hy - 10 - pondH) };
   pondBoxes[0] = { ...p0, w: pondW, h: pondH };
   ponds[0] = view.seats[0].river.map((d, i) => {
     const r = Math.floor(i / 6), c = i % 6;
@@ -150,8 +154,9 @@ export function layoutBoard(view: PublicView, variant: BoardVariant): BoardLayou
     };
   });
 
-  // left (seat 3): columns grow rightward, rows top-to-bottom
-  const p3 = { x: l3x + tile.h + gap + 4, y: Math.round((H - sidePondH) / 2) };
+  // left (seat 3): a vertical river hugged against the left edge so its
+  // inward-most column stays clear of the centre block. Rows top-to-bottom.
+  const p3 = { x: l3x + tile.h + 3, y: Math.round((H - sidePondH) / 2) };
   pondBoxes[3] = { ...p3, w: sidePondW, h: sidePondH };
   ponds[3] = view.seats[3].river.map((d, i) => {
     const r = Math.floor(i / 6), c = i % 6;
@@ -161,8 +166,9 @@ export function layoutBoard(view: PublicView, variant: BoardVariant): BoardLayou
     };
   });
 
-  // right (seat 1): columns grow leftward, rows bottom-to-top
-  const p1 = { x: r1x - sidePondW - gap - 4, y: Math.round((H - sidePondH) / 2) };
+  // right (seat 1): mirror of the left river, hugged against the right edge so
+  // its inward-most column stays clear of the centre block. Rows bottom-to-top.
+  const p1 = { x: r1x - sidePondW - 3, y: Math.round((H - sidePondH) / 2) };
   pondBoxes[1] = { ...p1, w: sidePondW, h: sidePondH };
   ponds[1] = view.seats[1].river.map((d, i) => {
     const r = Math.floor(i / 6), c = i % 6;
@@ -242,7 +248,6 @@ export function layoutBoard(view: PublicView, variant: BoardVariant): BoardLayou
   const drawnGap = 8;
   const rowW = sorted.length > 0 ? sorted.length * step - 2 + (view.drawnTile !== null ? drawnGap + m.hand.w : 0) : 0;
   const hx = Math.round((W - rowW) / 2);
-  const hy = H - rim - m.hand.h;
   sorted.forEach((t, i) => hand.push({ id: t, x: hx + i * step, y: hy, rot: 0, key: `h-${i}` }));
   if (view.drawnTile !== null && sorted.length > 0) {
     hand.push({ id: view.drawnTile, x: hx + rowW - m.hand.w, y: hy, rot: 0, key: 'h-drawn' });

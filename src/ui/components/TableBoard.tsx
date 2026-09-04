@@ -89,7 +89,7 @@ export default function TableBoard({
             key={t.key}
             id={t.id}
             size="rv"
-            className="abs"
+            className={`abs${t.key === 'h-drawn' ? ' hand-drawn' : ''}`}
             style={pos(t, L.m.hand)}
             onClick={() => doDiscard(t.id)}
             disabled={!canDiscard(t.id)}
