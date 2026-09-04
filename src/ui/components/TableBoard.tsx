@@ -1,18 +1,23 @@
 /**
  * TableBoard — renders the deterministic layout from @ui/table/layout:
- * every back, discard, meld and hand tile is absolutely positioned in board
- * coordinates inside a uniformly scaled board. No flex/grid/percentage layout
- * touches the table, so it is pixel-identical across browsers and viewports.
+ * every back, discard, meld, hand tile and the centre block is absolutely
+ * positioned in board coordinates inside a uniformly scaled board. No
+ * flex/grid/percentage layout touches the table, so it is pixel-identical
+ * across browsers and viewports.
+ *
  * The human hand lives on the felt too (face-up along the bottom edge, drawn
- * tile set apart, own melds beside it) and stays tappable.
+ * tile set apart, own melds beside it). Tiles are small on a phone, so a
+ * discard is a two-step gesture: tap to lift the tile, tap again (or press
+ * the confirm button in the action bar) to throw it.
  */
 import { useRef, type CSSProperties } from 'react';
 import type { LegalAction, PublicView, SeatIndex, TileId } from '@engine/types';
 import Tile, { type TileRotation } from './Tile';
 import TableCenter from './TableCenter';
-import { useFitScale } from '@ui/hooks/useFitScale';
+import { useBoxSize, fitScale } from '@ui/hooks/useFitScale';
 import type { Orientation } from '@ui/hooks/useOrientation';
-import { layoutBoard, type BoardVariant, type PlacedTile } from '@ui/table/layout';
+import { fitMetrics, layoutBoard, type BoardVariant, type PlacedTile } from '@ui/table/layout';
+import { tileFace } from '@ui/tiles';
 
 export interface TableBoardProps {
   view: PublicView;
@@ -23,18 +28,24 @@ export interface TableBoardProps {
   /** discard interaction for the on-table hand */
   discardActions: LegalAction[];
   onDiscard: (tile: TileId, riichi: boolean) => void;
+  /** the tile currently lifted out of the hand, awaiting confirmation */
+  selected: TileId | null;
+  onSelect: (tile: TileId | null) => void;
   riichiMode: boolean;
   locked: boolean;
 }
 
 export default function TableBoard({
-  view, seatName: _seatName, aiThinking: _aiThinking, orient, compact = false,
-  discardActions, onDiscard, riichiMode, locked,
+  view, seatName: _seatName, aiThinking, orient, compact = false,
+  discardActions, onDiscard, selected, onSelect, riichiMode, locked,
 }: TableBoardProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const variant: BoardVariant = orient === 'portrait' ? 'portrait' : compact ? 'compact' : 'landscape';
-  const L = layoutBoard(view, variant);
-  const scale = useFitScale(hostRef, L.m.W, L.m.H);
+  const box = useBoxSize(hostRef);
+  // stretch the board to the shape of the felt, then scale it to fit exactly
+  const metrics = fitMetrics(variant, box.w, box.h);
+  const L = layoutBoard(view, variant, metrics);
+  const scale = fitScale(box, L.m.W, L.m.H);
 
   const plain = new Set<TileId>();
   const riichiable = new Set<TileId>();
@@ -48,9 +59,10 @@ export default function TableBoard({
     if (riichiMode) return riichiable.has(t);
     return plain.has(t) || riichiable.has(t);
   };
-  const doDiscard = (t: TileId) => {
+  const tapTile = (t: TileId) => {
     if (!canDiscard(t)) return;
-    onDiscard(t, riichiMode && riichiable.has(t));
+    if (selected === t) onDiscard(t, riichiMode && riichiable.has(t));
+    else onSelect(t);
   };
 
   const pos = (t: { x: number; y: number }, box = L.m.tile): CSSProperties => ({
@@ -65,7 +77,7 @@ export default function TableBoard({
       key={t.key}
       id={t.id}
       size="rv"
-      className="abs"
+      className={`abs${t.latest ? ' tile-latest' : ''}${t.tsumogiri ? ' tile-tsumogiri' : ''}`}
       style={pos(t)}
       faceDown={t.faceDown}
       rotation={t.rot as TileRotation}
@@ -84,20 +96,6 @@ export default function TableBoard({
         {L.melds.map(renderTile)}
         {([0, 1, 2, 3] as SeatIndex[]).flatMap((s) => L.ponds[s]).map(renderTile)}
 
-        {L.hand.map((t) => (
-          <Tile
-            key={t.key}
-            id={t.id}
-            size="rv"
-            className="abs"
-            style={pos(t, L.m.hand)}
-            onClick={() => doDiscard(t.id)}
-            disabled={!canDiscard(t.id)}
-            dimmed={!locked && riichiMode && !riichiable.has(t.id)}
-            title={t.key === 'h-drawn' ? 'just drawn' : undefined}
-          />
-        ))}
-
         {L.sticks.map((s) => (
           <span
             key={`stick${s.seat}`}
@@ -112,17 +110,30 @@ export default function TableBoard({
           />
         ))}
 
-        <div
-          className="board-center abs"
-          style={{
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            '--cube': `${L.m.cube}px`,
-          } as CSSProperties}
-        >
-          <TableCenter view={view} />
+        <div className="abs board-center" style={{ left: L.center.x, top: L.center.y }}>
+          <TableCenter view={view} center={L.center} thinking={aiThinking} />
         </div>
+
+        {L.hand.map((t) => {
+          const face = tileFace(t.id);
+          const playable = canDiscard(t.id);
+          const isSelected = selected === t.id;
+          return (
+            <Tile
+              key={t.key}
+              id={t.id}
+              size="rv"
+              className={`abs hand-tile${t.key === 'h-drawn' ? ' drawn' : ''}`}
+              style={pos(t, L.m.hand)}
+              onClick={() => tapTile(t.id)}
+              disabled={!playable}
+              selected={isSelected}
+              dimmed={!locked && riichiMode && !riichiable.has(t.id)}
+              ariaLabel={`${face.label}${t.key === 'h-drawn' ? ' (just drawn)' : ''}`}
+              title={isSelected ? `Tap again to discard ${face.label}` : face.label}
+            />
+          );
+        })}
       </div>
     </div>
   );

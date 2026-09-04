@@ -45,6 +45,17 @@ export default function PauseMenu({ onResume, onQuitToMenu }: PauseMenuProps) {
           ))}
         </div>
 
+        <div className="stack" style={{ gap: 6 }}>
+          <h4 style={{ margin: 0, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)' }}>Reading the table</h4>
+          <ul className="legend">
+            <li><span className="lg lg-ring" aria-hidden="true" />The discard that was just made</li>
+            <li><span className="lg lg-pip" aria-hidden="true" />Discarded straight off the draw (tsumogiri)</li>
+            <li><span className="lg lg-turn" aria-hidden="true" />A sideways tile is that seat's riichi declaration</li>
+            <li><span className="lg lg-draw" aria-hidden="true" />The gold line marks the tile you just drew</li>
+            <li><span className="lg lg-cube" aria-hidden="true" />The centre cube shows each seat's wind; the lit one is to act</li>
+          </ul>
+        </div>
+
         <div className="rules-summary">
           <span className="pill">{settings.redDora ? 'Red fives on' : 'No red fives'}</span>
           <span className="pill">{settings.kuitan ? 'Kuitan on' : 'No kuitan'}</span>

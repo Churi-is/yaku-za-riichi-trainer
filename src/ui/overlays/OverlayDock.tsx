@@ -62,13 +62,13 @@ export default function OverlayDock({ view, seatName, callWindow }: OverlayDockP
 
   return (
     <aside className={`overlay-dock${min ? ' min' : ''}`} aria-label="Training overlays">
-      <div className="dock-head">
+      <div className="dock-head" onClick={() => setMin((m) => !m)}>
         <span className="title">Trainer<span className="kan">指導</span></span>
         <span className="spacer" />
         <button
           type="button"
           className="dock-min-btn"
-          onClick={() => setMin((m) => !m)}
+          onClick={(e) => { e.stopPropagation(); setMin((m) => !m); }}
           aria-label={min ? 'Expand trainer panels' : 'Minimise trainer panels'}
         >
           {min ? '▲' : '▼'}

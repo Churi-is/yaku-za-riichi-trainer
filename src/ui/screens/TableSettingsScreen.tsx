@@ -28,7 +28,7 @@ function Segmented<T extends string>({
   label, value, options, onChange,
 }: { label: string; value: T; options: { v: T; l: string }[]; onChange: (v: T) => void }) {
   return (
-    <div className="setting-row">
+    <div className="setting-row seg-row">
       <span className="lab">{label}</span>
       <div className="seg" role="group" aria-label={label}>
         {options.map((o) => (

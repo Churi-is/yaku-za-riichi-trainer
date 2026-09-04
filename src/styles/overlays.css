@@ -10,14 +10,23 @@
   display: flex; flex-direction: column; min-height: 0;
   background: linear-gradient(180deg, #17110a, #0e0a06);
   border-top: 1px solid var(--hairline);
-  max-height: 44%;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.45);
+  max-height: 42%;
 }
-.overlay-dock.min { max-height: 38px; }
+.overlay-dock.min { max-height: 36px; }
 .dock-head {
   flex: none; display: flex; align-items: center; gap: 8px;
-  padding: 5px 10px; min-height: 38px;
+  padding: 4px 10px; min-height: 36px;
   border-bottom: 1px solid rgba(216, 180, 90, 0.16);
+  cursor: pointer;
 }
+.dock-head::before {
+  content: ''; position: absolute; left: 50%; top: 4px; transform: translateX(-50%);
+  width: 34px; height: 3px; border-radius: 3px;
+  background: rgba(216, 180, 90, 0.3);
+}
+.overlay-dock { position: relative; }
 .dock-head .title {
   font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold);
 }
@@ -25,7 +34,7 @@
 .dock-head .spacer { flex: 1; }
 .dock-min-btn {
   background: none; border: 1px solid var(--panel-border); border-radius: 4px;
-  color: var(--muted); min-width: 30px; min-height: 26px; cursor: pointer; font-size: 12px;
+  color: var(--muted); min-width: 34px; min-height: 28px; cursor: pointer; font-size: 12px;
 }
 .dock-body { overflow: auto; min-height: 0; overscroll-behavior: contain; }
 .overlay-dock.min .dock-body { display: none; }
@@ -35,8 +44,9 @@
 .panel-head {
   width: 100%; display: flex; align-items: center; gap: 8px;
   background: none; border: 0; cursor: pointer; text-align: left;
-  padding: 8px 12px; min-height: 40px; color: var(--ink);
+  padding: 7px 12px; min-height: 40px; color: var(--ink);
 }
+.panel-head:hover { background: rgba(216, 180, 90, 0.06); }
 .panel-head h4 { margin: 0; font-size: 13px; letter-spacing: 0.05em; }
 .panel-head .chev { margin-left: auto; color: var(--muted); font-size: 12px; }
 .panel-head .badge {
@@ -107,9 +117,13 @@
 /* landscape: dock becomes a right-hand column */
 @media (min-width: 700px) and (orientation: landscape) {
   .overlay-dock {
-    width: 330px; max-height: none; border-top: 0;
-    border-left: 1px solid var(--hairline);
+    width: 330px; max-height: none; border-top: 0; border-radius: 0;
+    border-left: 1px solid var(--hairline); box-shadow: none;
   }
-  .overlay-dock.min { max-height: none; }
-  .overlay-dock.min .dock-body { display: block; }
+  .dock-head::before { display: none; }
+  /* minimising a side column means narrowing it, not shortening it */
+  .overlay-dock.min { max-height: none; width: 46px; }
+  .overlay-dock.min .dock-body,
+  .overlay-dock.min .dock-head .title { display: none; }
+  .overlay-dock.min .dock-head { justify-content: center; padding: 4px; }
 }

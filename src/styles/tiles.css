@@ -8,7 +8,7 @@
   position: relative;
   width: var(--tw); height: var(--th);
   flex: none;
-  border-radius: calc(var(--tw) * 0.16);
+  border-radius: calc(min(var(--tw), var(--th)) * 0.16);
   background: linear-gradient(175deg, #fefcf4 0%, #f1ead8 62%, #ddd2b6 100%);
   border: 1px solid #b3a888;
   box-shadow:
@@ -32,11 +32,20 @@
 .tile-rv   { --tw: var(--rv-w, 16px); --th: var(--rv-h, 22px); }
 .tile-bk   { --tw: var(--bk-w, 16px); --th: var(--bk-h, 22px); }
 
-/* orientation on the table (top-down: opponents' tiles are rotated) */
+/* Orientation on the table (top-down: opponents' tiles are rotated).
+   The face keeps its own upright box and is rotated about the tile's centre,
+   so a sideways tile shows exactly the same amount of art as an upright one —
+   only the footprint turns. */
 .tile.rot90, .tile.rot270 { width: var(--th); height: var(--tw); }
-.tile.rot90  .tile-art { transform: rotate(90deg); }
+.tile.rot90 .tile-art,
+.tile.rot270 .tile-art {
+  inset: auto; top: 50%; left: 50%;
+  width: var(--tw); height: var(--th);
+  transform-origin: 50% 50%;
+}
+.tile.rot90  .tile-art { transform: translate(-50%, -50%) rotate(90deg); }
+.tile.rot270 .tile-art { transform: translate(-50%, -50%) rotate(270deg); }
 .tile.rot180 .tile-art { transform: rotate(180deg); }
-.tile.rot270 .tile-art { transform: rotate(270deg); }
 
 /* face-down tile backs */
 .tile-back {
@@ -58,16 +67,57 @@
   0 0 0 1.5px rgba(199, 52, 52, 0.75); }
 
 /* states */
-.tile-dimmed { opacity: 0.4; }
+.tile-dimmed { opacity: 0.38; }
 .tile-clickable { cursor: pointer; }
-.tile-clickable:hover { transform: translateY(-6px); }
-.tile-clickable:active { transform: translateY(-4px); }
-.tile-selected { transform: translateY(-9px); box-shadow:
-  0 calc(var(--th) * 0.05) 0 #b0a486,
-  0 0 0 2px var(--gold), 0 10px 14px rgba(0, 0, 0, 0.5); }
-.tile-disabled { cursor: not-allowed; }
+.tile-disabled { cursor: default; }
 .tile-disabled:hover { transform: none; }
+
+/* tsumogiri: discarded straight off the draw. A quiet corner pip, because
+   tedashi-vs-tsumogiri is half of river reading. Explained in the pause menu. */
+.tile-tsumogiri::after {
+  content: ''; position: absolute; right: 1.5px; bottom: 1.5px;
+  width: 3px; height: 3px; border-radius: 50%;
+  background: rgba(35, 39, 51, 0.32);
+}
+
+/* the tile everyone is looking at: the discard on the table right now */
+.tile-latest {
+  outline: 1.5px solid rgba(240, 211, 138, 0.95);
+  outline-offset: 1px;
+  animation: tile-drop 0.28s cubic-bezier(0.2, 1.4, 0.4, 1);
+  z-index: 2;
+}
+@keyframes tile-drop {
+  from { transform: scale(1.35); filter: brightness(1.5); }
+  to   { transform: scale(1); filter: none; }
+}
+
+/* ---------- the human's own hand ---------- */
+.hand-tile {
+  z-index: 4;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.hand-tile.drawn::after {
+  content: ''; position: absolute; left: 50%; bottom: -1px; width: 40%; height: 2px;
+  transform: translateX(-50%); border-radius: 2px; background: var(--gold);
+  opacity: 0.9;
+}
+.tile-clickable:hover { transform: translateY(-5px); }
+.tile-selected,
+.tile-selected:hover {
+  transform: translateY(-11px);
+  z-index: 6;
+  box-shadow:
+    0 3px 0 #b0a486,
+    0 0 0 2px var(--gold-hi),
+    0 10px 16px rgba(0, 0, 0, 0.55),
+    0 0 18px rgba(240, 211, 138, 0.45);
+}
 @media (hover: none) {
   .tile-clickable:hover { transform: none; }
-  .tile-clickable:active { transform: translateY(-6px); }
+  .tile-selected, .tile-selected:hover { transform: translateY(-11px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile-latest { animation: none; }
+  .hand-tile { transition: none; }
 }

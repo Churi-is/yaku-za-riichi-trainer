@@ -1,13 +1,27 @@
-/** CallBar — the player's plate plus chi/pon/kan/riichi/ron/tsumo/pass.
- *  Sits under the hand like a real table's action row. */
-import type { Action, LegalAction } from '@engine/types';
+/**
+ * CallBar — the action row under the felt: chi/pon/kan/riichi/ron/tsumo/pass,
+ * the discard confirmation, and (when there is nothing to do) whose turn it is.
+ *
+ * On a phone the hand tiles are necessarily small, so discarding is two-step:
+ * tapping a tile lifts it, and this bar shows the confirmation. That makes the
+ * costliest mistake in the game — a fat-fingered discard — impossible.
+ */
+import type { Action, LegalAction, TileId } from '@engine/types';
+import { tileFace } from '@ui/tiles';
+import Tile from './Tile';
 
 export interface CallBarProps {
   legal: LegalAction[];
   riichiMode: boolean;
+  /** tile lifted out of the hand, awaiting confirmation */
+  selected: TileId | null;
   onEnterRiichiMode: () => void;
   onCancelRiichi: () => void;
+  onConfirmDiscard: () => void;
+  onClearSelection: () => void;
   onAct: (action: Action) => void;
+  /** shown when the player has nothing to decide */
+  status?: React.ReactNode;
 }
 
 const KANJI: Record<string, string> = {
@@ -15,7 +29,8 @@ const KANJI: Record<string, string> = {
 };
 
 export default function CallBar({
-  legal, riichiMode, onEnterRiichiMode, onCancelRiichi, onAct,
+  legal, riichiMode, selected, onEnterRiichiMode, onCancelRiichi,
+  onConfirmDiscard, onClearSelection, onAct, status,
 }: CallBarProps) {
   const tsumo = legal.find((l) => l.action.type === 'tsumo');
   const ron = legal.find((l) => l.action.type === 'ron');
@@ -26,12 +41,29 @@ export default function CallBar({
   const ankans = legal.filter((l) => l.action.type === 'ankan');
   const kakans = legal.filter((l) => l.action.type === 'kakan');
   const hasRiichi = legal.some((l) => l.action.type === 'discard' && (l.action as { riichi?: boolean }).riichi);
+  const canDiscard = legal.some((l) => l.action.type === 'discard');
+
+  const confirm = selected !== null && (
+    <div className="discard-confirm">
+      <Tile id={selected} size="sm" />
+      <button
+        className={`call-btn confirm${riichiMode ? ' riichi' : ''}`}
+        onClick={onConfirmDiscard}
+      >
+        {riichiMode ? 'Riichi + discard' : 'Discard'}
+        <span className="kan">{tileFace(selected).label}</span>
+      </button>
+      <button className="call-btn pass slim" onClick={onClearSelection} aria-label="Put the tile back">✕</button>
+    </div>
+  );
 
   if (riichiMode) {
     return (
       <div className="call-bar">
-        <span className="call-hint">Select a tile to discard for riichi</span>
-        <button className="call-btn ghost" onClick={onCancelRiichi}>Cancel<span className="kan">戻</span></button>
+        {confirm || <span className="call-hint">Pick the tile you'll declare riichi on</span>}
+        {!confirm && (
+          <button className="call-btn pass" onClick={onCancelRiichi}>Cancel<span className="kan">戻</span></button>
+        )}
       </div>
     );
   }
@@ -55,7 +87,12 @@ export default function CallBar({
 
   return (
     <div className="call-bar">
+      {confirm}
       {buttons}
+      {!confirm && buttons.length === 0 && canDiscard && (
+        <span className="call-hint">Tap a tile, then tap again to discard</span>
+      )}
+      {!confirm && buttons.length === 0 && !canDiscard && status}
     </div>
   );
 }

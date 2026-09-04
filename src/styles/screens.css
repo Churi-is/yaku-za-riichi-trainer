@@ -4,11 +4,17 @@
 
 /* ---------- main menu ---------- */
 .menu-shell {
-  min-height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 20px; padding: 32px 18px calc(24px + env(safe-area-inset-bottom, 0px));
-  text-align: center; position: relative; overflow: hidden;
+  height: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 20px;
+  padding: calc(32px + env(safe-area-inset-top, 0px)) 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  text-align: center; position: relative;
+  overflow-y: auto; overscroll-behavior: contain;
 }
+/* centre the menu vertically, but let it scroll instead of clipping when a
+   short (landscape phone) viewport can't fit it */
+.menu-shell .menu-crest { margin-top: auto; }
+.menu-shell .menu-foot { margin-bottom: auto; }
 .menu-kanji {
   position: absolute; top: 18px; right: 14px;
   writing-mode: vertical-rl; font-size: 20px; letter-spacing: 0.35em;
@@ -51,6 +57,14 @@
 
 /* ---------- settings ---------- */
 .setting-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; }
+/* a segmented control must never run off the edge of a phone: below 560px the
+   control drops onto its own full-width line under the label */
+.setting-row.seg-row .seg { flex: 0 1 auto; min-width: 0; }
+.setting-row.seg-row .seg button { flex: 1 1 0; min-width: 0; padding: 8px 10px; white-space: nowrap; }
+@media (max-width: 560px) {
+  .setting-row.seg-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .setting-row.seg-row .seg { display: flex; width: 100%; }
+}
 .setting-row + .setting-row { border-top: 1px solid rgba(216, 180, 90, 0.1); }
 .setting-row .lab { font-size: 14px; }
 .setting-row .hint { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -58,13 +72,16 @@
 @media (min-width: 760px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
 .rules-summary { display: flex; flex-wrap: wrap; gap: 8px; }
 .start-bar {
+  /* auto top margin keeps the primary action pinned to the bottom edge even
+     when the settings list is short; sticky keeps it there while scrolling */
   position: sticky; bottom: 0; z-index: 5;
-  margin: 14px -14px -32px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  margin: auto -14px calc(-32px - env(safe-area-inset-bottom, 0px));
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(180deg, rgba(13, 10, 6, 0.2), #0d0a06 40%);
   border-top: 1px solid var(--hairline);
 }
 .start-bar .btn { width: 100%; font-size: 16px; min-height: 50px; }
-@media (min-width: 760px) { .start-bar { margin: 14px 0 0; border-top: 0; background: none; padding: 0; } }
+@media (min-width: 760px) { .start-bar { margin: auto 0 0; border-top: 0; background: none; padding: 16px 0 0; } }
 
 /* ---------- hand end / reveal ---------- */
 .handend-card { width: min(600px, 96vw); }
@@ -136,3 +153,22 @@
 @media (max-width: 460px) {
   .intro-table { grid-template-columns: 1fr; grid-template-areas: 'top' 'left' 'right'; }
 }
+
+/* ---------- pause-menu legend ---------- */
+.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.legend li {
+  display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 9px;
+  font-size: 12.5px; color: var(--ink); line-height: 1.35;
+}
+.legend .lg { width: 18px; height: 24px; border-radius: 3px; position: relative; justify-self: center;
+  background: linear-gradient(175deg, #fefcf4, #ddd2b6); border: 1px solid #b3a888; }
+.legend .lg-ring { outline: 1.5px solid var(--gold-hi); outline-offset: 1px; }
+.legend .lg-pip::after { content: ''; position: absolute; right: 2px; bottom: 2px; width: 4px; height: 4px;
+  border-radius: 50%; background: rgba(35, 39, 51, 0.45); }
+.legend .lg-turn { width: 24px; height: 18px; }
+.legend .lg-draw::after { content: ''; position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%);
+  width: 60%; height: 2px; border-radius: 2px; background: var(--gold); }
+.legend .lg-cube { background: linear-gradient(145deg, #2b2013, #140e07 70%); border-color: var(--gold-dim);
+  width: 22px; height: 22px; border-radius: 5px; }
+.legend .lg-cube::after { content: ''; position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%);
+  width: 6px; height: 6px; border-radius: 2px; background: var(--gold-hi); }

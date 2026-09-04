@@ -1,13 +1,27 @@
-/** ScoreStrip — every seat's points across the top, in wind order. */
+/** ScoreStrip — every seat's points across the top, in turn (wind) order. */
 import type { PublicView, SeatIndex, Wind } from '@engine/types';
 import { WIND_LETTER } from './SeatPlate';
 
 const WIND_ORDER: Wind[] = ['east', 'south', 'west', 'north'];
 
+/** where each seat sits relative to the viewer, so the strip maps to the felt */
+const POSITION: Record<SeatIndex, { glyph: string; title: string }> = {
+  0: { glyph: '▼', title: 'you (bottom)' },
+  1: { glyph: '▶', title: 'right' },
+  2: { glyph: '▲', title: 'across' },
+  3: { glyph: '◀', title: 'left' },
+};
+
 export interface ScoreStripProps {
   view: PublicView;
   seatName: (seat: SeatIndex) => string;
   tools?: React.ReactNode;
+}
+
+/** "Kenta the Rush" reads as "Kenta" in a 90px plate. */
+function shortName(name: string): string {
+  const first = name.split(/\s+/)[0];
+  return first.length >= 3 ? first : name;
 }
 
 export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
@@ -29,14 +43,19 @@ export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
           return (
             <div className={cls} key={s}>
               <div className="l1">
-                <span className="wind">{WIND_LETTER[seat.seatWind]}</span>
-                <span className="name">{s === 0 ? 'You' : seatName(s)}</span>
+                <span className="wind" title={`${seat.seatWind} seat`}>{WIND_LETTER[seat.seatWind]}</span>
+                <span className="name" title={s === 0 ? 'You' : seatName(s)}>
+                  {s === 0 ? 'You' : shortName(seatName(s))}
+                </span>
+                <span className="pos" aria-hidden="true" title={POSITION[s].title}>{POSITION[s].glyph}</span>
+              </div>
+              <div className="l2">
+                <span className="pts">{seat.points.toLocaleString()}</span>
                 <span className="marks">
-                  {view.dealer === s && <span className="pill gold" style={{ fontSize: 9, padding: '0 4px' }}>親</span>}
-                  {seat.riichi && <span className="pill red" style={{ fontSize: 9, padding: '0 4px' }}>リ</span>}
+                  {view.dealer === s && <span className="mark dealer" title="dealer">親</span>}
+                  {seat.riichi && <span className="mark riichi" title="riichi declared">リ</span>}
                 </span>
               </div>
-              <span className="pts">{seat.points.toLocaleString()}</span>
             </div>
           );
         })}
