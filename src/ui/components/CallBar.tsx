@@ -1,7 +1,6 @@
 /** CallBar — the player's plate plus chi/pon/kan/riichi/ron/tsumo/pass.
  *  Sits under the hand like a real table's action row. */
-import type { Action, LegalAction, PublicSeatView, Wind } from '@engine/types';
-import { WIND_KANJI } from './SeatPlate';
+import type { Action, LegalAction } from '@engine/types';
 
 export interface CallBarProps {
   legal: LegalAction[];
@@ -9,8 +8,6 @@ export interface CallBarProps {
   onEnterRiichiMode: () => void;
   onCancelRiichi: () => void;
   onAct: (action: Action) => void;
-  me: PublicSeatView;
-  isDealer: boolean;
 }
 
 const KANJI: Record<string, string> = {
@@ -18,7 +15,7 @@ const KANJI: Record<string, string> = {
 };
 
 export default function CallBar({
-  legal, riichiMode, onEnterRiichiMode, onCancelRiichi, onAct, me, isDealer,
+  legal, riichiMode, onEnterRiichiMode, onCancelRiichi, onAct,
 }: CallBarProps) {
   const tsumo = legal.find((l) => l.action.type === 'tsumo');
   const ron = legal.find((l) => l.action.type === 'ron');
@@ -30,18 +27,9 @@ export default function CallBar({
   const kakans = legal.filter((l) => l.action.type === 'kakan');
   const hasRiichi = legal.some((l) => l.action.type === 'discard' && (l.action as { riichi?: boolean }).riichi);
 
-  const plate = (
-    <div className="player-plate">
-      <span className={`wind-badge${isDealer ? ' dealer' : ''}`}>{WIND_KANJI[me.seatWind as Wind]}</span>
-      <span><strong>You</strong> <span className="muted">{me.points.toLocaleString()}</span></span>
-      {me.riichi && <span className="pill red">RIICHI</span>}
-    </div>
-  );
-
   if (riichiMode) {
     return (
       <div className="call-bar">
-        {plate}
         <span className="call-hint">Select a tile to discard for riichi</span>
         <button className="call-btn ghost" onClick={onCancelRiichi}>Cancel<span className="kan">戻</span></button>
       </div>
@@ -67,7 +55,6 @@ export default function CallBar({
 
   return (
     <div className="call-bar">
-      {plate}
       {buttons}
     </div>
   );

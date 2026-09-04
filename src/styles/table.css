@@ -94,19 +94,19 @@
 .board[data-orient='portrait'] {
   --bw: 380px; --bh: 470px;
   --rv-w: 14px; --rv-h: 20px; --bk-w: 14px; --bk-h: 20px;
-  --wall: 11px; --cube: 62px; --plate-fs: 9px; --gap: 5px;
+  --wall: 11px; --cube: 62px; --plate-fs: 9px; --gap: 5px; --rim: 42px;
 }
 .board[data-orient='landscape'] {
   --bw: 1000px; --bh: 560px;
   --rv-w: 22px; --rv-h: 30px; --bk-w: 22px; --bk-h: 30px;
-  --wall: 15px; --cube: 92px; --plate-fs: 11px; --gap: 8px;
+  --wall: 15px; --cube: 92px; --plate-fs: 11px; --gap: 8px; --rim: 58px;
 }
 
 /* phones sideways: same geometry, tighter coordinates */
 .board[data-orient='landscape'][data-compact='true'] {
   --bw: 760px; --bh: 430px;
   --rv-w: 17px; --rv-h: 23px; --bk-w: 17px; --bk-h: 23px;
-  --wall: 12px; --cube: 70px; --plate-fs: 10px; --gap: 6px;
+  --wall: 12px; --cube: 70px; --plate-fs: 10px; --gap: 6px; --rim: 47px;
 }
 
 /* a riichi stick laid on the cloth in front of a declared seat */
@@ -130,20 +130,25 @@
     linear-gradient(160deg, #e6d093 0%, #c2a052 55%, #8a6d2c 100%);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 2px 5px rgba(0, 0, 0, 0.4);
 }
-.wall-h { height: var(--wall); left: calc(var(--wall) + 4px); right: calc(var(--wall) + 4px);
+.wall-h { height: var(--wall); left: calc(var(--rim, 42px) + 4px); right: calc(var(--rim, 42px) + 4px);
   background-image:
     repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0 1px, rgba(0, 0, 0, 0) 1px calc(var(--wall) * 1.5)),
     linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 40%),
     linear-gradient(160deg, #e6d093 0%, #c2a052 55%, #8a6d2c 100%);
 }
-.wall-v { width: var(--wall); top: calc(var(--wall) + 4px); bottom: calc(var(--wall) + 4px);
+.wall-v { width: var(--wall); top: calc(var(--rim, 42px) + 4px); bottom: calc(var(--rim, 42px) + 4px);
   background-image:
     repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0 1px, rgba(0, 0, 0, 0) 1px calc(var(--wall) * 1.5)),
     linear-gradient(90deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 40%),
     linear-gradient(160deg, #e6d093 0%, #c2a052 55%, #8a6d2c 100%);
 }
-.wall.top { top: 3px; } .wall.bottom { bottom: 3px; }
-.wall.left { left: 3px; } .wall.right { right: 3px; }
+.wall.top { top: var(--rim, 42px); } .wall.bottom { bottom: var(--rim, 42px); }
+.wall.left { left: var(--rim, 42px); } .wall.right { right: var(--rim, 42px); }
+/* rivers start inside the wall ring */
+.zone-top .river { margin-top: calc(var(--wall) + 6px); }
+.zone-bottom .river { margin-bottom: calc(var(--wall) + 6px); }
+.zone-left .river.side { margin-left: calc(var(--wall) + 6px); }
+.zone-right .river.side { margin-right: calc(var(--wall) + 6px); }
 .wall-used { position: absolute; background: rgba(9, 40, 28, 0.85); box-shadow: inset 0 0 6px rgba(0,0,0,0.6); }
 .wall-h .wall-used { top: 0; bottom: 0; right: 0; }
 .wall-v .wall-used { left: 0; right: 0; bottom: 0; }
@@ -152,7 +157,7 @@
 /* seat zones + centre */
 .board-grid {
   position: absolute;
-  inset: calc(var(--wall) + 6px);
+  inset: 2px;
   display: grid;
   grid-template-columns: auto 1fr auto;
   grid-template-rows: auto 1fr auto;
@@ -257,28 +262,17 @@
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; gap: 6px;
 }
-.hand-dock { --hand-tw: clamp(18px, calc((100% - 26px) / var(--hand-n, 15)), 46px); }
 .hand-melds { display: flex; gap: 10px; justify-content: flex-end; align-items: center; min-height: 0; padding-right: 2px; }
 .hand-melds:empty { display: none; }
 .hand-row { display: flex; gap: 2px; justify-content: center; align-items: flex-end; }
-.drawn-sep { width: calc(var(--hand-tw) * 0.32); flex: none; }
-.hand-status { text-align: center; font-size: 11px; color: var(--muted); min-height: 14px; }
+.drawn-sep { width: clamp(6px, calc((100% - 26px) / var(--hand-n, 15) * 0.3), 14px); flex: none; }
+.turn-status { color: var(--gold); border-color: var(--gold-dim); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 
 .call-bar {
   display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap;
   min-height: 46px;
 }
-.call-bar .player-plate {
-  display: flex; align-items: center; gap: 6px; margin-right: auto;
-  padding: 4px 8px; border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--panel-border);
-  font-size: 12px;
-}
-.call-bar .player-plate .wind-badge {
-  font-family: var(--font-jp); color: #fff; background: var(--red);
-  border-radius: 50%; width: 20px; height: 20px; display: grid; place-items: center; font-size: 12px;
-}
-.call-bar .player-plate .wind-badge.dealer { background: var(--gold-dim); color: #221704; }
 .call-btn {
   min-height: 44px; min-width: 58px; padding: 6px 12px;
   border-radius: 8px; border: 1px solid #d05252;
@@ -313,8 +307,6 @@
 /* short landscape (phone sideways): reclaim vertical space */
 @media (orientation: landscape) and (max-height: 520px) {
   .dock-bottom { padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px)); gap: 3px; }
-  .hand-dock { --hand-tw: clamp(16px, calc((100% - 24px) / var(--hand-n, 15)), 34px); }
-  .hand-status { display: none; }
   .call-btn { min-height: 38px; min-width: 50px; padding: 4px 10px; font-size: 13px; }
   .call-bar { min-height: 38px; }
   .score-plate .pts { font-size: 13px; }

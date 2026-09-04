@@ -92,6 +92,11 @@ export default function MatchScreen() {
             {usingFallback() && (
               <span className="pill" title="Worker A's engine has not merged yet; using Worker D's built-in fallback rules engine.">demo</span>
             )}
+            {!humanTurn && !handEnd && !matchResult && (
+              <span className="pill turn-status" role="status">
+                {aiThinking ? 'Opponents playing…' : 'Waiting…'}
+              </span>
+            )}
             <OverlayToggleBar />
             <button
               type="button"
@@ -123,19 +128,12 @@ export default function MatchScreen() {
           riichiMode={riichiMode}
           locked={!canAct || isCallWindow}
         />
-        {!humanTurn && !handEnd && !matchResult && (
-          <div className="hand-status">
-            {aiThinking ? 'Opponents are playing…' : 'Waiting…'}
-          </div>
-        )}
         <CallBar
           legal={humanLegal}
           riichiMode={riichiMode}
           onEnterRiichiMode={() => setRiichiMode(true)}
           onCancelRiichi={() => setRiichiMode(false)}
           onAct={act}
-          me={me}
-          isDealer={view.dealer === 0}
         />
       </footer>
 

@@ -38,7 +38,11 @@ describe('top-down table layout', () => {
     // hand + calls live below the felt, in that order
     const dock = container.querySelector('.dock-bottom');
     expect(dock!.querySelector('.hand-dock')).toBeTruthy();
-    expect(dock!.querySelector('.call-bar .player-plate')).toBeTruthy();
+    expect(dock!.querySelector('.call-bar')).toBeTruthy();
+    // no redundant points plate or waiting row in the dock: the score strip
+    // carries points and the turn status lives up with the trainer toggles
+    expect(dock!.querySelector('.player-plate')).toBeNull();
+    expect(dock!.querySelector('.hand-status')).toBeNull();
   });
 
   it('keeps every opponent concealed: only backs on the felt', () => {

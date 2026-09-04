@@ -242,11 +242,22 @@ function commit(next: GameState, set: (p: Partial<MatchStore>) => void, get: () 
   detectRiichiForPractice(next, set, get);
 }
 
+/**
+ * Legal actions for a seat right now.
+ * `pendingSeats` only reports seats during an open CALL window; on a plain
+ * draw/discard turn the seat to act is `state.turn`, so gate on phase too —
+ * otherwise the loop never surfaces discard options and the table stalls.
+ */
 function safeLegal(state: GameState, seat: SeatIndex): LegalAction[] {
   try {
-    const pend = pendingSeats(state);
-    if (!pend.includes(seat)) return [];
-    return getLegalActions(state, seat);
+    if (state.phase === 'awaitingCalls') {
+      if (!pendingSeats(state).includes(seat)) return [];
+      return getLegalActions(state, seat);
+    }
+    if ((state.phase === 'awaitingDraw' || state.phase === 'awaitingDiscard') && state.turn === seat) {
+      return getLegalActions(state, seat);
+    }
+    return [];
   } catch {
     return [];
   }
@@ -276,44 +287,49 @@ async function pump(token: number, get: () => MatchStore, set: (p: Partial<Match
       return;
     }
 
+    // 1. An open call window: those seats act first (ron / pon / chi / kan / pass).
     let pend: SeatIndex[] = [];
     try { pend = pendingSeats(state); } catch { pend = []; }
 
-    if (pend.length === 0) {
-      // Nothing pending but not hand over — likely awaitingDraw for current turn.
-      // Try to auto-draw for the current turn seat if legal.
-      const drawSeat = state.turn;
-      const legal = safeLegal(state, drawSeat);
-      const draw = legal.find((l) => l.action.type === 'draw');
-      if (draw) {
-        await stepApply(token, get, set, drawSeat, draw.action, null);
-        continue;
+    if (pend.length > 0) {
+      if (pend.includes(0)) {
+        // Hand control to the human for the call decision.
+        set({ aiThinking: false, humanLegal: safeLegal(state, 0) });
+        return;
       }
-      return;
+      const seat = pend[0];
+      set({ aiThinking: true });
+      await delay(randDelay());
+      if (token !== pumpToken) return;
+      const decided = decideAI(state, seat);
+      await stepApply(token, get, set, seat, decided, null);
+      continue;
     }
 
-    // Human decision needed?
-    if (pend.includes(0)) {
-      const legal = safeLegal(state, 0);
-      // Auto-draw for the human so the UI shows the drawn tile immediately.
-      if (state.phase === 'awaitingDraw' && state.turn === 0) {
-        const draw = legal.find((l) => l.action.type === 'draw');
-        if (draw) {
-          await stepApply(token, get, set, 0, draw.action, null);
-          continue;
-        }
+    // 2. No call window: the turn seat draws, then discards.
+    const seat = state.turn;
+    if (state.phase !== 'awaitingDraw' && state.phase !== 'awaitingDiscard') return;
+
+    if (state.phase === 'awaitingDraw') {
+      const draw = safeLegal(state, seat).find((l) => l.action.type === 'draw');
+      if (!draw) return;
+      if (seat !== 0) {
+        set({ aiThinking: true });
+        await delay(randDelay());
+        if (token !== pumpToken) return;
       }
-      // Hand control to the human.
-      set({ aiThinking: false, humanLegal: legal });
-      return;
+      await stepApply(token, get, set, seat, draw.action, null);
+      continue;
     }
 
-    // Otherwise, an AI seat decides. Handle call windows (may involve several AI).
-    const seat = pend[0];
+    // awaitingDiscard: human gets the buttons; AI decides.
+    if (seat === 0) {
+      set({ aiThinking: false, humanLegal: safeLegal(state, 0) });
+      return;
+    }
     set({ aiThinking: true });
     await delay(randDelay());
     if (token !== pumpToken) return;
-
     const decided = decideAI(state, seat);
     await stepApply(token, get, set, seat, decided, null);
   }

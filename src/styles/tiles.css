@@ -19,9 +19,7 @@
   overflow: hidden;
 }
 .tile-art {
-  position: absolute; left: 50%; top: 50%;
-  width: var(--tw); height: var(--th);
-  transform: translate(-50%, -50%);
+  position: absolute; inset: 0; width: 100%; height: 100%;
   pointer-events: none;
 }
 .tile-art svg { width: 100%; height: 100%; }
@@ -33,14 +31,25 @@
 .tile-lg   { --tw: 54px; --th: 73px; }
 .tile-rv   { --tw: var(--rv-w, 20px); --th: var(--rv-h, 27px); }
 .tile-bk   { --tw: var(--bk-w, 20px); --th: var(--bk-h, 28px); }
-.tile-hand { --tw: var(--hand-tw, 34px); --th: calc(var(--hand-tw, 34px) * 1.36); }
-.tile-meld { --tw: calc(var(--hand-tw, 34px) * 0.74); --th: calc(var(--hand-tw, 34px) * 1.0); }
+/* Hand + meld tiles size fluidly from the dock width. NOTE: the percentage
+   lives directly in `width` (never inside a custom property — Safari drops
+   those) and the height follows via aspect-ratio. */
+.tile-hand {
+  --tw: 30px; --th: 41px;
+  width: clamp(18px, calc((100% - 26px) / var(--hand-n, 15)), 46px);
+  height: auto; aspect-ratio: 60 / 84;
+}
+.tile-meld {
+  --tw: 24px; --th: 33px;
+  width: clamp(14px, calc((100% - 26px) / var(--hand-n, 15) * 0.74), 34px);
+  height: auto; aspect-ratio: 60 / 84;
+}
 
 /* orientation on the table (top-down: opponents' tiles are rotated) */
 .tile.rot90, .tile.rot270 { width: var(--th); height: var(--tw); }
-.tile.rot90  .tile-art { transform: translate(-50%, -50%) rotate(90deg); }
-.tile.rot180 .tile-art { transform: translate(-50%, -50%) rotate(180deg); }
-.tile.rot270 .tile-art { transform: translate(-50%, -50%) rotate(270deg); }
+.tile.rot90  .tile-art { transform: rotate(90deg); }
+.tile.rot180 .tile-art { transform: rotate(180deg); }
+.tile.rot270 .tile-art { transform: rotate(270deg); }
 
 /* face-down tile backs */
 .tile-back {

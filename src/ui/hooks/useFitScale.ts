@@ -21,7 +21,7 @@ export function useFitScale(
       const { width, height } = el.getBoundingClientRect();
       if (width < 40 || height < 40) return; // jsdom / pre-layout: keep 1
       const s = Math.min(width / boardW, height / boardH);
-      setScale(Math.max(0.4, Math.min(s, 1.6)));
+      setScale(Math.max(0.4, Math.min(s, 2.2)));
     };
 
     measure();
