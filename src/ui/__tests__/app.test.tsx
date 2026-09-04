@@ -8,7 +8,7 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   useMatch.getState().reset();
-  useSession.setState({ screen: 'menu', matchLog: null });
+  useSession.setState({ screen: 'menu' });
 });
 
 describe('App shell + screen wiring', () => {

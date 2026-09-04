@@ -9,7 +9,7 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   useMatch.getState().reset();
-  useSession.setState({ screen: 'menu', matchLog: null });
+  useSession.setState({ screen: 'menu' });
 });
 
 function startMatch() {
@@ -64,13 +64,4 @@ describe('top-down table layout', () => {
     backs.forEach((b) => expect(b.textContent).toBe(''));
   });
 
-  it('docks the trainer overlays instead of floating them over the table', () => {
-    const { container } = startMatch();
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Yaku' })); });
-    const dock = container.querySelector('.overlay-dock');
-    expect(dock).toBeTruthy();
-    // in flow, i.e. a sibling of the felt, not an absolutely positioned layer
-    expect(dock!.parentElement!.className).toContain('match-main');
-    expect(container.querySelector('.overlay-layer')).toBeNull();
-  });
 });

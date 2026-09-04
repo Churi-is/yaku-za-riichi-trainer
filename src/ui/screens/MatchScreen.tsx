@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Action, SeatIndex, TileId } from '@engine/types';
 import { useSession } from '@state/session';
-import { useMatch, getLogBuilder } from '@state/gameLoop';
+import { useMatch } from '@state/gameLoop';
 import { usingFallback } from '@state/engineAdapter';
 import { useOrientation } from '@ui/hooks/useOrientation';
 
@@ -13,12 +13,8 @@ import PauseMenu from '@ui/components/PauseMenu';
 import HandEndBanner from '@ui/components/HandEndBanner';
 import PersonalitiesIntro from '@ui/components/PersonalitiesIntro';
 
-import OverlayToggleBar from '@ui/overlays/OverlayToggleBar';
-import OverlayDock from '@ui/overlays/OverlayDock';
-
 export default function MatchScreen() {
   const go = useSession((s) => s.go);
-  const setMatchLog = useSession((s) => s.setMatchLog);
 
   const state = useMatch((s) => s.state);
   const view = useMatch((s) => s.view);
@@ -45,14 +41,6 @@ export default function MatchScreen() {
     for (const p of seatPersonalities) map[p.seat] = p.name;
     return (seat: SeatIndex) => map[seat] ?? `Seat ${seat}`;
   }, [seatPersonalities]);
-
-  // When the match finishes, package the log and jump to replay.
-  useEffect(() => {
-    if (matchResult) {
-      const builder = getLogBuilder();
-      if (builder) setMatchLog(builder.build());
-    }
-  }, [matchResult, setMatchLog]);
 
   const legalKey = humanLegal.length;
   // A lifted tile only makes sense while the player still owns the decision.
@@ -113,7 +101,6 @@ export default function MatchScreen() {
             locked={locked}
           />
         </div>
-        <OverlayDock view={view} seatName={seatName} callWindow={isCallWindow && canAct} />
       </div>
 
       <footer className="dock-bottom">
@@ -136,7 +123,6 @@ export default function MatchScreen() {
           )}
         />
         <div className="tool-row">
-          <OverlayToggleBar />
           <span className="spacer" />
           {usingFallback() && (
             <span className="pill" title="Worker A's engine has not merged yet; using Worker D's built-in fallback rules engine.">demo</span>
@@ -175,8 +161,7 @@ export default function MatchScreen() {
             <p className="muted">
               You finished {ordinal(matchResult.ranking.indexOf(0) + 1)} with {matchResult.finalPoints[0].toLocaleString()} points.
             </p>
-            <button className="btn btn-primary" onClick={() => go('replay')}>See your graded replay →</button>
-            <button className="btn" onClick={() => go('summary')}>Session summary</button>
+            <button className="btn btn-primary" onClick={() => go('menu')}>Back to menu</button>
           </div>
         </div>
       )}

@@ -1,10 +1,9 @@
 /**
- * Match game loop (Worker D). Drives one match: deal → turns → calls → hand end
- * → next hand → match over, while recording the replay log and running the AI.
+ * Match game loop. Drives one match: deal → turns → calls → hand end → next
+ * hand → match over, while running the AI.
  *
- * Design goals from the brief:
+ * Design goals:
  *  - AI seats decide from ONLY toPublicView(state, seat) + getLegalActions.
- *  - Every action is logged; human actions carry viewBefore = human public view.
  *  - AI turns are paced with a short delay; the UI thread never blocks.
  *  - The loop is guarded against a throwing engine (the adapter handles that).
  *  - Human seat (0) surfaces legal actions as UI options and waits.
@@ -23,10 +22,6 @@ import type {
 import {
   applyAction, createMatch, getLegalActions, nextHand, pendingSeats, toPublicView,
 } from './engineAdapter';
-import { resolveWaitGuesses } from './analysisAdapter';
-import { MatchLogBuilder } from '@replay/log';
-import type { WaitGuessRecord } from '@analysis/types';
-import { kindOf, waitsIds } from './mahjong';
 
 export interface SeatPersonality {
   seat: SeatIndex;
@@ -40,11 +35,6 @@ export interface HandEndBanner {
   roundLabel: string;
 }
 
-export interface WaitPracticePrompt {
-  seat: SeatIndex;
-  /** Deadline: resolve before this opponent's next discard. */
-  active: boolean;
-}
 
 interface MatchStore {
   state: GameState | null;
@@ -58,17 +48,13 @@ interface MatchStore {
   handEnd: HandEndBanner | null;
   matchResult: MatchResult | null;
   /** Practice-mode: pending wait-guess prompts by seat. */
-  practicePrompts: WaitPracticePrompt[];
   /** Recorded wait guesses this match (live, before resolution). */
-  waitGuesses: WaitGuessRecord[];
   message: string | null;
 
   // actions
   start: (settings: TableSettings, seed?: number) => void;
   humanAct: (action: Action) => void;
   advanceHand: () => void;
-  submitWaitGuess: (seat: SeatIndex, kinds: TileKind[]) => void;
-  dismissPractice: (seat: SeatIndex) => void;
   finish: () => void; // finalize -> returns log via getter
   reset: () => void;
 }
@@ -78,10 +64,8 @@ const AI_MAX_DELAY = 780;
 
 // Module-scoped, non-reactive controller data (avoids re-render churn).
 let ais: Record<number, AIPlayer> = {};
-let logBuilder: MatchLogBuilder | null = null;
 let pumpToken = 0; // invalidates in-flight timers when we reset/restart
 let handCounter = 0;
-let riichiSeen: Set<number> = new Set();
 
 function roundLabel(state: GameState): string {
   const wind = state.roundWind[0].toUpperCase() + state.roundWind.slice(1);
@@ -95,7 +79,6 @@ function randDelay(): number {
   return AI_MIN_DELAY + Math.floor(Math.random() * (AI_MAX_DELAY - AI_MIN_DELAY));
 }
 
-export const getLogBuilder = (): MatchLogBuilder | null => logBuilder;
 
 export const useMatch = create<MatchStore>((set, get) => ({
   state: null,
@@ -105,16 +88,12 @@ export const useMatch = create<MatchStore>((set, get) => ({
   seatPersonalities: [],
   handEnd: null,
   matchResult: null,
-  practicePrompts: [],
-  waitGuesses: [],
   message: null,
 
   start(settings, seed) {
     pumpToken++;
     const token = pumpToken;
     handCounter = 0;
-    riichiSeen = new Set();
-    logBuilder = new MatchLogBuilder(settings);
 
     let state = createMatch(settings, seed);
 
@@ -138,8 +117,6 @@ export const useMatch = create<MatchStore>((set, get) => ({
       seatPersonalities,
       handEnd: null,
       matchResult: null,
-      practicePrompts: [],
-      waitGuesses: [],
       message: null,
     });
 
@@ -152,7 +129,6 @@ export const useMatch = create<MatchStore>((set, get) => ({
     if (!state) return;
     const view = toPublicView(state, 0);
     let next = applyAction(state, action);
-    logBuilder?.record(0, action, view);
     afterApply(next, action);
     commit(next, set, get);
     // resume the pump after a human action
@@ -164,57 +140,31 @@ export const useMatch = create<MatchStore>((set, get) => ({
     const { state } = get();
     if (!state) return;
     if (state.phase !== 'handOver') return;
-    // finalize wait guesses for the just-finished hand using revealed hands
-    resolveHandWaitGuesses(state.handOver, set, get);
     let next = nextHand(state);
     if (next.matchOver) {
       finalizeMatch(next, set);
       return;
     }
     beginHandLog(next);
-    set({ handEnd: null, practicePrompts: [] });
+    set({ handEnd: null });
     commit(next, set, get);
     const token = pumpToken;
     void pump(token, get, set);
-  },
-
-  submitWaitGuess(seat, kinds) {
-    const { state } = get();
-    if (!state) return;
-    const record: WaitGuessRecord = {
-      handId: handCounter,
-      seat,
-      submittedKinds: kinds,
-      actualWaits: null,
-      correct: null,
-    };
-    logBuilder?.addWaitGuess(record);
-    set((st) => ({
-      waitGuesses: [...st.waitGuesses, record],
-      practicePrompts: st.practicePrompts.map((p) => (p.seat === seat ? { ...p, active: false } : p)),
-    }));
-  },
-
-  dismissPractice(seat) {
-    set((st) => ({ practicePrompts: st.practicePrompts.map((p) => (p.seat === seat ? { ...p, active: false } : p)) }));
   },
 
   finish() {
     const { state } = get();
     if (state && !state.matchOver) {
       // finalize whatever we have
-      logBuilder?.setWaitGuesses(get().waitGuesses);
     }
   },
 
   reset() {
     pumpToken++;
     ais = {};
-    logBuilder = null;
     set({
       state: null, view: null, humanLegal: [], aiThinking: false,
-      seatPersonalities: [], handEnd: null, matchResult: null,
-      practicePrompts: [], waitGuesses: [], message: null,
+      seatPersonalities: [], handEnd: null, matchResult: null, message: null,
     });
   },
 }));
@@ -223,13 +173,6 @@ export const useMatch = create<MatchStore>((set, get) => ({
 
 function beginHandLog(state: GameState) {
   handCounter += 1;
-  logBuilder?.beginHand({
-    handId: handCounter,
-    roundWind: state.roundWind,
-    roundNumber: state.roundNumber,
-    honba: state.honba,
-    dealer: state.dealer,
-  });
 }
 
 function commit(next: GameState, set: (p: Partial<MatchStore>) => void, get: () => MatchStore) {
@@ -239,7 +182,6 @@ function commit(next: GameState, set: (p: Partial<MatchStore>) => void, get: () 
     view: toPublicView(next, 0),
     humanLegal,
   });
-  detectRiichiForPractice(next, set, get);
 }
 
 /**
@@ -265,7 +207,6 @@ function safeLegal(state: GameState, seat: SeatIndex): LegalAction[] {
 
 function afterApply(state: GameState, _action: Action) {
   if (state.phase === 'handOver' && state.handOver) {
-    logBuilder?.endHand(state.handOver);
   }
 }
 
@@ -385,7 +326,6 @@ async function stepApply(
     set({ aiThinking: false, message: 'The engine hit an error; pausing the hand.' });
     return;
   }
-  logBuilder?.record(seat, action, seat === 0 ? humanViewBefore : humanViewBefore);
   afterApply(next, action);
   if (token !== pumpToken) return;
   commit(next, set, get);
@@ -407,62 +347,7 @@ function finalizeMatch(state: GameState, set: (p: Partial<MatchStore>) => void) 
   const result: MatchResult = {
     ranking,
     finalPoints: finalPoints as Record<SeatIndex, number>,
-    handsPlayed: logBuilder?.getHands().length ?? state.matchOver?.handsPlayed ?? 0,
+    handsPlayed: state.matchOver?.handsPlayed ?? handCounter,
   };
-  logBuilder?.setWaitGuesses(useMatch.getState().waitGuesses);
   set({ matchResult: result, aiThinking: false, humanLegal: [], state, handEnd: null });
 }
-
-// --- practice-mode wait guessing ------------------------------------------
-
-function detectRiichiForPractice(state: GameState, set: (p: Partial<MatchStore>) => void, get: () => MatchStore) {
-  // When an opponent newly declares riichi, and practice mode is active (the UI
-  // decides whether to surface it), create a prompt to guess before their next
-  // discard. We record the "newly riichi" fact; the panel reads practicePrompts.
-  const prompts = get().practicePrompts;
-  const updated = [...prompts];
-  for (let seat = 1 as SeatIndex; seat < 4; seat = (seat + 1) as SeatIndex) {
-    const p = state.players[seat];
-    if (p.riichi && !riichiSeen.has(seat)) {
-      riichiSeen.add(seat);
-      if (!updated.some((x) => x.seat === seat)) {
-        updated.push({ seat, active: true });
-      }
-    }
-  }
-  if (updated.length !== prompts.length) set({ practicePrompts: updated });
-}
-
-function resolveHandWaitGuesses(handOver: HandResult | null, set: (p: Partial<MatchStore>) => void, get: () => MatchStore) {
-  if (!handOver) return;
-  const guesses = get().waitGuesses;
-  if (guesses.length === 0) return;
-  const revealed = handOver.revealedHands;
-  const updated = guesses.map((g) => {
-    if (g.correct !== null) return g;
-    const hand = revealed[g.seat];
-    if (!hand) return g;
-    // compute true waits from the revealed concealed hand (public at reveal time)
-    // account for melds: we don't have them here, assume 0 for reveal simplicity
-    const actual = computeActualWaits(hand);
-    const correct = actual.length > 0 && g.submittedKinds.some((k) => actual.includes(k));
-    return { ...g, actualWaits: actual, correct: actual.length ? correct : null };
-  });
-  set({ waitGuesses: updated });
-  logBuilder?.setWaitGuesses(updated);
-}
-
-function computeActualWaits(hand: TileId[]): TileKind[] {
-  // Determine tenpai waits from a concealed hand of length 13 (or 13-3*melds).
-  // We approximate meld count from hand length: (13 - len)/3 assuming standard.
-  const meldCount = Math.max(0, Math.round((13 - hand.length) / 3));
-  try {
-    return waitsIds(hand, meldCount);
-  } catch {
-    return [];
-  }
-}
-
-// silence unused import in some build modes
-void kindOf;
-export type { TileId };

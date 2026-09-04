@@ -5,7 +5,6 @@ import Tile from '@ui/components/Tile';
 
 export default function MainMenu() {
   const go = useSession((s) => s.go);
-  const matchLog = useSession((s) => s.matchLog);
   const reset = useMatch((s) => s.reset);
 
   return (
@@ -17,28 +16,14 @@ export default function MainMenu() {
         <span className="accent">Mahjong Trainer</span>
       </h1>
       <p className="menu-sub">
-        Single-player riichi practice with three live coaching overlays —
-        yaku direction, opponent reads, and wait guessing — plus turn-by-turn
-        grading after every match. You already know how to play; this sharpens
-        your judgment.
+        Single-player riichi against three AI opponents, each with their own
+        style. Full Japanese rules: riichi, calls, dora, yaku and scoring.
       </p>
       <nav className="menu-list">
         <button className="menu-item primary" onClick={() => { reset(); go('settings'); }}>
           <span className="label">New Match</span>
           <span className="kan jp">対局</span>
         </button>
-        {matchLog && (
-          <>
-            <button className="menu-item" onClick={() => go('replay')}>
-              <span className="label">Review Last Match</span>
-              <span className="kan jp">牌譜</span>
-            </button>
-            <button className="menu-item" onClick={() => go('summary')}>
-              <span className="label">Session Summary</span>
-              <span className="kan jp">戦績</span>
-            </button>
-          </>
-        )}
       </nav>
       <div className="tile-fan" aria-hidden="true">
         <Tile id={31 * 4} size="md" />

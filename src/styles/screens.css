@@ -85,14 +85,9 @@
 
 /* ---------- hand end / reveal ---------- */
 .handend-card { width: min(600px, 96vw); }
-.reveal-table,
-.reveal-grid {
+.reveal-table {
   display: grid; gap: 8px;
   grid-template-columns: 1fr;
-}
-@media (min-width: 760px) {
-  /* the replay reveal pairs seats up side by side on wider screens */
-  .reveal-grid { grid-template-columns: 1fr 1fr; }
 }
 .reveal-seat {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -106,43 +101,6 @@
 .reveal-meld { display: inline-flex; gap: 2px; margin-left: 10px; }
 .yaku-list { display: flex; flex-direction: column; gap: 3px; }
 .score-line { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
-
-/* ---------- replay ---------- */
-.timeline { display: flex; flex-direction: column; gap: 8px; }
-.turn-card { border: 1px solid var(--panel-border); border-radius: var(--radius); overflow: hidden; background: rgba(0, 0, 0, 0.25); }
-.turn-head {
-  width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-  cursor: pointer; background: none; border: 0; text-align: left; color: var(--ink);
-}
-.turn-head:hover { background: rgba(255, 255, 255, 0.04); }
-.grade-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
-.grade-Excellent { background: #14532d; color: #86efac; }
-.grade-Good { background: #166534; color: #bbf7d0; }
-.grade-Fair { background: #78350f; color: #fcd34d; }
-.grade-Poor { background: #7c2d12; color: #fdba74; }
-.grade-Blunder { background: #7f1d1d; color: #fecaca; }
-.turn-body { padding: 10px 12px; border-top: 1px solid var(--panel-border); font-size: 13px; }
-.alt-item { padding: 6px 0; border-top: 1px dashed rgba(255, 255, 255, 0.12); }
-.alt-item:first-child { border-top: 0; }
-.metric { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.round-section-head {
-  margin: 20px 0 10px; color: var(--gold);
-  border-bottom: 1px solid var(--hairline); padding-bottom: 5px; font-size: 15px;
-}
-
-/* ---------- summary ---------- */
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-.stat {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.3));
-  border: 1px solid var(--panel-border); border-radius: var(--radius);
-  padding: 12px 8px; text-align: center;
-}
-.stat .num { font-size: 24px; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
-.stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.bar-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
-.bar-label { width: 90px; font-size: 12px; }
-.bar-track { flex: 1; height: 14px; background: rgba(0, 0, 0, 0.45); border-radius: 8px; overflow: hidden; }
-.bar-fill { height: 100%; }
 
 /* ---------- personalities intro ---------- */
 .intro-table {

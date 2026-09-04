@@ -3,7 +3,7 @@
 
    .match is a column:
      score strip  (who's who, points, whose turn)
-     match-main   (felt + the trainer dock)
+     match-main   (the felt)
      dock-bottom  (the action row + trainer toggles, in thumb reach)
 
    The felt holds a fixed-coordinate board (see src/ui/table/layout.ts) that is
@@ -244,12 +244,11 @@
 
 /* ---------- landscape: felt beside the trainer column ---------- */
 @media (min-width: 700px) and (orientation: landscape) {
-  .match-main { flex-direction: row; }
   .score-plate .name { font-size: 12px; }
 }
 
 /* short landscape (phone sideways): every pixel of felt counts, so the action
-   row and the trainer toggles share one line and the plates go single-line */
+   row and the tool buttons share one line and the plates go single-line */
 @media (orientation: landscape) and (max-height: 560px) {
   .dock-bottom {
     flex-direction: row; align-items: center; gap: 8px;
@@ -265,8 +264,4 @@
   .score-plate .l1 { flex: 1; }
   .score-plate .pts { font-size: 14px; }
   .score-plate .pos { margin-left: 4px; }
-}
-
-@media (min-width: 700px) and (max-width: 999px) and (orientation: landscape) {
-  .overlay-dock { width: 280px; }
 }
