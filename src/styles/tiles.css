@@ -1,0 +1,77 @@
+/* ---------------------------------------------------------------------------
+   Tiles — physical objects: ivory face, bevelled edge, coloured back.
+   Sizes are custom-property driven so the table board and the hand dock can
+   each define their own scale (including a per-orientation one).
+--------------------------------------------------------------------------- */
+.tile {
+  --tw: 40px; --th: 54px;
+  position: relative;
+  width: var(--tw); height: var(--th);
+  flex: none;
+  border-radius: calc(var(--tw) * 0.16);
+  background: linear-gradient(175deg, #fefcf4 0%, #f1ead8 62%, #ddd2b6 100%);
+  border: 1px solid #b3a888;
+  box-shadow:
+    0 calc(var(--th) * 0.05) 0 #b0a486,
+    0 calc(var(--th) * 0.09) calc(var(--th) * 0.12) rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  padding: 0; color: #20242a; user-select: none;
+  overflow: hidden;
+}
+.tile-art {
+  position: absolute; left: 50%; top: 50%;
+  width: var(--tw); height: var(--th);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.tile-art svg { width: 100%; height: 100%; }
+
+/* sizes */
+.tile-xs   { --tw: 22px; --th: 30px; }
+.tile-sm   { --tw: 30px; --th: 41px; }
+.tile-md   { --tw: 40px; --th: 54px; }
+.tile-lg   { --tw: 54px; --th: 73px; }
+.tile-rv   { --tw: var(--rv-w, 20px); --th: var(--rv-h, 27px); }
+.tile-bk   { --tw: var(--bk-w, 20px); --th: var(--bk-h, 28px); }
+.tile-hand { --tw: var(--hand-tw, 34px); --th: calc(var(--hand-tw, 34px) * 1.36); }
+.tile-meld { --tw: calc(var(--hand-tw, 34px) * 0.74); --th: calc(var(--hand-tw, 34px) * 1.0); }
+
+/* orientation on the table (top-down: opponents' tiles are rotated) */
+.tile.rot90, .tile.rot270 { width: var(--th); height: var(--tw); }
+.tile.rot90  .tile-art { transform: translate(-50%, -50%) rotate(90deg); }
+.tile.rot180 .tile-art { transform: translate(-50%, -50%) rotate(180deg); }
+.tile.rot270 .tile-art { transform: translate(-50%, -50%) rotate(270deg); }
+
+/* face-down tile backs */
+.tile-back {
+  background: linear-gradient(160deg, #47926a 0%, #236044 55%, #17452f 100%);
+  border-color: #11301f;
+  box-shadow:
+    0 calc(var(--th) * 0.05) 0 #0e2a1c,
+    0 calc(var(--th) * 0.09) calc(var(--th) * 0.12) rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.07),
+    inset 0 2px 0 rgba(255, 255, 255, 0.18);
+}
+.tile-back .tile-art { display: none; }
+
+/* red five glow */
+.tile-red { box-shadow:
+  0 calc(var(--th) * 0.05) 0 #b0a486,
+  0 calc(var(--th) * 0.09) calc(var(--th) * 0.12) rgba(0, 0, 0, 0.45),
+  inset 0 1px 0 rgba(255, 255, 255, 0.9),
+  0 0 0 1.5px rgba(199, 52, 52, 0.75); }
+
+/* states */
+.tile-dimmed { opacity: 0.4; }
+.tile-clickable { cursor: pointer; }
+.tile-clickable:hover { transform: translateY(-6px); }
+.tile-clickable:active { transform: translateY(-4px); }
+.tile-selected { transform: translateY(-9px); box-shadow:
+  0 calc(var(--th) * 0.05) 0 #b0a486,
+  0 0 0 2px var(--gold), 0 10px 14px rgba(0, 0, 0, 0.5); }
+.tile-disabled { cursor: not-allowed; }
+.tile-disabled:hover { transform: none; }
+@media (hover: none) {
+  .tile-clickable:hover { transform: none; }
+  .tile-clickable:active { transform: translateY(-6px); }
+}

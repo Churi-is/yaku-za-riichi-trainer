@@ -1,0 +1,161 @@
+/* ---------------------------------------------------------------------------
+   Theme — a mahjong parlour at night: lacquer, gold leaf, deep felt.
+   Mobile-first. Every size that matters scales from clamp()/vw so a phone in
+   portrait is the primary target, not an afterthought.
+--------------------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+
+  --lacquer: #14100b;
+  --lacquer-2: #1d1610;
+  --lacquer-3: #261d13;
+  --panel: rgba(20, 15, 10, 0.94);
+  --panel-border: #453723;
+  --hairline: rgba(216, 180, 90, 0.28);
+
+  --gold: #d8b45a;
+  --gold-hi: #f0d38a;
+  --gold-dim: #8a6f2f;
+
+  --red: #9c2222;
+  --red-hi: #c73434;
+  --red-deep: #6d1616;
+
+  --felt: #1d5c42;
+  --felt-mid: #17503a;
+  --felt-dark: #0d3527;
+
+  --ivory: #f2ecdc;
+  --ink: #efe8d8;
+  --muted: #a2977f;
+
+  --good: #4cb877;
+  --warn: #e0a63c;
+  --bad: #d95c5c;
+
+  --radius: 6px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-jp: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "MS PMincho", serif;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background:
+    radial-gradient(120% 90% at 50% -10%, #221a10 0%, rgba(0, 0, 0, 0) 60%),
+    repeating-linear-gradient(45deg, rgba(216, 180, 90, 0.022) 0 2px, rgba(0, 0, 0, 0) 2px 14px),
+    repeating-linear-gradient(-45deg, rgba(216, 180, 90, 0.022) 0 2px, rgba(0, 0, 0, 0) 2px 14px),
+    #0b0906;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+button { font-family: inherit; color: inherit; }
+h1, h2, h3, h4 { font-weight: 700; margin: 0 0 0.4em; letter-spacing: 0.02em; }
+a { color: var(--gold); }
+svg { display: block; }
+
+.jp { font-family: var(--font-jp); }
+
+/* ---------- primitives ---------- */
+.muted { color: var(--muted); }
+.center { text-align: center; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 999px; font-size: 11px;
+  border: 1px solid var(--panel-border); background: rgba(0, 0, 0, 0.35);
+  color: var(--muted); white-space: nowrap;
+}
+.pill.gold { border-color: var(--gold-dim); color: var(--gold); }
+.pill.red { border-color: var(--red-hi); color: #f0b6b6; }
+
+.card {
+  background: linear-gradient(180deg, var(--lacquer-2), var(--lacquer));
+  border: 1px solid var(--panel-border);
+  border-top-color: var(--hairline);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  background: linear-gradient(180deg, var(--lacquer-3), var(--lacquer));
+  color: var(--ink);
+  border: 1px solid var(--panel-border);
+  border-top-color: var(--hairline);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  min-height: 44px;
+  transition: transform 0.06s ease, filter 0.15s ease, border-color 0.15s ease;
+}
+.btn:hover { border-color: var(--gold-dim); filter: brightness(1.12); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary {
+  background: linear-gradient(180deg, #e7c476, #b3892f 55%, #8a6a22);
+  border-color: var(--gold); color: #221704; font-weight: 700;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-danger { background: linear-gradient(180deg, #7d1d1d, #521212); border-color: #a83232; }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn-ghost:hover { color: var(--ink); border-color: var(--panel-border); }
+.btn-sm { padding: 6px 10px; min-height: 34px; font-size: 12px; }
+
+/* ---------- switches & segments ---------- */
+.toggle {
+  width: 52px; height: 30px; border-radius: 999px; border: 1px solid var(--panel-border);
+  background: #171208; position: relative; cursor: pointer; flex: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+.toggle .knob {
+  position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(180deg, #6b6152, #453d31);
+  transition: left 0.15s ease, background 0.15s ease;
+}
+.toggle.on { background: #2c2110; border-color: var(--gold-dim); }
+.toggle.on .knob { left: 24px; background: linear-gradient(180deg, var(--gold-hi), var(--gold-dim)); }
+
+.seg { display: inline-flex; border: 1px solid var(--panel-border); border-radius: var(--radius); overflow: hidden; background: rgba(0,0,0,0.35); }
+.seg button {
+  background: transparent; color: var(--muted); border: 0; padding: 8px 14px;
+  cursor: pointer; min-height: 40px; font-size: 13px; letter-spacing: 0.04em;
+}
+.seg button + button { border-left: 1px solid var(--panel-border); }
+.seg button.on { background: linear-gradient(180deg, #e7c476, #a8802c); color: #221704; font-weight: 700; }
+
+/* ---------- modal / scrim ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(4, 3, 2, 0.72);
+  backdrop-filter: blur(3px); z-index: 40;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.modal { width: min(480px, 94vw); max-height: 90vh; overflow: auto; }
+.scrim {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  z-index: 20; background: rgba(4, 3, 2, 0.62); backdrop-filter: blur(2px); padding: 12px;
+}
+
+/* ---------- shared screen chrome ---------- */
+.screen { padding: 18px 14px 32px; max-width: 1000px; margin: 0 auto; }
+.screen-narrow { max-width: 720px; }
+.screen-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding-bottom: 10px; margin-bottom: 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+.screen-head h1 { margin: 0; font-size: clamp(19px, 5vw, 26px); }
+.screen-head .kan { color: var(--gold-dim); font-size: 0.75em; margin-left: 8px; }
+@media (min-width: 720px) { .screen { padding: 26px 22px 44px; } }

@@ -1,22 +1,26 @@
-/** DiscardRiver — a seat's discard pond. Owned by Worker D. */
+/** DiscardRiver — a seat's discard pond, oriented for the top-down table. */
 import type { DiscardEntry } from '@engine/types';
-import Tile from './Tile';
+import Tile, { type TileRotation, type TileSize } from './Tile';
 
 export interface DiscardRiverProps {
   river: DiscardEntry[];
-  orientation?: 'bottom' | 'top' | 'left' | 'right';
+  /** Base rotation of the owning seat on the table (0/90/180/270). */
+  rotation?: TileRotation;
+  /** Side seats lay their river 3-wide (which reads as 3 columns rotated). */
+  side?: boolean;
+  size?: TileSize;
 }
 
-export default function DiscardRiver({ river, orientation = 'bottom' }: DiscardRiverProps) {
-  const cls = orientation === 'left' || orientation === 'right' ? 'river river-left' : 'river';
+export default function DiscardRiver({ river, rotation = 0, side = false, size = 'rv' }: DiscardRiverProps) {
   return (
-    <div className={cls} aria-label="discards">
+    <div className={`river${side ? ' side' : ''}`} aria-label="discards">
+      {river.length === 0 && <div className="river-empty" aria-hidden="true" />}
       {river.map((d, i) => (
         <Tile
           key={i}
           id={d.tile}
-          size="xs"
-          rotated={d.riichiDeclaration}
+          size={size}
+          rotation={(((rotation + (d.riichiDeclaration ? 90 : 0)) % 360) as TileRotation)}
           dimmed={d.calledBy !== null}
           title={d.calledBy !== null ? 'called away' : d.tsumogiri ? 'tsumogiri' : undefined}
         />

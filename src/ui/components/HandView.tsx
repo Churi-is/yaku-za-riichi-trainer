@@ -1,4 +1,7 @@
-/** HandView — the human player's concealed hand + drawn tile + melds. Owned by Worker D. */
+/** HandView — the human player's concealed hand + drawn tile + melds.
+ *  Tile size is fluid: it divides the dock width by the tile count so all 14
+ *  always fit on a phone without wrapping. */
+import type { CSSProperties } from 'react';
 import type { LegalAction, Meld, TileId } from '@engine/types';
 import Tile from './Tile';
 import MeldArea from './MeldArea';
@@ -20,7 +23,6 @@ export interface HandViewProps {
 export default function HandView({
   hand, drawnTile, melds, discardActions, onDiscard, riichiMode, locked,
 }: HandViewProps) {
-  // Map tile -> whether it can be discarded (and whether riichi is allowed on it)
   const plain = new Map<TileId, boolean>();
   const riichiable = new Map<TileId, boolean>();
   for (const la of discardActions) {
@@ -43,11 +45,13 @@ export default function HandView({
     onDiscard(t, riichiMode && riichiable.has(t));
   };
 
+  const count = sortedHand.length + (drawnTile !== null ? 1 : 0) + 0.7;
+
   return (
-    <div>
+    <div className="hand-dock" style={{ '--hand-n': count } as CSSProperties}>
       {melds.length > 0 && (
         <div className="hand-melds">
-          <MeldArea melds={melds} size="sm" />
+          <MeldArea melds={melds} size="meld" />
         </div>
       )}
       <div className="hand-row">
@@ -55,7 +59,7 @@ export default function HandView({
           <Tile
             key={`${t}-${i}`}
             id={t}
-            size="md"
+            size="hand"
             onClick={() => doDiscard(t)}
             disabled={!canDiscard(t)}
             dimmed={!locked && riichiMode && !riichiable.has(t)}
@@ -66,7 +70,7 @@ export default function HandView({
             <span className="drawn-sep" />
             <Tile
               id={drawnTile}
-              size="md"
+              size="hand"
               onClick={() => doDiscard(drawnTile)}
               disabled={!canDiscard(drawnTile)}
               dimmed={!locked && riichiMode && !riichiable.has(drawnTile)}

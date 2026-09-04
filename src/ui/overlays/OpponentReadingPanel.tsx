@@ -3,7 +3,6 @@
  * threat state, and Low/Medium/High deal-in risk, all probabilistic, each with
  * a "why" tooltip. Reads ONLY from @analysis. Owned by Worker D.
  */
-import { useState } from 'react';
 import type { PublicView, SeatIndex } from '@engine/types';
 import { readOpponents } from '@state/analysisAdapter';
 import Tooltip from '@ui/components/Tooltip';
@@ -11,22 +10,21 @@ import Tooltip from '@ui/components/Tooltip';
 export interface OpponentReadingPanelProps {
   view: PublicView;
   seatName: (seat: SeatIndex) => string;
+  open?: boolean;
+  onToggleOpen?: () => void;
 }
 
-export default function OpponentReadingPanel({ view, seatName }: OpponentReadingPanelProps) {
-  const [open, setOpen] = useState(true);
+export default function OpponentReadingPanel({ view, seatName, open = true, onToggleOpen }: OpponentReadingPanelProps) {
   const reads = readOpponents(view);
 
   return (
     <div className="overlay-panel">
-      <h4>
-        <span>Opponent Reads <span className="estimate-tag">estimate</span></span>
-        <button className="collapse-btn" aria-label={open ? 'Collapse' : 'Expand'} onClick={() => setOpen((o) => !o)}>
-          {open ? '−' : '+'}
-        </button>
-      </h4>
+      <button type="button" className="panel-head" onClick={onToggleOpen} aria-expanded={open}>
+        <h4>Opponent Reads <span className="estimate-tag">estimate</span></h4>
+        <span className="chev">{open ? '−' : '+'}</span>
+      </button>
       {open && (
-        <div>
+        <div className="panel-body">
           {reads.map((r) => (
             <div className="read-seat" key={r.seat}>
               <div className="read-head">

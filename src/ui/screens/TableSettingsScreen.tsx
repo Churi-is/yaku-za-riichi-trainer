@@ -3,10 +3,13 @@ import { useSession } from '@state/session';
 import { useMatch } from '@state/gameLoop';
 import type { Difficulty, GameLength, TableSettings } from '@engine/types';
 
-function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
+function Toggle({ on, onClick, label, hint }: { on: boolean; onClick: () => void; label: string; hint?: string }) {
   return (
     <div className="setting-row">
-      <span>{label}</span>
+      <span className="lab">
+        {label}
+        {hint && <span className="hint">{hint}</span>}
+      </span>
       <button
         type="button"
         className={`toggle${on ? ' on' : ''}`}
@@ -26,7 +29,7 @@ function Segmented<T extends string>({
 }: { label: string; value: T; options: { v: T; l: string }[]; onChange: (v: T) => void }) {
   return (
     <div className="setting-row">
-      <span>{label}</span>
+      <span className="lab">{label}</span>
       <div className="seg" role="group" aria-label={label}>
         {options.map((o) => (
           <button
@@ -67,44 +70,63 @@ export default function TableSettingsScreen() {
 
   return (
     <div className="screen screen-narrow stack">
-      <div className="row spread">
-        <h1>Table Settings</h1>
+      <div className="screen-head">
+        <h1>Table Settings<span className="kan jp">ルール</span></h1>
         <button className="btn btn-ghost btn-sm" onClick={() => go('menu')}>← Menu</button>
       </div>
 
-      <div className="card stack">
-        <h3>Rules</h3>
+      <div className="card">
         <div className="settings-grid">
-          <Toggle label="Red fives (aka dora)" on={settings.redDora} onClick={() => setSettings({ redDora: !settings.redDora })} />
-          <Toggle label="Open tanyao (kuitan)" on={settings.kuitan} onClick={() => setSettings({ kuitan: !settings.kuitan })} />
-          <Toggle label="Two-han minimum" on={settings.twoHanMinimum} onClick={() => setSettings({ twoHanMinimum: !settings.twoHanMinimum })} />
-          <div />
-          <Segmented<GameLength>
-            label="Game length"
-            value={settings.gameLength}
-            options={[{ v: 'east', l: 'East only' }, { v: 'hanchan', l: 'Hanchan' }]}
-            onChange={(v) => setSettings({ gameLength: v })}
-          />
-          <Segmented<Difficulty>
-            label="Opponent difficulty"
-            value={settings.difficulty}
-            options={[{ v: 'easy', l: 'Easy' }, { v: 'normal', l: 'Normal' }, { v: 'hard', l: 'Hard' }]}
-            onChange={(v) => setSettings({ difficulty: v })}
-          />
+          <div>
+            <Toggle
+              label="Red fives (aka dora)"
+              hint="One red five per suit adds bonus han"
+              on={settings.redDora}
+              onClick={() => setSettings({ redDora: !settings.redDora })}
+            />
+            <Toggle
+              label="Open tanyao (kuitan)"
+              hint="All-simples counts even with an open hand"
+              on={settings.kuitan}
+              onClick={() => setSettings({ kuitan: !settings.kuitan })}
+            />
+            <Toggle
+              label="Two-han minimum"
+              hint="Hands under 2 han cannot win"
+              on={settings.twoHanMinimum}
+              onClick={() => setSettings({ twoHanMinimum: !settings.twoHanMinimum })}
+            />
+          </div>
+          <div>
+            <Segmented<GameLength>
+              label="Game length"
+              value={settings.gameLength}
+              options={[{ v: 'east', l: 'East only' }, { v: 'hanchan', l: 'Hanchan' }]}
+              onChange={(v) => setSettings({ gameLength: v })}
+            />
+            <Segmented<Difficulty>
+              label="Opponent difficulty"
+              value={settings.difficulty}
+              options={[{ v: 'easy', l: 'Easy' }, { v: 'normal', l: 'Normal' }, { v: 'hard', l: 'Hard' }]}
+              onChange={(v) => setSettings({ difficulty: v })}
+            />
+          </div>
         </div>
       </div>
 
       <div className="card stack">
-        <h3>Current rules</h3>
+        <h3 style={{ margin: 0 }}>Current rules</h3>
         <div className="rules-summary">
           {summaryChips(settings).map((c) => <span key={c} className="pill">{c}</span>)}
         </div>
-        <p className="muted" style={{ fontSize: 12 }}>
+        <p className="muted" style={{ fontSize: 12, margin: 0 }}>
           A reminder of what you selected — not a how-to. Adjust anything above before you start.
         </p>
       </div>
 
-      <button className="btn btn-primary" onClick={startMatch}>Start Match</button>
+      <div className="start-bar">
+        <button className="btn btn-primary" onClick={startMatch}>Start Match</button>
+      </div>
     </div>
   );
 }

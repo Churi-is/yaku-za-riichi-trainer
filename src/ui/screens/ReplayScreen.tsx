@@ -70,7 +70,7 @@ export default function ReplayScreen() {
   if (!matchLog) {
     return (
       <div className="screen stack">
-        <h1>Replay</h1>
+        <div className="screen-head"><h1>Replay</h1></div>
         <p className="muted">No match recorded yet.</p>
         <button className="btn btn-primary" onClick={() => go('menu')}>Back to menu</button>
       </div>
@@ -88,8 +88,8 @@ export default function ReplayScreen() {
 
   return (
     <div className="screen stack">
-      <div className="row spread">
-        <h1>Graded Replay</h1>
+      <div className="screen-head">
+        <h1>Graded Replay<span className="kan jp">牌譜</span></h1>
         <div className="row" style={{ gap: 8 }}>
           <button className="btn" onClick={() => go('summary')}>Summary →</button>
           <button className="btn btn-ghost btn-sm" onClick={() => go('menu')}>Menu</button>
