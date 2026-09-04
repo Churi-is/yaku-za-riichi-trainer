@@ -26,8 +26,14 @@ src/state/      session store + game loop        (Worker D)
 src/replay/     action log, session summary      (schema C, writer D)
 ```
 
+## Deploying
+
+Hosted on Cloudflare Pages at <https://riichi.churi.net>. Setup steps:
+`docs/DEPLOY-CLOUDFLARE.md`.
+
 ## Docs
 
 - `docs/PLAN.md` — how the build is split across four parallel workers
 - `docs/CONTRACTS.md` — the cross-worker seams (read before editing shared types)
 - `docs/worker-{A,B,C,D}-*.md` — per-worker briefs
+- `docs/DEPLOY-CLOUDFLARE.md` — Cloudflare Pages deployment guide
