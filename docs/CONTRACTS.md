@@ -117,3 +117,15 @@ from them, don't invent parallel shapes.
   - Internal (not contract): `rinshanDraw` no longer takes a kan ordinal, and it
     now splices the replacement tile out of the dead wall so a tile is never in
     two places at once.
++- 2026-09-04 — **Worker C: replay schema addition — `ActionLogEntry.handReveal`**
++  (optional). Additive only: log entries may carry
++  `handReveal: { revealedHands, winningTile }` on the FINAL entry of a hand so
++  `resolveWaitGuesses` can score practice guesses against the revealed hands.
++  Absent by default; the game loop writes it at hand end. Other entries
++  unchanged. Everything else in Worker C's scope consumes the existing
++  `PublicView` contract as frozen.
++- 2026-09-04 — **Worker C (analysis) + Worker D (UI/game loop) integration.**
++  No exported shape changes. `src/analysis` implements the three overlays and
++  replay grading against the engine's public surface
++  (`shanten`/`waits`/`ukeire`/`toPublicView`) as frozen; Worker D's adapters
++  probe the real modules and yield to them automatically.

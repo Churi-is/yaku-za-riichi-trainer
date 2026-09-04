@@ -32,6 +32,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    environmentMatchGlobs: [['src/ui/**', 'jsdom']],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 } as never);
