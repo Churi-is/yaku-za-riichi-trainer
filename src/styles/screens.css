@@ -85,9 +85,14 @@
 
 /* ---------- hand end / reveal ---------- */
 .handend-card { width: min(600px, 96vw); }
-.reveal-table {
+.reveal-table,
+.reveal-grid {
   display: grid; gap: 8px;
   grid-template-columns: 1fr;
+}
+@media (min-width: 760px) {
+  /* the replay reveal pairs seats up side by side on wider screens */
+  .reveal-grid { grid-template-columns: 1fr 1fr; }
 }
 .reveal-seat {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
