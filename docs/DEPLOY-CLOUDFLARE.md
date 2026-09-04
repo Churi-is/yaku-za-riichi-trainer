@@ -1,92 +1,54 @@
-# Deploying to Cloudflare Pages — `riichi.churi.net`
+# Deploying to Cloudflare Workers — `riichi.churi.net`
 
-This app is a fully static Vite build (no backend), so it deploys to
-**Cloudflare Pages** (not Workers) straight from the GitHub repo. Every push to
-`main` becomes a production deploy; every other branch/PR gets a preview URL.
+This app is a static Vite Single Page Application (SPA) deployed on **Cloudflare Workers** using **Workers Static Assets**. Every push to `main` deploys to production and serves at <https://riichi.churi.net>.
 
-Everything below is done in the Cloudflare web dashboard — no CLI needed.
-
-## Files in the repo that Pages uses
+## Configuration Files
 
 | File | Purpose |
 |---|---|
+| `wrangler.jsonc` | Defines the worker name, static assets directory (`./dist`), SPA not-found handling (`single-page-application`), and custom domain route (`riichi.churi.net`) |
 | `public/_headers` | Security headers + long-lived cache for hashed `/assets/*`, `no-cache` for `index.html` |
 | `public/_redirects` | SPA fallback (`/* → /index.html 200`) |
-| `.nvmrc` | Pins Node 22 for the Pages build image |
+| `.nvmrc` | Pins Node 22 for build environments |
 
-Vite copies `public/` verbatim into `dist/`, so these end up at the root of the
-deployed site.
+Vite copies `public/` verbatim into `dist/`, so `_headers` and `_redirects` are included in the assets bundle uploaded by Wrangler.
 
-## 1. Create the Pages project
+## Setup & Deployment
 
-1. Log in at <https://dash.cloudflare.com>.
-2. Left sidebar → **Compute (Workers & Pages)** → **Create** → pick the **Pages** tab → **Connect to Git**.
-3. Authorise Cloudflare's GitHub app if prompted, then select the
-   `Churi-is/yaku-za-riichi-trainer` repository → **Begin setup**.
-4. Fill in the build settings:
+### 1. Cloudflare Dashboard / Git Integration
 
-   | Setting | Value |
-   |---|---|
-   | Project name | `riichi-trainer` (anything — this only sets the `*.pages.dev` URL) |
-   | Production branch | `main` |
-   | Framework preset | **Vite** |
-   | Build command | `npm run build` |
-   | Build output directory | `dist` |
-   | Root directory | *(leave blank)* |
+When connecting your repository in the Cloudflare Dashboard under **Workers & Pages**:
 
-5. Expand **Environment variables (advanced)** and add:
+1. Go to **Compute (Workers & Pages)** → **Create** → **Workers** (or connect existing).
+2. Build settings:
+   - **Framework preset**: `None` or `Vite` (with `wrangler.jsonc` present, Wrangler handles asset deployment automatically)
+   - **Build command**: `npm run build`
+   - **Deploy command**: `npx wrangler deploy`
+   - **Output directory**: `dist` (or defined in `wrangler.jsonc`)
+3. Environment variables:
+   - `NODE_VERSION`: `22`
 
-   | Variable | Value |
-   |---|---|
-   | `NODE_VERSION` | `22` |
+### 2. Custom Domain (`riichi.churi.net`)
 
-   (`.nvmrc` also pins this; setting the variable is belt-and-braces.)
+`wrangler.jsonc` contains:
+```jsonc
+{
+  "routes": [
+    {
+      "pattern": "riichi.churi.net",
+      "custom_domain": true
+    }
+  ]
+}
+```
 
-6. Click **Save and Deploy**. The first build takes ~1–2 minutes. When it
-   finishes you'll get a `https://riichi-trainer.pages.dev` URL — open it and
-   confirm the game loads.
+- When deployed, Cloudflare will automatically bind the Worker to the custom domain `riichi.churi.net` in your Cloudflare zone `churi.net`.
+- **Note if migrating from Cloudflare Pages**: If `riichi.churi.net` was previously assigned to a Pages project or has an existing conflicting CNAME record in your Cloudflare DNS settings, remove the old Pages custom domain or conflicting DNS record in Cloudflare Dashboard so Wrangler can manage the custom domain.
 
-## 2. Attach the custom domain
+### 3. Local Deployment via CLI
 
-Because `churi.net` is already on Cloudflare, this is fully automatic.
-
-1. In the Pages project → **Custom domains** tab → **Set up a custom domain**.
-2. Enter `riichi.churi.net` → **Continue**.
-3. Cloudflare shows the DNS record it will create (a proxied `CNAME
-   riichi → riichi-trainer.pages.dev`). Click **Activate domain**.
-4. Wait for the status to change from *Initializing* to **Active** (usually
-   under a minute; up to a few minutes for the TLS certificate).
-
-> If `churi.net`'s DNS is **not** on Cloudflare, the same screen will instead
-> tell you to add a `CNAME riichi → riichi-trainer.pages.dev` record at your
-> DNS provider. Add it, then come back and click **Check DNS records**.
-
-## 3. Verify
-
-- <https://riichi.churi.net> loads the trainer over HTTPS (Pages issues and
-  renews the certificate automatically).
-- `https://riichi-trainer.pages.dev` still works as a fallback URL.
-- In DevTools → Network, `/assets/*.js` responds with
-  `cache-control: public, max-age=31536000, immutable` — confirms `_headers`
-  is being applied.
-
-## 4. Optional hardening (dashboard-only)
-
-- **Build watch paths** (Pages project → Settings → Builds & deployments):
-  add `docs/**` and `*.md` to *Exclude paths* so doc-only commits don't
-  trigger a deploy.
-- **Preview deployments**: same page, choose *All non-production branches*
-  (default) to get a URL per PR, or *None* to only deploy `main`.
-- **Access control for previews**: Settings → General → *Enable access
-  policy* restricts `*.pages.dev` preview URLs to your Cloudflare Access users
-  while leaving `riichi.churi.net` public.
-- **Redirect `pages.dev` → custom domain**: not needed, but if you want a
-  single canonical URL, add a Bulk Redirect in the zone dashboard
-  (Rules → Redirect Rules).
-
-## Day-to-day
-
-- **Deploy**: merge/push to `main`. Nothing else to do.
-- **Roll back**: Pages project → **Deployments** → `⋯` on an older production
-  deploy → **Rollback to this deployment**.
-- **Build logs**: click any deployment in the same list.
+You can also deploy manually via CLI:
+```bash
+npm run build
+npm run deploy
+```

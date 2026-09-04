@@ -3,6 +3,9 @@ dist
 .DS_Store
 *.local
 
+# Cloudflare Wrangler
+.wrangler
+
 # TypeScript incremental build info
 tsconfig.tsbuildinfo
 *.tsbuildinfo

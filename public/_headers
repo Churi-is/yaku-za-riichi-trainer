@@ -1,4 +1,4 @@
-# Cloudflare Pages headers (copied verbatim into dist/ by Vite)
+# Cloudflare Workers headers (copied verbatim into dist/ by Vite)
 
 /*
   X-Content-Type-Options: nosniff
