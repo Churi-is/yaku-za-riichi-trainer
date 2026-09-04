@@ -17,6 +17,15 @@ export interface ActionLogEntry {
   /** Public view from the HUMAN seat immediately before this action.
    *  Lets grading rerun the same analysis the overlays would have shown. */
   viewBefore: PublicView | null;
+  /**
+   * Optional, written on the FINAL entry of a hand by the game loop.
+   * Lets `resolveWaitGuesses` score practice guesses against the revealed
+   * hands (Worker C schema). Absent for hands without a recorded reveal.
+   */
+  handReveal?: {
+    revealedHands: Record<SeatIndex, TileId[]>;
+    winningTile: TileId | null;
+  };
 }
 
 export interface HandLog {

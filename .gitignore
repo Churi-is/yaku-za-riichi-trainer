@@ -2,4 +2,7 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# TypeScript incremental build info
+tsconfig.tsbuildinfo
 *.tsbuildinfo
