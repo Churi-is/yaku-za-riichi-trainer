@@ -14,11 +14,19 @@ import CallButtons from '@ui/components/CallButtons';
 import PauseMenu from '@ui/components/PauseMenu';
 import HandEndBanner from '@ui/components/HandEndBanner';
 import PersonalitiesIntro from '@ui/components/PersonalitiesIntro';
+import LayoutGuard from '@ui/dev/LayoutGuard';
+import { useViewport } from '@ui/lib/useViewport';
 
-import OverlayToggleBar from '@ui/overlays/OverlayToggleBar';
+import OverlayToggleBar, { type OverlayKey } from '@ui/overlays/OverlayToggleBar';
 import YakuAdvisorPanel from '@ui/overlays/YakuAdvisorPanel';
 import OpponentReadingPanel from '@ui/overlays/OpponentReadingPanel';
 import WaitGuessingPanel from '@ui/overlays/WaitGuessingPanel';
+
+const OVERLAY_TABS: { key: OverlayKey; label: string }[] = [
+  { key: 'yakuAdvisor', label: 'Yaku' },
+  { key: 'opponentReading', label: 'Reads' },
+  { key: 'waitGuessing', label: 'Waits' },
+];
 
 export default function MatchScreen() {
   const go = useSession((s) => s.go);
@@ -38,9 +46,23 @@ export default function MatchScreen() {
   const [paused, setPaused] = useState(false);
   const [riichiMode, setRiichiMode] = useState(false);
   const [introDismissed, setIntroDismissed] = useState(false);
+  const [expandedOverlay, setExpandedOverlay] = useState<OverlayKey | null>(null);
+
+  const viewport = useViewport();
+  const mobile = viewport !== 'desktop';
 
   // Reset intro when a new match starts (new personalities set).
   useEffect(() => { setIntroDismissed(false); }, [seatPersonalities]);
+
+  // Close the mobile overlay sheet on Escape.
+  useEffect(() => {
+    if (!mobile || !expandedOverlay) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpandedOverlay(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobile, expandedOverlay]);
 
   const seatName = useMemo(() => {
     const map: Record<number, string> = { 0: 'You' };
@@ -89,8 +111,14 @@ export default function MatchScreen() {
 
   const anyOverlayOn = overlays.yakuAdvisor || overlays.opponentReading || overlays.waitGuessing;
 
+  const matchCls = [
+    'match',
+    mobile ? (viewport === 'portrait' ? 'match-portrait' : 'match-landscape') : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className="match">
+    <div className={matchCls}>
+      <LayoutGuard />
       <div className="match-top">
         <div className="row" style={{ gap: 8 }}>
           <button className="btn btn-sm" onClick={() => setPaused(true)}>☰ Pause</button>
@@ -99,21 +127,55 @@ export default function MatchScreen() {
         <div className="row" style={{ gap: 6 }}>
           <span className="muted" style={{ fontSize: 12 }}>You: {me.points.toLocaleString()}</span>
         </div>
-        <OverlayToggleBar />
+        <OverlayToggleBar
+          expanded={mobile ? expandedOverlay : undefined}
+          onToggle={mobile ? setExpandedOverlay : undefined}
+        />
+        {/* Mobile: collapsed overlay pills, same header row (scrolls if tight, §8). */}
+        {anyOverlayOn && mobile && (
+          <div className="overlay-pills" role="group" aria-label="Expanded training overlays">
+            {OVERLAY_TABS.filter((t) => overlays[t.key]).map((t) => (
+              <button
+                key={t.key}
+                className={`overlay-pill${expandedOverlay === t.key ? ' on' : ''}`}
+                aria-expanded={expandedOverlay === t.key}
+                onClick={() => setExpandedOverlay(expandedOverlay === t.key ? null : t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="table-wrap">
         <div className="table">
           {/* Top opponent (seat 2) */}
           <div className="seat-top">
-            <SeatInfo seat={opp2} personalityName={seatName(2)} isTurn={view.turn === 2} isDealer={view.dealer === 2} thinking={aiThinking} />
+            <SeatInfo
+              seat={opp2}
+              personalityName={seatName(2)}
+              isTurn={view.turn === 2}
+              isDealer={view.dealer === 2}
+              thinking={aiThinking}
+              orientation={mobile ? 'top' : 'bottom'}
+              compact={mobile}
+            />
             <DiscardRiver river={opp2.river} orientation="top" />
           </div>
 
           {/* Left opponent (seat 3) */}
           <div className="seat-left">
-            <SeatInfo seat={opp3} personalityName={seatName(3)} isTurn={view.turn === 3} isDealer={view.dealer === 3} thinking={aiThinking} />
-            <DiscardRiver river={opp3.river} orientation="left" />
+            <SeatInfo
+              seat={opp3}
+              personalityName={seatName(3)}
+              isTurn={view.turn === 3}
+              isDealer={view.dealer === 3}
+              thinking={aiThinking}
+              orientation={mobile ? 'left' : 'bottom'}
+              compact={mobile}
+            />
+            <DiscardRiver river={opp3.river} orientation={mobile ? 'left' : 'bottom'} />
           </div>
 
           {/* Center */}
@@ -126,8 +188,16 @@ export default function MatchScreen() {
 
           {/* Right opponent (seat 1) */}
           <div className="seat-right">
-            <SeatInfo seat={opp1} personalityName={seatName(1)} isTurn={view.turn === 1} isDealer={view.dealer === 1} thinking={aiThinking} />
-            <DiscardRiver river={opp1.river} orientation="right" />
+            <SeatInfo
+              seat={opp1}
+              personalityName={seatName(1)}
+              isTurn={view.turn === 1}
+              isDealer={view.dealer === 1}
+              thinking={aiThinking}
+              orientation={mobile ? 'right' : 'bottom'}
+              compact={mobile}
+            />
+            <DiscardRiver river={opp1.river} orientation={mobile ? 'right' : 'bottom'} />
           </div>
 
           {/* Human (seat 0) river */}
@@ -136,12 +206,49 @@ export default function MatchScreen() {
           </div>
         </div>
 
-        {/* Overlay layer — floats top-right, scrolls, never covers rivers on wide screens */}
-        {anyOverlayOn && (
+        {/* Desktop (and tablet): floating panel stack — never covers rivers on wide screens. */}
+        {anyOverlayOn && !mobile && (
           <div className="overlay-layer">
             {overlays.yakuAdvisor && <YakuAdvisorPanel view={view} />}
             {overlays.opponentReading && <OpponentReadingPanel view={view} seatName={seatName} />}
             {overlays.waitGuessing && <WaitGuessingPanel view={view} seatName={seatName} />}
+          </div>
+        )}
+
+        {/* Mobile overlay sheet — floats over the table area only, never the call
+            bar or hand dock (intended overlap, §10). */}
+        {mobile && expandedOverlay && overlays[expandedOverlay] && (
+          <div
+            className="overlay-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${OVERLAY_TABS.find((t) => t.key === expandedOverlay)?.label} overlay`}
+          >
+            <div className="sheet-tabs" role="tablist">
+              {OVERLAY_TABS.filter((t) => overlays[t.key]).map((t) => (
+                <button
+                  key={t.key}
+                  role="tab"
+                  aria-selected={expandedOverlay === t.key}
+                  className={`sheet-tab${expandedOverlay === t.key ? ' on' : ''}`}
+                  onClick={() => setExpandedOverlay(t.key)}
+                >
+                  {t.label}
+                </button>
+              ))}
+              <button
+                className="sheet-close"
+                aria-label="Close overlays"
+                onClick={() => setExpandedOverlay(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="sheet-body">
+              {expandedOverlay === 'yakuAdvisor' && <YakuAdvisorPanel view={view} />}
+              {expandedOverlay === 'opponentReading' && <OpponentReadingPanel view={view} seatName={seatName} />}
+              {expandedOverlay === 'waitGuessing' && <WaitGuessingPanel view={view} seatName={seatName} />}
+            </div>
           </div>
         )}
       </div>
@@ -175,7 +282,7 @@ export default function MatchScreen() {
           locked={!canAct || isCallWindow}
         />
         {!humanTurn && !handEnd && !matchResult && (
-          <div className="center muted" style={{ fontSize: 12, marginTop: 4 }}>
+          <div className="center muted hand-status" style={{ fontSize: 12, marginTop: 4 }}>
             {aiThinking ? 'Opponents are playing…' : 'Waiting…'}
           </div>
         )}

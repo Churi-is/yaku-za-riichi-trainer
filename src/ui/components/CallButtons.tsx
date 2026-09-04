@@ -53,7 +53,8 @@ export default function CallButtons({
   if (hasRiichi) buttons.push(<button key="riichi" className="btn btn-riichi" onClick={onEnterRiichiMode}>Riichi</button>);
   if (pass) buttons.push(<button key="pass" className="btn" onClick={() => onAct(pass.action)}>Pass</button>);
 
-  if (buttons.length === 0) return <div className="call-bar" />;
+  // No actions: reserve no space at all (mobile chrome stays minimal, §8).
+  if (buttons.length === 0) return null;
 
   return (
     <div className="call-bar">
