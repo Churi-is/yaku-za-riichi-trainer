@@ -6,7 +6,8 @@
 .menu-shell {
   min-height: 100%;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 20px; padding: 32px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  gap: 20px;
+  padding: calc(32px + env(safe-area-inset-top, 0px)) 18px calc(24px + env(safe-area-inset-bottom, 0px));
   text-align: center; position: relative; overflow: hidden;
 }
 .menu-kanji {
@@ -68,9 +69,14 @@
 
 /* ---------- hand end / reveal ---------- */
 .handend-card { width: min(600px, 96vw); }
-.reveal-table {
+.reveal-table,
+.reveal-grid {
   display: grid; gap: 8px;
   grid-template-columns: 1fr;
+}
+@media (min-width: 760px) {
+  .reveal-table,
+  .reveal-grid { grid-template-columns: 1fr 1fr; }
 }
 .reveal-seat {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -91,8 +97,14 @@
 .turn-head {
   width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
   cursor: pointer; background: none; border: 0; text-align: left; color: var(--ink);
+  flex-wrap: wrap;
 }
 .turn-head:hover { background: rgba(255, 255, 255, 0.04); }
+.turn-head strong { flex: 1 1 auto; min-width: 0; }
+.turn-head .metric { margin-left: auto; white-space: nowrap; }
+@media (max-width: 460px) {
+  .turn-head .metric { order: 3; flex-basis: 100%; margin-left: 0; white-space: normal; }
+}
 .grade-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
 .grade-Excellent { background: #14532d; color: #86efac; }
 .grade-Good { background: #166534; color: #bbf7d0; }

@@ -84,6 +84,19 @@ export default function TableBoard({
         {L.melds.map(renderTile)}
         {([0, 1, 2, 3] as SeatIndex[]).flatMap((s) => L.ponds[s]).map(renderTile)}
 
+        {L.hand.length > 0 && (
+          <span
+            className={`hand-tray abs${locked ? '' : ' active'}`}
+            aria-hidden="true"
+            style={{
+              left: L.handBox.x,
+              top: L.handBox.y,
+              width: L.handBox.w,
+              height: L.handBox.h,
+            }}
+          />
+        )}
+
         {L.hand.map((t) => (
           <Tile
             key={t.key}

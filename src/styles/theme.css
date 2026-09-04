@@ -149,10 +149,11 @@ svg { display: block; }
 }
 
 /* ---------- shared screen chrome ---------- */
-.screen { padding: 18px 14px 32px; max-width: 1000px; margin: 0 auto; }
+.screen { padding: calc(18px + env(safe-area-inset-top, 0px)) 14px 32px; max-width: 1000px; margin: 0 auto; }
 .screen-narrow { max-width: 720px; }
 .screen-head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap;
   padding-bottom: 10px; margin-bottom: 14px;
   border-bottom: 1px solid var(--hairline);
 }

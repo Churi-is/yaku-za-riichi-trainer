@@ -13,8 +13,8 @@
  * order. Melds continue past the end of their seat's hand (that seat's right),
  * oriented like the hand; if that slot runs out of felt they wrap to the other
  * side of the hand. The human hand sits face-up along the bottom edge with the
- * drawn tile separated, and the player's melds to its right (above it when
- * they would not fit beside it).
+ * drawn tile separated, and the player's own melds sit beside it or stack on
+ * the bottom strip beside the player's river.
  */
 import type { Meld, PublicView, SeatIndex, TileId } from '@engine/types';
 import { sortTiles } from '@ui/tiles';
@@ -35,7 +35,10 @@ export interface BoardMetrics {
 }
 
 export const METRICS: Record<BoardVariant, BoardMetrics> = {
-  portrait: { W: 360, H: 510, tile: { w: 18, h: 25 }, hand: { w: 22, h: 31 }, gap: 5, rim: 6, stick: { w: 40, h: 6 }, cube: 56 },
+  // Portrait is the primary target: keep the board short enough to scale up on
+  // a phone (larger tiles), while leaving a comfortable central band so the
+  // dora tray never underlaps the left/right rivers.
+  portrait: { W: 410, H: 450, tile: { w: 23, h: 30 }, hand: { w: 26, h: 36 }, gap: 6, rim: 8, stick: { w: 44, h: 7 }, cube: 58 },
   landscape: { W: 880, H: 560, tile: { w: 26, h: 35 }, hand: { w: 32, h: 43 }, gap: 8, rim: 10, stick: { w: 60, h: 8 }, cube: 64 },
   compact: { W: 640, H: 420, tile: { w: 20, h: 27 }, hand: { w: 24, h: 33 }, gap: 6, rim: 8, stick: { w: 48, h: 7 }, cube: 58 },
 };
@@ -128,8 +131,11 @@ export function layoutBoard(view: PublicView, variant: BoardVariant): BoardLayou
   const pondBoxes = {} as BoardLayout['pondBoxes'];
   const ponds = {} as BoardLayout['ponds'];
 
-  // own (seat 0): bottom, row 1 at the bottom edge
-  const p0 = { x: Math.round((W - pondW) / 2), y: H - rim - pondH };
+  // own (seat 0): bottom river sits ABOVE the player's hand, not underneath
+  // it. The hand hugs the bottom edge; the river fills the gap between the
+  // centre and the hand so it stays readable while the player discards.
+  const handY = H - rim - m.hand.h;
+  const p0 = { x: Math.round((W - pondW) / 2), y: Math.max(rim, handY - gap - pondH) };
   pondBoxes[0] = { ...p0, w: pondW, h: pondH };
   ponds[0] = view.seats[0].river.map((d, i) => {
     const r = Math.floor(i / 6), c = i % 6;
@@ -249,28 +255,56 @@ export function layoutBoard(view: PublicView, variant: BoardVariant): BoardLayou
   }
   const handBox = { x: hx, y: hy, w: rowW, h: m.hand.h };
 
-  // ---- the human melds: to the right of the hand (their right hand side),
-  //      wrapping to a right-aligned row above the hand when they won't fit
+  // ---- the human melds: beside the hand when it can fit; otherwise they
+  //      stack in the roomy bottom strip to the LEFT/RIGHT of the player's pond
+  //      (below the opponents' side rivers, so they never overlap a river).
   const ownMelds = view.seats[0].melds;
   const ownSpan = (meld: Meld): number => meldSpan(meld, 0, 'x');
   const totalOwn = ownMelds.reduce((a, md) => a + ownSpan(md) + 8, 0);
   const beside = rowW > 0 && hx + rowW + 10 + totalOwn <= W - rim;
-  let ox = hx + rowW + 10;
   let oy = H - rim - tile.h;
-  if (!beside) {
-    ox = W - rim;
-    oy = p0.y - m.stick.h - 8 - tile.h;
-  }
-  for (const meld of ownMelds) {
-    const w = ownSpan(meld);
-    let x: number;
-    if (beside) { x = ox; ox += w + 8; }
-    else { ox -= w; x = ox; ox -= 8; }
-    let cx = x;
-    for (const t of meld.tiles) {
-      const rot = calledRot(meld, t, 0);
-      melds.push({ id: t, x: cx, y: oy, rot, key: `m0-${melds.length}` });
-      cx += foot(m, rot).w + 1;
+  if (beside) {
+    let ox = hx + rowW + 10;
+    oy = H - rim - tile.h;
+    for (const meld of ownMelds) {
+      const w = ownSpan(meld);
+      let cx = ox;
+      for (const t of meld.tiles) {
+        const rot = calledRot(meld, t, 0);
+        melds.push({ id: t, x: cx, y: oy, rot, key: `m0-${melds.length}` });
+        cx += foot(m, rot).w + 1;
+      }
+      ox += w + 8;
+    }
+  } else {
+    // Two vertical "rails" in the bottom strip: one beside each side of the
+    // player's river, stacked downward. They stay below the side rivers and
+    // above the hand.
+    const rightX = p0.x + pondW + gap + 4;
+    const leftX = p0.x - gap - 4; // right edge of the left rail
+    const railTop = p0.y;
+    const railBottom = handY - gap;
+    let rightY = railTop;
+    let leftY = railTop;
+    for (const meld of ownMelds) {
+      const w = ownSpan(meld);
+      let x: number;
+      let y: number;
+      if (rightY + tile.h <= railBottom) {
+        x = rightX;
+        y = rightY;
+        rightY += tile.h + gap;
+      } else {
+        x = leftX - w;
+        y = leftY;
+        leftY += tile.h + gap;
+      }
+      let cx = x;
+      for (const t of meld.tiles) {
+        const rot = calledRot(meld, t, 0);
+        melds.push({ id: t, x: cx, y: y, rot, key: `m0-${melds.length}` });
+        cx += foot(m, rot).w + 1;
+      }
     }
   }
 

@@ -127,15 +127,18 @@ export default function MatchScreen() {
         <OverlayDock view={view} seatName={seatName} callWindow={isCallWindow && canAct} />
       </div>
 
-      <footer className="dock-bottom">
-        <CallBar
-          legal={humanLegal}
-          riichiMode={riichiMode}
-          onEnterRiichiMode={() => setRiichiMode(true)}
-          onCancelRiichi={() => setRiichiMode(false)}
-          onAct={act}
-        />
-      </footer>
+      {(humanLegal.length > 0 || (humanTurn && !isCallWindow)) && (
+        <footer className="dock-bottom">
+          <CallBar
+            legal={humanLegal}
+            riichiMode={riichiMode}
+            onEnterRiichiMode={() => setRiichiMode(true)}
+            onCancelRiichi={() => setRiichiMode(false)}
+            onAct={act}
+            hint={humanTurn && !isCallWindow ? 'Tap a tile to discard' : undefined}
+          />
+        </footer>
+      )}
 
       {showIntro && (
         <PersonalitiesIntro personalities={seatPersonalities} onStart={() => setIntroDismissed(true)} />

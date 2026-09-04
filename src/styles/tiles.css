@@ -16,6 +16,8 @@
     0 calc(var(--th) * 0.09) calc(var(--th) * 0.12) rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   padding: 0; color: #20242a; user-select: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
   overflow: hidden;
 }
 .tile-art {
@@ -34,9 +36,20 @@
 
 /* orientation on the table (top-down: opponents' tiles are rotated) */
 .tile.rot90, .tile.rot270 { width: var(--th); height: var(--tw); }
-.tile.rot90  .tile-art { transform: rotate(90deg); }
+/* Rotate the whole face box (not the artwork inside the box) so a sideways
+   tile keeps its own upright aspect ratio: the SVG is scaled to the same
+   upright face size it would have at rotation 0, then the box is rotated to
+   fill the sideways tile. This fixes the sideways faces rendering ~40% smaller
+   than upright faces. */
+.tile.rot90 .tile-art,
+.tile.rot270 .tile-art {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: calc(var(--tw) - 2px); height: calc(var(--th) - 2px);
+  transform: translate(-50%, -50%) rotate(90deg);
+}
 .tile.rot180 .tile-art { transform: rotate(180deg); }
-.tile.rot270 .tile-art { transform: rotate(270deg); }
+.tile.rot270 .tile-art { transform: translate(-50%, -50%) rotate(270deg); }
 
 /* face-down tile backs */
 .tile-back {

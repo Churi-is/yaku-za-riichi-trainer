@@ -8,6 +8,8 @@ export interface CallBarProps {
   onEnterRiichiMode: () => void;
   onCancelRiichi: () => void;
   onAct: (action: Action) => void;
+  /** Shown when there are no call/discard buttons (e.g. your discard turn). */
+  hint?: string;
 }
 
 const KANJI: Record<string, string> = {
@@ -15,7 +17,7 @@ const KANJI: Record<string, string> = {
 };
 
 export default function CallBar({
-  legal, riichiMode, onEnterRiichiMode, onCancelRiichi, onAct,
+  legal, riichiMode, onEnterRiichiMode, onCancelRiichi, onAct, hint,
 }: CallBarProps) {
   const tsumo = legal.find((l) => l.action.type === 'tsumo');
   const ron = legal.find((l) => l.action.type === 'ron');
@@ -56,6 +58,7 @@ export default function CallBar({
   return (
     <div className="call-bar">
       {buttons}
+      {buttons.length === 0 && hint && <span className="call-hint" role="status">{hint}</span>}
     </div>
   );
 }

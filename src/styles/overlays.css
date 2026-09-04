@@ -10,7 +10,9 @@
   display: flex; flex-direction: column; min-height: 0;
   background: linear-gradient(180deg, #17110a, #0e0a06);
   border-top: 1px solid var(--hairline);
-  max-height: 44%;
+  /* Keep the felt (and the player's tappable hand) big enough to play on a
+     phone: a bottom sheet that never eats more than a third of the screen. */
+  max-height: min(40%, 320px);
 }
 .overlay-dock.min { max-height: 38px; }
 .dock-head {
