@@ -8,7 +8,6 @@ import { useOrientation } from '@ui/hooks/useOrientation';
 
 import ScoreStrip from '@ui/components/ScoreStrip';
 import TableBoard from '@ui/components/TableBoard';
-import HandView from '@ui/components/HandView';
 import CallBar from '@ui/components/CallBar';
 import PauseMenu from '@ui/components/PauseMenu';
 import HandEndBanner from '@ui/components/HandEndBanner';
@@ -113,21 +112,22 @@ export default function MatchScreen() {
 
       <div className="match-main">
         <div className="felt-wrap">
-          <TableBoard view={view} seatName={seatName} aiThinking={aiThinking} orient={orient} compact={compact} />
+          <TableBoard
+            view={view}
+            seatName={seatName}
+            aiThinking={aiThinking}
+            orient={orient}
+            compact={compact}
+            discardActions={humanLegal.filter((l) => l.action.type === 'discard')}
+            onDiscard={onDiscard}
+            riichiMode={riichiMode}
+            locked={!canAct || isCallWindow}
+          />
         </div>
         <OverlayDock view={view} seatName={seatName} callWindow={isCallWindow && canAct} />
       </div>
 
       <footer className="dock-bottom">
-        <HandView
-          hand={view.hand}
-          drawnTile={view.drawnTile}
-          melds={me.melds}
-          discardActions={humanLegal.filter((l) => l.action.type === 'discard')}
-          onDiscard={onDiscard}
-          riichiMode={riichiMode}
-          locked={!canAct || isCallWindow}
-        />
         <CallBar
           legal={humanLegal}
           riichiMode={riichiMode}

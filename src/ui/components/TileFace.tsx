@@ -131,7 +131,8 @@ export default function TileFace({ id }: TileFaceProps) {
 
   return (
     <svg viewBox="0 0 60 84" aria-hidden="true" focusable="false">
-      {art}
+      {/* scale the art up inside the face: real tiles print edge-to-edge */}
+      <g transform="translate(30 42) scale(1.18) translate(-30 -43)">{art}</g>
     </svg>
   );
 }

@@ -89,28 +89,6 @@
 .board-host { position: absolute; inset: 0; }
 .board { position: absolute; left: 50%; top: 50%; }
 
-/* seat plates on the felt (positioned by the layout model) */
-.plate-box { display: flex; }
-.plate-box .seat-plate { width: 100%; height: 100%; justify-content: center; }
-.seat-plate {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 10px;
-  padding: 2px 6px;
-  background: rgba(10, 8, 5, 0.55);
-  border: 1px solid rgba(216, 180, 90, 0.22);
-  border-radius: 4px;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-}
-.seat-plate .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
-.seat-plate .wd { color: var(--gold); font-family: var(--font-jp); }
-.seat-plate .st { color: var(--muted); }
-.seat-plate.turn { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
-.seat-plate.riichi { border-color: var(--red-hi); }
-.seat-plate.riichi .nm { color: #f0b6b6; }
-.plate-v { writing-mode: vertical-rl; text-orientation: mixed; padding: 6px 2px; }
-
 /* centre: round wind cube + dead wall + sticks (a self-contained card) */
 .center-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .dora-tray {
@@ -181,10 +159,6 @@
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; gap: 6px;
 }
-.hand-melds { display: flex; gap: 10px; justify-content: flex-end; align-items: center; min-height: 0; padding-right: 2px; flex-wrap: wrap; max-width: 100%; }
-.hand-melds:empty { display: none; }
-.hand-row { display: flex; gap: 2px; justify-content: center; align-items: flex-end; }
-.drawn-sep { width: clamp(6px, calc((100% - 26px) / var(--hand-n, 15) * 0.3), 14px); flex: none; }
 .turn-status { color: var(--gold); border-color: var(--gold-dim); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 
@@ -208,15 +182,8 @@
 .call-btn.ghost { background: transparent; border-color: var(--panel-border); color: var(--muted); box-shadow: none; }
 .call-hint { color: var(--gold); font-size: 12px; letter-spacing: 0.06em; }
 
-/* meld base (MeldArea) */
-.opp-melds { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
-
 @media (min-width: 700px) and (orientation: landscape) {
   .match-main { flex-direction: row; }
-  /* room to sit the called melds beside the hand, like a real table */
-  .hand-dock { display: flex; flex-direction: row-reverse; align-items: flex-end; gap: 14px; }
-  .hand-dock .hand-row { flex: 1; }
-  .hand-melds { flex-direction: column; align-items: flex-end; gap: 6px; padding-bottom: 2px; }
 }
 
 @media (max-width: 520px) {

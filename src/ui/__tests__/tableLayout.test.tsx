@@ -38,13 +38,18 @@ describe('top-down table layout', () => {
       expect(st.left !== '' || st.transform !== '').toBe(true);
       expect(st.top !== '' || st.transform !== '').toBe(true);
     });
-    expect(container.querySelectorAll('.plate-box').length).toBe(3);
+    // no name plates on the felt: the score strip up top is the scoreboard
+    expect(container.querySelectorAll('.plate-box').length).toBe(0);
+    expect(board!.querySelector('.seat-plate')).toBeNull();
     expect(container.querySelector('.wind-cube')).toBeTruthy();
     expect(container.querySelector('.dora-tray')).toBeTruthy();
     expect(container.querySelectorAll('.score-plate').length).toBe(4);
-    // hand + calls live below the felt, in that order
+    // the human hand sits on the felt, face-up and tappable
+    const handTiles = board!.querySelectorAll('.tile-clickable');
+    expect(handTiles.length).toBeGreaterThanOrEqual(13);
+    // calls stay below the felt; no hand row or redundant plates down there
     const dock = container.querySelector('.dock-bottom');
-    expect(dock!.querySelector('.hand-dock')).toBeTruthy();
+    expect(dock!.querySelector('.hand-dock')).toBeNull();
     expect(dock!.querySelector('.call-bar')).toBeTruthy();
     // no redundant points plate or waiting row in the dock: the score strip
     // carries points and the turn status lives up with the trainer toggles

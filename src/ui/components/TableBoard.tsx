@@ -1,13 +1,14 @@
 /**
  * TableBoard — renders the deterministic layout from @ui/table/layout:
- * every plate, back, discard and meld tile is absolutely positioned in board
+ * every back, discard, meld and hand tile is absolutely positioned in board
  * coordinates inside a uniformly scaled board. No flex/grid/percentage layout
  * touches the table, so it is pixel-identical across browsers and viewports.
+ * The human hand lives on the felt too (face-up along the bottom edge, drawn
+ * tile set apart, own melds beside it) and stays tappable.
  */
 import { useRef, type CSSProperties } from 'react';
-import type { PublicView, SeatIndex } from '@engine/types';
+import type { LegalAction, PublicView, SeatIndex, TileId } from '@engine/types';
 import Tile, { type TileRotation } from './Tile';
-import SeatPlate from './SeatPlate';
 import TableCenter from './TableCenter';
 import { useFitScale } from '@ui/hooks/useFitScale';
 import type { Orientation } from '@ui/hooks/useOrientation';
@@ -19,19 +20,44 @@ export interface TableBoardProps {
   aiThinking: boolean;
   orient: Orientation;
   compact?: boolean;
+  /** discard interaction for the on-table hand */
+  discardActions: LegalAction[];
+  onDiscard: (tile: TileId, riichi: boolean) => void;
+  riichiMode: boolean;
+  locked: boolean;
 }
 
-export default function TableBoard({ view, seatName, aiThinking, orient, compact = false }: TableBoardProps) {
+export default function TableBoard({
+  view, seatName: _seatName, aiThinking: _aiThinking, orient, compact = false,
+  discardActions, onDiscard, riichiMode, locked,
+}: TableBoardProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const variant: BoardVariant = orient === 'portrait' ? 'portrait' : compact ? 'compact' : 'landscape';
   const L = layoutBoard(view, variant);
   const scale = useFitScale(hostRef, L.m.W, L.m.H);
 
-  const pos = (t: { x: number; y: number }): CSSProperties => ({
+  const plain = new Set<TileId>();
+  const riichiable = new Set<TileId>();
+  for (const la of discardActions) {
+    if (la.action.type !== 'discard') continue;
+    if (la.action.riichi) riichiable.add(la.action.tile);
+    else plain.add(la.action.tile);
+  }
+  const canDiscard = (t: TileId): boolean => {
+    if (locked) return false;
+    if (riichiMode) return riichiable.has(t);
+    return plain.has(t) || riichiable.has(t);
+  };
+  const doDiscard = (t: TileId) => {
+    if (!canDiscard(t)) return;
+    onDiscard(t, riichiMode && riichiable.has(t));
+  };
+
+  const pos = (t: { x: number; y: number }, box = L.m.tile): CSSProperties => ({
     left: t.x,
     top: t.y,
-    '--tw': `${L.m.tile.w}px`,
-    '--th': `${L.m.tile.h}px`,
+    '--tw': `${box.w}px`,
+    '--th': `${box.h}px`,
   }) as CSSProperties;
 
   const renderTile = (t: PlacedTile) => (
@@ -54,26 +80,23 @@ export default function TableBoard({ view, seatName, aiThinking, orient, compact
         data-orient={orient}
         style={{ width: L.m.W, height: L.m.H, transform: `translate(-50%, -50%) scale(${scale})` }}
       >
-        {L.plates.map((p) => (
-          <div
-            key={p.seat}
-            className="abs plate-box"
-            style={{ left: p.x, top: p.y, width: p.w, height: p.h }}
-          >
-            <SeatPlate
-              seat={view.seats[p.seat]}
-              name={seatName(p.seat)}
-              isTurn={view.turn === p.seat}
-              isDealer={view.dealer === p.seat}
-              thinking={aiThinking}
-              vertical={p.vertical}
-            />
-          </div>
-        ))}
-
         {L.backs.map(renderTile)}
         {L.melds.map(renderTile)}
         {([0, 1, 2, 3] as SeatIndex[]).flatMap((s) => L.ponds[s]).map(renderTile)}
+
+        {L.hand.map((t) => (
+          <Tile
+            key={t.key}
+            id={t.id}
+            size="rv"
+            className="abs"
+            style={pos(t, L.m.hand)}
+            onClick={() => doDiscard(t.id)}
+            disabled={!canDiscard(t.id)}
+            dimmed={!locked && riichiMode && !riichiable.has(t.id)}
+            title={t.key === 'h-drawn' ? 'just drawn' : undefined}
+          />
+        ))}
 
         {L.sticks.map((s) => (
           <span
@@ -91,7 +114,12 @@ export default function TableBoard({ view, seatName, aiThinking, orient, compact
 
         <div
           className="board-center abs"
-          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            '--cube': `${L.m.cube}px`,
+          } as CSSProperties}
         >
           <TableCenter view={view} />
         </div>
