@@ -3,9 +3,6 @@ dist
 .DS_Store
 *.local
 
-# Playwright layout audit outputs (scripts/layout-audit.mjs)
-artifacts/
-
 # Cloudflare Wrangler
 .wrangler
 

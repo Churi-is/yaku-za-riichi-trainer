@@ -34,7 +34,6 @@ Hosted on Cloudflare Workers at <https://riichi.churi.net>. Setup steps:
 ## Docs
 
 - `docs/PLAN.md` — how the build is split across four parallel workers
-- `docs/PLAN-MOBILE-LAYOUT.md` — portrait/landscape match-table layout plan (sideways side-seat tiles, no-clip/no-overlap invariants)
 - `docs/CONTRACTS.md` — the cross-worker seams (read before editing shared types)
 - `docs/worker-{A,B,C,D}-*.md` — per-worker briefs
 - `docs/DEPLOY-CLOUDFLARE.md` — Cloudflare Workers deployment guide
