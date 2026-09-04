@@ -1,5 +1,7 @@
 /** TableCenter — the middle of the table: dead wall dora tray, wind cube,
- *  honba/riichi sticks and the live wall count. */
+ *  honba/riichi sticks and the live wall count. Geometry mirrors
+ *  centreMetrics() in @ui/table/layout (tray, label under the tray, cube,
+ *  status row). */
 import type { PublicView, Wind } from '@engine/types';
 import Tile from './Tile';
 
@@ -19,10 +21,12 @@ export default function TableCenter({ view }: TableCenterProps) {
   const hidden = Math.max(0, 5 - indicators.length);
   return (
     <div className="center-block">
-      <div className="dora-tray" aria-label="dora indicators">
-        <span className="lbl">Dora</span>
-        {indicators.map((id, i) => <Tile key={i} id={id} size="rv" />)}
-        {Array.from({ length: hidden }).map((_, i) => <Tile key={`h${i}`} id={0} size="rv" faceDown />)}
+      <div className="dora-group" aria-label="dora indicators">
+        <div className="dora-tray">
+          {indicators.map((id, i) => <Tile key={i} id={id} size="rv" />)}
+          {Array.from({ length: hidden }).map((_, i) => <Tile key={`h${i}`} id={0} size="rv" faceDown />)}
+        </div>
+        <span className="dora-lbl">Dora</span>
       </div>
 
       <div className="wind-cube" aria-label={`${WIND_LABEL[view.roundWind]} ${view.roundNumber}`}>

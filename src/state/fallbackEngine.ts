@@ -255,7 +255,7 @@ export function getLegalActions(state: GameState, seat: SeatIndex): LegalAction[
 
     // Tsumo?
     if (p.drawnTile !== null) {
-      const counts = idsToCounts(full.map(kindOf));
+      const counts = idsToCounts(full);
       if (shantenFromCounts(counts, meldCount) === -1 && hasYakuTsumo(state, seat, full)) {
         actions.push({ action: { type: 'tsumo', seat }, label: 'Tsumo' });
       }
@@ -323,7 +323,7 @@ function callActionsFor(state: GameState, seat: SeatIndex, cw: NonNullable<CallS
   // If in riichi, no melds allowed
   if (p.riichi) return actions;
 
-  const counts = idsToCounts(p.hand.map(kindOf));
+  const counts = idsToCounts(p.hand);
 
   // Pon
   if (counts[tk] >= 2) {
@@ -360,7 +360,7 @@ function kanDeclareActions(state: GameState, seat: SeatIndex, full: TileId[]): L
   const p = state.players[seat];
   const out: LegalAction[] = [];
   if (state.wall.length < 1) return out;
-  const counts = idsToCounts(full.map(kindOf));
+  const counts = idsToCounts(full);
   // Ankan: 4 in hand
   for (let k = 0; k < 34; k++) {
     if (counts[k] === 4) {
@@ -586,7 +586,7 @@ function potentialCalls(s: GameState, seat: SeatIndex, tile: TileId, from: SeatI
   // ron
   if (canRon(s, seat, tile)) return true;
   if (p.riichi) return false;
-  const counts = idsToCounts(p.hand.map(kindOf));
+  const counts = idsToCounts(p.hand);
   if (counts[tk] >= 2) return true; // pon (and maybe kan)
   if (from === ((seat + 3) % 4) && tk < 27) {
     const suitBase = Math.floor(tk / 9) * 9;
@@ -1018,7 +1018,7 @@ export function shanten(hand: TileId[], melds: Meld[]): number {
 export function ukeire(
   hand: TileId[], melds: Meld[], visibleCounts: number[],
 ): { kind: number; count: number }[] {
-  return ukeireCounts(idsToCounts(hand.map(kindOf)), melds.length, visibleCounts);
+  return ukeireCounts(idsToCounts(hand), melds.length, visibleCounts);
 }
 
 export function waits(hand: TileId[], melds: Meld[]): number[] {

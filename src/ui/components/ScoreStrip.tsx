@@ -32,8 +32,8 @@ export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
                 <span className="wind">{WIND_LETTER[seat.seatWind]}</span>
                 <span className="name">{s === 0 ? 'You' : seatName(s)}</span>
                 <span className="marks">
-                  {view.dealer === s && <span className="pill gold" style={{ fontSize: 9, padding: '0 4px' }}>親</span>}
-                  {seat.riichi && <span className="pill red" style={{ fontSize: 9, padding: '0 4px' }}>リ</span>}
+                  {view.dealer === s && <span className="pill gold">親</span>}
+                  {seat.riichi && <span className="pill red">リ</span>}
                 </span>
               </div>
               <span className="pts">{seat.points.toLocaleString()}</span>

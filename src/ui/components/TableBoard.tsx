@@ -119,6 +119,10 @@ export default function TableBoard({
             top: '50%',
             transform: 'translate(-50%, -50%)',
             '--cube': `${L.m.cube}px`,
+            // dora-tray tiles share the board's tile size (bug: they used to
+            // fall back to a tiny hard-coded size)
+            '--rv-w': `${L.m.tile.w}px`,
+            '--rv-h': `${L.m.tile.h}px`,
           } as CSSProperties}
         >
           <TableCenter view={view} />
