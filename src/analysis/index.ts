@@ -21,7 +21,7 @@ import { gradeMatch as grade } from './grading';
 
 export * from './types';
 
-/** Overlay A. Top 5 realistically feasible yaku, definitions only, no advice. */
+/** Overlay A. Top 5 reachable yaku, definitions only, no advice. */
 export function suggestYaku(view: PublicView): YakuSuggestion[] {
   return yakuAdvisor(view);
 }

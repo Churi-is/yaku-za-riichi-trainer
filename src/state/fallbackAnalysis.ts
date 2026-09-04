@@ -70,140 +70,15 @@ function bandFromScore(score: number): ProbabilityBand {
 }
 
 // ---------------------------------------------------------------------------
-// Overlay A — yaku advisor (definitions + bands only; never tile advice)
+// Overlay A — yaku advisor
+//
+// DELETED. There is exactly one yaku advisor now: the Monte-Carlo one in
+// @analysis/yakuAdvisor. The heuristic that used to live here scored hands
+// with hand-written constants and printed them as percentages; keeping a
+// second, differently-wrong implementation around as a "fallback" only made
+// it possible to ship the wrong numbers by accident. `suggestYaku` in the
+// adapter now calls the real module unconditionally.
 // ---------------------------------------------------------------------------
-
-export function suggestYaku(view: PublicView): YakuSuggestion[] {
-  const hand = view.drawnTile !== null ? [...view.hand, view.drawnTile] : [...view.hand];
-  const me = view.seats[view.viewer];
-  const closed = me.isClosed;
-  const counts = new Array<number>(34).fill(0);
-  for (const id of hand) counts[kindOf(id)]++;
-
-  const sh = safeShanten(view);
-  const progress = Math.max(0, 1 - sh / 6); // 0 (far) .. 1 (tenpai)
-
-  const scores = new Map<YakuId, number>();
-  const bump = (id: YakuId, v: number) => scores.set(id, Math.max(scores.get(id) ?? 0, v));
-
-  // suit distribution
-  const suitCounts = [0, 0, 0, 0];
-  for (let k = 0; k < 34; k++) suitCounts[suitOf(k)] += counts[k];
-  const suited = suitCounts.slice(0, 3);
-  const maxSuit = Math.max(...suited);
-  const usedSuits = suited.filter((c) => c > 0).length;
-
-  // tanyao
-  let simples = 0, thAll = 0;
-  for (let k = 0; k < 34; k++) { if (counts[k]) { if (isTerminalOrHonor(k)) thAll += counts[k]; else simples += counts[k]; } }
-  bump('tanyao', 0.15 + 0.5 * (simples / Math.max(1, simples + thAll)) * (0.5 + 0.5 * progress));
-
-  // honitsu / chinitsu
-  const honors = suitCounts[3];
-  if (usedSuits <= 1) {
-    bump('chinitsu', 0.1 + 0.7 * (maxSuit / 13) * (0.4 + 0.6 * progress));
-    if (honors > 0) bump('honitsu', 0.15 + 0.6 * ((maxSuit + honors) / 13) * (0.4 + 0.6 * progress));
-  } else if (usedSuits === 2 && Math.min(...suited.filter((c) => c > 0)) <= 2) {
-    bump('honitsu', 0.1 + 0.4 * (maxSuit / 13));
-  }
-
-  // yakuhai (dragons + winds)
-  const dragonKinds: YakuId[] = ['yakuhaiHaku', 'yakuhaiHatsu', 'yakuhaiChun'];
-  for (let d = 0; d < 3; d++) {
-    const c = counts[31 + d];
-    if (c >= 1) bump(dragonKinds[d], c >= 2 ? 0.5 + 0.2 * progress : 0.22);
-  }
-  const roundWindKind = 27 + ['east', 'south', 'west', 'north'].indexOf(view.roundWind);
-  const seatWindKind = 27 + ['east', 'south', 'west', 'north'].indexOf(me.seatWind);
-  if (counts[roundWindKind] >= 1) bump('yakuhaiRoundWind', counts[roundWindKind] >= 2 ? 0.5 : 0.2);
-  if (counts[seatWindKind] >= 1) bump('yakuhaiSeatWind', counts[seatWindKind] >= 2 ? 0.5 : 0.2);
-
-  // chiitoitsu
-  let pairs = 0;
-  for (let k = 0; k < 34; k++) if (counts[k] >= 2) pairs++;
-  if (closed) bump('chiitoitsu', 0.1 + 0.12 * pairs);
-
-  // pinfu / riichi (closed hands)
-  if (closed) {
-    bump('riichi', 0.2 + 0.6 * progress);
-    let hasNonSimplePair = false;
-    for (let k = 27; k < 34; k++) if (counts[k] >= 2) hasNonSimplePair = true;
-    bump('pinfu', (hasNonSimplePair ? 0.1 : 0.25) + 0.35 * progress);
-    if (view.tilesRemaining > 4) bump('menzenTsumo', 0.15 + 0.3 * progress);
-  }
-
-  // toitoi / sanankou
-  const trips = countTriplets(counts);
-  if (trips >= 2) { bump('toitoi', 0.2 + 0.15 * trips); if (closed) bump('sanankou', 0.12 + 0.1 * trips); }
-
-  // sanshoku / ittsu (rough sequence presence)
-  bump('sanshokuDoujun', sanshokuHint(counts) * (0.4 + 0.6 * progress));
-  bump('ittsu', ittsuHint(counts) * (0.4 + 0.6 * progress));
-
-  // chanta/junchan
-  bump('chanta', 0.1 + 0.3 * (thAll / 13));
-
-  const ranked = [...scores.entries()]
-    .filter(([id]) => YAKU_DEF[id])
-    .map(([id, s]) => ({ id, s }))
-    .sort((a, b) => b.s - a.s)
-    .slice(0, 5);
-
-  return ranked.map(({ id, s }) => {
-    const def = YAKU_DEF[id]!;
-    return {
-      id,
-      name: def.name,
-      hanLabel: hanLabel(def),
-      description: def.def,
-      band: bandFromScore(s),
-      approxPercent: Math.round(Math.min(0.95, s) * 100),
-      methodNote:
-        'Estimate from your hand shape, shanten, suit balance and turns left — a heuristic, not a solver. It never tells you which tiles to keep or drop.',
-    };
-  });
-}
-
-function countTriplets(counts: number[]): number {
-  let t = 0;
-  for (let k = 0; k < 34; k++) if (counts[k] >= 3) t++;
-  return t;
-}
-function sanshokuHint(counts: number[]): number {
-  let best = 0;
-  for (let r = 0; r <= 6; r++) {
-    let suitsWith = 0;
-    for (let s = 0; s < 3; s++) {
-      const base = s * 9 + r;
-      const present = (counts[base] > 0 ? 1 : 0) + (counts[base + 1] > 0 ? 1 : 0) + (counts[base + 2] > 0 ? 1 : 0);
-      if (present >= 2) suitsWith++;
-    }
-    best = Math.max(best, suitsWith / 3);
-  }
-  return best * 0.6;
-}
-function ittsuHint(counts: number[]): number {
-  let best = 0;
-  for (let s = 0; s < 3; s++) {
-    const base = s * 9;
-    let blocks = 0;
-    for (const off of [0, 3, 6]) {
-      const present = (counts[base + off] > 0 ? 1 : 0) + (counts[base + off + 1] > 0 ? 1 : 0) + (counts[base + off + 2] > 0 ? 1 : 0);
-      if (present >= 2) blocks++;
-    }
-    best = Math.max(best, blocks / 3);
-  }
-  return best * 0.6;
-}
-
-function safeShanten(view: PublicView): number {
-  try {
-    const me = view.seats[view.viewer];
-    return shanten(view.hand, me.melds);
-  } catch {
-    return 6;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Overlay B — opponent reading

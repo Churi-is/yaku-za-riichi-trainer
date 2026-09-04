@@ -111,7 +111,10 @@ describe('suggestYaku', () => {
         descById.set(s.id, s.description);
         // han labels are static too
         expect(s.hanLabel.length).toBeGreaterThan(0);
-        expect(s.methodNote).toMatch(/estimate/i);
+        // The note must disclose that the number is a simulation sample, and
+        // must report that sample, so the panel can never imply certainty.
+        expect(s.methodNote).toMatch(/simulat/i);
+        expect(s.methodNote).toMatch(/\d+ of \d+/);
       }
     }
   });

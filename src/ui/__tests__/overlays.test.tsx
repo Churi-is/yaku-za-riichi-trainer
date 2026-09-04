@@ -59,9 +59,9 @@ describe('overlay panels render with empty/minimal data', () => {
     expect(advisor.textContent).not.toMatch(/\b\d+[mps]\b/);
   });
 
-  it('Yaku advisor labels output as an estimate', () => {
+  it('Yaku advisor labels its output as simulated, never as certain', () => {
     render(<YakuAdvisorPanel view={emptyView()} />);
-    expect(screen.getAllByText(/estimate/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/simulat/i).length).toBeGreaterThan(0);
   });
 
   it('Opponent reading renders one section per opponent', () => {

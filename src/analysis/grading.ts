@@ -17,7 +17,7 @@ import type { Action, Meld, PublicView, TileId } from '@engine/types';
 import type {
   AlternativeAction, Grade, GradedTurn, MistakeCategory,
 } from './types';
-import { yakuAdvisor } from './yakuAdvisor';
+import { FAST_BUDGET, yakuAdvisor } from './yakuAdvisor';
 import { readOpponents } from './opponentRead';
 import { safeKindsFor } from './tileSafety';
 import { computeShanten, computeUkeire, computeUkeireWaiting } from './shanten';
@@ -197,8 +197,11 @@ function gradeRiichiDiscard(entry: ActionLogEntry, view: PublicView): GradedTurn
   const shantenAfter = computeShanten(afterFull, melds);
   const waitsNow = computeWaits(afterFull, melds);
   const waitCount = waitsNow.length;
-  const advisor = yakuAdvisor(view);
-  const topValue = advisor[0] ? hanPotential(advisor[0].id) : 1;
+  // Grading wants "is this hand worth a riichi", so it asks for the most
+  // valuable REACHABLE yaku, not the most likely one — the advisor is ranked
+  // by reachability, and cheap yaku are always the most reachable.
+  const advisor = yakuAdvisor(view, {}, FAST_BUDGET);
+  const topValue = advisor.reduce((m, s) => Math.max(m, hanPotential(s.id)), 1);
   const turnEarly = entry.seq <= 8;
   const risk = maxRisk(view);
 
@@ -270,7 +273,7 @@ function gradeCall(entry: ActionLogEntry, view: PublicView): GradedTurn {
       0: { ...view.seats[0], isClosed: false, melds: afterMelds },
     },
   };
-  const openAdvisor = yakuAdvisor(openView);
+  const openAdvisor = yakuAdvisor(openView, {}, FAST_BUDGET);
   if (openAdvisor.length === 0) {
     score -= 30;
     reasons.push('after opening, no yaku path remains — kuitan off and no honor/suit direction');

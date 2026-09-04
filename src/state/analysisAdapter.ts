@@ -40,12 +40,13 @@ function probeReal(view: PublicView): boolean {
   return realHasContent;
 }
 
+/**
+ * Overlay A. No fallback: the yaku advisor is a simulation with exactly one
+ * implementation. An empty list is a real answer ("nothing is reachable"), not
+ * a signal that the module is missing.
+ */
 export function suggestYaku(view: PublicView): YakuSuggestion[] {
-  if (probeReal(view)) {
-    const r = analysis.suggestYaku(view);
-    if (r.length) return r;
-  }
-  return fb.suggestYaku(view);
+  return analysis.suggestYaku(view);
 }
 
 export function readOpponents(view: PublicView): OpponentRead[] {

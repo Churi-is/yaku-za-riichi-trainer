@@ -18,8 +18,11 @@ export interface YakuSuggestion {
   /** The yaku's standard DEFINITION ONLY. Never advice, never tile references. */
   description: string;
   band: ProbabilityBand;
-  /** Optional approximate percentage, 0-100. */
+  /** Measured reachability as a percentage, 0-100. */
   approxPercent?: number;
+  /** Raw sample behind `approxPercent`, so the UI can show its own error bars. */
+  hits?: number;
+  runs?: number;
   /** Tooltip explaining how the estimate was produced (method, not hand contents). */
   methodNote: string;
 }

@@ -27,6 +27,10 @@ describe('public-information firewall (Worker D)', () => {
   });
 
   it('overlay panels only receive PublicView-derived data', () => {
+    // A panel may call the adapter directly, or through a hook that does. The
+    // rule is that analysis is never computed inline in a component and never
+    // reaches for anything outside PublicView.
+    const routes = /@state\/analysisAdapter|@ui\/hooks\/useYakuAdvisor/;
     for (const f of [
       'src/ui/overlays/YakuAdvisorPanel.tsx',
       'src/ui/overlays/OpponentReadingPanel.tsx',
@@ -34,8 +38,27 @@ describe('public-information firewall (Worker D)', () => {
     ]) {
       const src = read(f);
       expect(src).not.toMatch(/\bGameState\b/);
-      // overlays route analysis through the adapter, never compute it inline
+      expect(src).toMatch(routes);
+    }
+  });
+
+  it('the advisor hook and its worker also route through the adapter', () => {
+    for (const f of [
+      'src/ui/hooks/useYakuAdvisor.ts',
+      'src/ui/workers/yakuAdvisor.worker.ts',
+    ]) {
+      const src = read(f);
+      expect(src).not.toMatch(/\bGameState\b/);
       expect(src).toMatch(/@state\/analysisAdapter/);
     }
+  });
+
+  it('the yaku simulator reads nothing but the public view', () => {
+    const src = read('src/analysis/yakuSim.ts');
+    expect(src).not.toMatch(/\bGameState\b/);
+    expect(src).not.toMatch(/\.deadWall\b/);
+    expect(src).not.toMatch(/\.uraIndicators\b/);
+    // opponents' concealed tiles are not a field it could read even by accident
+    expect(src).not.toMatch(/\.players\b/);
   });
 });

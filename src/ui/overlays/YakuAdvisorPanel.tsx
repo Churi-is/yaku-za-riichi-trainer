@@ -1,10 +1,15 @@
 /**
- * YakuAdvisorPanel (Overlay A) — top 5 yaku with name, han, definition, band.
- * Reads ONLY from @analysis (via the adapter). Renders nothing else: no tiles
- * to keep/seek, no waits, no reference to which tiles fit a yaku. Owned by D.
+ * YakuAdvisorPanel (Overlay A) — the yaku the hand can still reach, with the
+ * measured reachability of each. Reads ONLY from the analysis module. Renders
+ * nothing else: no tiles to keep or seek, no waits, no reference to which
+ * tiles fit a yaku. Owned by D.
+ *
+ * The percentage is a simulation result, so the raw sample is shown next to it
+ * — "35% (21/60)" is an honest way to say "this is measured, and this is how
+ * precisely". The tooltip carries the method.
  */
 import type { PublicView } from '@engine/types';
-import { suggestYaku } from '@state/analysisAdapter';
+import { useYakuAdvisor } from '@ui/hooks/useYakuAdvisor';
 import Tooltip from '@ui/components/Tooltip';
 import { bandClass } from './bandClass';
 
@@ -15,19 +20,24 @@ export interface YakuAdvisorPanelProps {
 }
 
 export default function YakuAdvisorPanel({ view, open = true, onToggleOpen }: YakuAdvisorPanelProps) {
-  const suggestions = suggestYaku(view).slice(0, 5);
+  const { suggestions, pending } = useYakuAdvisor(view, open);
 
   return (
     <div className="overlay-panel">
       <button type="button" className="panel-head" onClick={onToggleOpen} aria-expanded={open}>
-        <h4>Yaku Advisor <span className="estimate-tag">estimate</span></h4>
+        <h4>
+          Yaku Advisor <span className="estimate-tag">simulated</span>
+          {pending && suggestions.length > 0 && <span className="sim-dot" aria-hidden="true" />}
+        </h4>
         <span className="chev">{open ? '−' : '+'}</span>
       </button>
       {open && (
         <div className="panel-body">
           {suggestions.length === 0 ? (
             <p className="muted" style={{ fontSize: 12, margin: 0 }}>
-              No clear direction yet — keep your options open.
+              {pending
+                ? 'Simulating the rest of the hand…'
+                : 'No yaku came out of the simulation — nothing here is realistically reachable yet.'}
             </p>
           ) : (
             <div>
@@ -36,16 +46,23 @@ export default function YakuAdvisorPanel({ view, open = true, onToggleOpen }: Ya
                   <span className="yaku-name">{s.name}</span>
                   <span className="yaku-han">{s.hanLabel} han</span>
                   <div className="yaku-def">{s.description}</div>
-                  <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
+                  <div className="yaku-meter">
                     <span className={bandClass(s.band)}>
-                      {s.band}{typeof s.approxPercent === 'number' ? ` · ~${s.approxPercent}%` : ''}
+                      {s.band}
+                      {typeof s.approxPercent === 'number' ? ` · ~${s.approxPercent}%` : ''}
                     </span>
+                    {typeof s.hits === 'number' && typeof s.runs === 'number' && (
+                      <span className="yaku-runs" title="successful runs out of simulated runs">
+                        {s.hits}/{s.runs} runs
+                      </span>
+                    )}
                     <Tooltip content={s.methodNote} />
                   </div>
                 </div>
               ))}
               <p className="muted" style={{ fontSize: 10.5, marginTop: 8, marginBottom: 0 }}>
-                Definitions and likelihoods only. This panel never tells you which tiles to keep or discard.
+                Reachability if you commit to it — not your chance of winning. Never tells you
+                which tiles to keep or discard.
               </p>
             </div>
           )}

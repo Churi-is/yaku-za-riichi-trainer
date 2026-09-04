@@ -66,6 +66,23 @@
 .yaku-name { font-weight: 700; }
 .yaku-han { color: var(--gold); font-size: 12px; white-space: nowrap; }
 .yaku-def { grid-column: 1 / -1; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+/* band, raw sample, method tooltip — the honest trio */
+.yaku-meter {
+  grid-column: 1 / -1; display: flex; gap: 8px; align-items: center;
+  margin-top: 3px; flex-wrap: wrap;
+}
+.yaku-runs {
+  font-size: 10.5px; color: var(--muted); letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+/* a quiet pulse while the next position is still simulating */
+.sim-dot {
+  display: inline-block; width: 5px; height: 5px; margin-left: 6px;
+  border-radius: 50%; background: var(--gold); vertical-align: middle;
+  animation: sim-pulse 1s ease-in-out infinite;
+}
+@keyframes sim-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sim-dot { animation: none; } }
 
 /* bands & risk */
 .band { font-size: 11px; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
