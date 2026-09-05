@@ -35,7 +35,12 @@ export interface Step {
   focusPond?: string;
   /** Spotlight the centre block (dora, wall, round) instead of tiles. */
   focusCentre?: boolean;
-  /** Force the coach card to a side; otherwise it dodges the spotlight. */
+  /**
+   * Force the coach card to a side. Normally you should not: `@dojo/coach`
+   * works the side out from what the step is pointing at, so the card dodges
+   * its own subject automatically. This is an escape hatch for a step whose
+   * subject is not a spotlight.
+   */
   cardAt?: 'top' | 'bottom';
   /** Face-up dora indicator for this position. */
   dora?: string;
@@ -151,14 +156,16 @@ export const CHAPTERS: Chapter[] = [
             {
               turn: 'Turn 2',
               hand: '234m 678m 22p 45p 789s',
-              draw: 'E',
+              draw: 'N',
               seatWind: 'south',
-              prompt: 'You drew the East wind. You are the South seat, and East is not your wind. What leaves?',
+              rivers: { 1: '1m 5z', 2: '9s 7z', 3: '9p 1z' },
+              table: 'East round. You are South, so the winds that pay you are South and East — and North is neither.',
+              prompt: 'You drew the North wind. It is not your seat wind and not the round wind. What leaves?',
               check: 'efficiency',
               options: [
-                { tile: 'E', correct: true, why: 'A wind that is neither your seat nor the round can only ever be a triplet, and you have one copy. It is the emptiest tile in the hand — throw it while it is still safe to throw.' },
+                { tile: 'N', correct: true, why: 'A wind that is neither your seat nor the round is worth no han to anybody but the North seat, and you hold one copy of it. It is the emptiest tile in the hand — throw it while it is still early enough to be safe.' },
                 { tile: '2p', why: 'That is your only pair. Every hand needs a head; giving it up for nothing costs you a block.' },
-                { tile: '4p', why: 'Breaking a two-sided shape while a lone honour sits in your hand is exactly backwards.' },
+                { tile: '4p', why: 'Breaking a two-sided shape while a dead honour sits in your hand is exactly backwards. Note the trap in the other direction: had you drawn the East wind instead, it would be the round wind and worth a han, and holding it a few turns would be right.' },
                 { tile: '9s', why: 'That breaks a finished run. Never break a completed set while junk is in the hand.' },
               ],
             },
@@ -281,23 +288,25 @@ export const CHAPTERS: Chapter[] = [
             hand: '234m 567m 234p 55s 78s',
             focus: '78s',
             text: [
-              'You are tenpai: one tile from complete. The tiles that finish the hand are your wait, and there are five kinds with wildly different sizes.',
+              'You are tenpai: one tile from complete. The tiles that finish the hand are your wait, and there are five shapes it can take, with wildly different sizes.',
             ],
             figures: [
-              { tiles: '78s', caption: 'Ryanmen — 6s and 9s. Eight tiles.' },
+              { tiles: '78s', caption: 'Ryanmen — 6s or 9s finishes it. Eight tiles.' },
               { tiles: '46s', caption: 'Kanchan — 5s only. Four tiles.' },
               { tiles: '12s', caption: 'Penchan — 3s only. Four tiles.' },
-              { tiles: '55s', caption: 'Shanpon or tanki — two or four tiles.' },
+              { tiles: '55s 99p', caption: 'Shanpon — two pairs, either can become the triplet. Four tiles.' },
+              { tiles: '5s', caption: 'Tanki — a lone tile waiting to pair. Three tiles, and the smallest wait there is.' },
             ],
           },
           {
             kind: 'teach',
             turn: 'Turn 9',
-            hand: '234m 567m 234p 555s',
+            hand: '234m 567m 234p 555s 7s',
             draw: '8s',
+            rivers: { 1: '7s 1z', 2: '7s 9m', 3: '7s 1p' },
             focus: '555s',
             text: [
-              'Then you draw the third 5s and the hand changes shape. Now you hold four complete sets and a two-tile fragment, and every discard leaves you tenpai on something different.',
+              'Then you draw the third 5s and the hand changes shape. Now you hold four complete sets — 234m, 567m, 234p, 555s — and a bare 78s with no pair behind it, and every discard leaves you tenpai on something different.',
               'This is the moment where players talk themselves into the wrong wait, because a triplet feels like progress.',
             ],
           },
@@ -305,41 +314,47 @@ export const CHAPTERS: Chapter[] = [
             {
               turn: 'Turn 9',
               hand: '234m 567m 234p 555s 78s',
+              rivers: { 1: '7s 1z', 2: '7s 9m', 3: '7s 1p' },
+              table: 'All three of the other 7s are already in the ponds.',
               prompt: 'Every discard here is tenpai. Which wait do you actually want?',
               check: 'efficiency',
               options: [
                 { tile: '5s', correct: true, why: 'Break the triplet back to a pair and 78s waits on 6s and 9s: eight tiles, two-sided. The third 5s bought you one tile of shape and cost you half your wait.' },
-                { tile: '8s', why: 'Four sets and a lone 7s — a tanki on 7s. Four tiles, and you are holding none of the help.' },
-                { tile: '7s', why: 'A tanki on 8s. Same size problem, and a middle tanki is not a wait people deal into early.' },
+                { tile: '8s', why: 'This leaves 555s and 7s, which waits on 6s and 7s — and every other 7s is in a pond, so it is really a four-tile wait. Half the size, for a triplet you did not need.' },
+                { tile: '7s', why: 'Four sets and a lone 8s: a tanki on 8s, three tiles left. A middle tanki is not a wait people deal into early either.' },
                 { tile: '2p', why: 'Breaking a completed run to reshape a wait. Never.' },
               ],
             },
             {
               turn: 'Turn 11',
-              hand: '345m 678m 123p 99p 46s',
-              draw: '5s',
-              table: 'Two 9p are visible in the ponds.',
-              prompt: 'Tenpai either way. The 9p pair or the sou shape?',
+              hand: '345m 678m 123p 99p 66s',
+              draw: '7s',
+              rivers: { 1: '9p 5s 1z', 2: '9p 5s 7z', 3: '5s 6s 5z' },
+              focusPond: '9p 9p 6s',
+              table: 'Both other 9p are gone, and the third 6s has just been discarded.',
+              prompt: 'Two of these discards are tenpai. Count what is left before you choose.',
               check: 'efficiency',
               options: [
-                { tile: '4s', correct: true, why: 'Throwing 4s leaves 56s waiting on 4s and 7s — eight tiles, and none of them visible. The alternative is a 9p shanpon with only two 9p left in the world.' },
-                { tile: '6s', why: 'Leaves 45s waiting on 3s and 6s, which is also eight tiles — a perfectly reasonable answer, and worse only because you just discarded the 6s neighbourhood yourself.' },
-                { tile: '9p', why: 'Now you have 99p broken and no head at all. This is not tenpai.' },
-                { tile: '5s', why: 'Throwing the tile you just drew keeps 46s: a closed wait on 5s, four tiles, when eight were available.' },
+                { tile: '6s', correct: true, why: 'Keeping 67s and throwing the spare 6s waits on 5s and 8s — four 8s are live even with three 5s gone, so seven tiles. The shanpon alternative is worth one.' },
+                { tile: '7s', why: 'Also tenpai, on a 9p / 6s shanpon — and both other 9p and the third 6s are in the ponds. That is one live tile in the entire wall. Same tenpai, a seventh of the wait.' },
+                { tile: '9p', why: 'Now 99p is broken and 667s cannot be a head and a run at once. You lose tenpai entirely.' },
+                { tile: '1p', why: 'Breaking a completed run while a spare sou tile sits in the hand, and it is not tenpai either.' },
               ],
             },
             {
               turn: 'Turn 12',
               hand: '234m 567m 789m 44p 13s',
-              draw: '2s',
-              table: 'All four 4s and three 1s are already visible.',
-              prompt: 'The 2s completes the sou shape. Do you take that tenpai, or the other one?',
+              draw: '5s',
+              rivers: { 1: '2s 1z 9m', 2: '2s 5z 9p', 3: '2s 7z' },
+              focusPond: '2s 2s 2s',
+              table: 'Three sets, a pair, and 135s. Three of the four 2s are in the ponds.',
+              prompt: 'Two of your discards keep tenpai. Which wait survives contact with the ponds?',
               check: 'efficiency',
               options: [
-                { tile: '1s', correct: true, why: 'Throw 1s and you wait on 4p for the shanpon... no: you wait on 2s-3s, a two-sided shape on 1s and 4s. Both are nearly dead — but so is every alternative, and this keeps the 44p pair as your head with a live tanki fallback.' },
-                { tile: '3s', why: 'Leaves 12s waiting on 3s only. An edge wait, four tiles, and you are holding one of them.' },
-                { tile: '4p', why: 'Breaking your head leaves 13s and 2s as your only shapes. You lose tenpai entirely.' },
-                { tile: '2s', why: 'Throwing the tile that just improved the hand puts you back where you started, waiting on the 2s you have now shown the table.' },
+                { tile: '1s', correct: true, why: 'Throwing 1s leaves 35s, a closed wait on 4s — four tiles, all live. It is only a kanchan, and it is four times the alternative.' },
+                { tile: '5s', why: 'Also tenpai, on the 2s that 13s needs — and three of them are already in the ponds. One tile left in the whole wall. This is the trap: two identical-looking kanchan, one of them dead.' },
+                { tile: '4p', why: 'Breaking your head leaves 135s with no pair anywhere. That is not tenpai at all.' },
+                { tile: '3s', why: 'Throws away the tile both closed shapes are built on and leaves 15s doing nothing. A step backwards.' },
               ],
             },
           ]),
@@ -426,11 +441,14 @@ export const CHAPTERS: Chapter[] = [
               turn: 'Turn 6',
               hand: '3456m 789m 22p 456p 3s',
               draw: '7s',
-              prompt: 'Here you only have four real blocks. Which floater do you keep?',
+              rivers: { 1: '1s 2s 1z', 2: '1s 2s 9m', 3: '1s 5z' },
+              focusPond: '1s 1s 1s 2s 2s',
+              table: 'Three 1s and two 2s are already in the ponds.',
+              prompt: 'Four real blocks and two sou floaters. Read the ponds, then choose.',
               check: 'efficiency',
               options: [
-                { tile: '3s', correct: true, why: 'Blocks: 3456m, 789m, 22p, 456p — four and a spare man tile. You need a fifth block, so the question is which sou floater grows best, and 7s reaches 5s through 9s while 3s is the more crowded end.' },
-                { tile: '7s', why: 'The mirror answer, and only marginally worse. What matters is that you keep exactly one of the two and do not sit on both while you are still short a block.' },
+                { tile: '3s', correct: true, why: 'Bare shape says the two floaters are near enough equal. The ponds break the tie: 3s grows downward into 12s and 23s, and the table has eaten three 1s and two 2s. The 7s reaches 5s through 9s with every one of those tiles still live.' },
+                { tile: '7s', why: 'The mirror answer on shape alone — and the whole point of the drill is that shape alone is not the whole answer. Keeping the floater whose neighbours are dead is a quiet, common leak.' },
                 { tile: '2p', why: 'Your only pair, and you are already short of blocks. This is the one clearly bad answer.' },
                 { tile: '4p', why: 'Breaking a completed run while two floaters are in the hand.' },
               ],
@@ -474,12 +492,14 @@ export const CHAPTERS: Chapter[] = [
           ...drills([
             {
               turn: 'Turn 6',
-              hand: '345m 89m 345p FF 456s 1s',
-              prompt: 'Six blocks, two of them weak, one of them worth a han. Which goes?',
+              hand: '345m 89m 345p FF 456s',
+              draw: '1s',
+              rivers: { 1: '1m 1z', 2: '9p 5z' },
+              prompt: 'Six candidates, two of them weak, one of them worth a han. Which goes?',
               check: 'efficiency',
               options: [
-                { tile: '1s', correct: true, why: 'You are holding two edge-ish shapes and a dragon pair. One of the weak shapes has to go, and the freshly drawn 1s is attached to nothing at all.' },
-                { tile: '9m', why: 'Defensible — 89m is genuinely your weakest real block. It only loses because the 1s is not a block at all.' },
+                { tile: '1s', correct: true, why: 'Count what is a block: 345m, 89m, 345p, FF, 456s — five, already. The 1s you just drew is a sixth candidate attached to nothing at all, so nothing in the hand has to be broken this turn. Always shed the tile that is not a block before you break one that is.' },
+                { tile: '9m', why: 'The 89m penchan is genuinely your weakest block and it will probably go later — but not this turn, while an unattached terminal is sitting in the hand. Breaking a block to keep a floater is the wrong order every time.' },
                 { tile: 'F', why: 'The mistake this lesson exists for. Two tiles from a guaranteed yaku, and the copy you need is the one nobody discards after turn ten. Breaking it makes the hand fast and worthless.' },
                 { tile: '4s', why: 'Breaking a finished run to solve a spare-block problem, while an unattached terminal sits in the hand.' },
               ],
@@ -611,6 +631,7 @@ export const CHAPTERS: Chapter[] = [
             turn: 'Turn 7',
             hand: '234m 234p 22s 34s 678s',
             draw: '9s',
+            rivers: { 1: '9s 1z 4m', 2: '9s 6s 1m', 3: '5z 7z' },
             text: [
               'There are yaku you steer towards and yaku you notice you already have. The second kind is where your points come from.',
               'Riichi needs only a closed tenpai hand. Pinfu is what an efficient closed hand looks like anyway: all runs, a plain pair, a two-sided wait. Tanyao is what happens when you shed terminals, which you were doing regardless. Yakuhai is one block.',
@@ -625,6 +646,7 @@ export const CHAPTERS: Chapter[] = [
             turn: 'Turn 7',
             hand: '234m 234p 22s 34s 678s',
             draw: '9s',
+            rivers: { 1: '9s 1z 4m', 2: '9s 6s 1m', 3: '5z 7z' },
             focus: '234m 234p 34s',
             text: [
               'Now look at this hand properly. You hold 234m and 234p, and your 34s is one tile from 234s — the same run in all three suits, which is sanshoku, worth two han closed.',
@@ -634,27 +656,31 @@ export const CHAPTERS: Chapter[] = [
           ...drills([
             {
               turn: 'Turn 7',
-              hand: '234m 234p 22s 34s 678s 9s',
+              hand: '234m 234p 22s 34s 678s',
+              draw: '9s',
+              rivers: { 1: '9s 1z 4m', 2: '9s 6s 1m', 3: '5z 7z' },
+              focusPond: '9s 9s 6s',
+              table: 'Both other 9s and one 6s are already in the ponds.',
               prompt: 'Sanshoku is one tile away and it is free. Confirm it.',
               check: 'efficiency',
               options: [
-                { tile: '9s', correct: true, why: 'The 9s is your only spare tile. Keeping 34s keeps both your acceptance and the sanshoku — that is what "free" means, and it is the only kind of sanshoku worth chasing.' },
-                { tile: '4s', why: 'Throwing the shape that carries both the acceptance and the yaku, to keep a lone 9s.' },
-                { tile: '2s', why: 'The 2s pair is your head, and the 2s is also the sanshoku tile. Breaking it gives up both at once.' },
+                { tile: '9s', correct: true, why: 'The 9s is your only spare tile, and the ponds have eaten the other two, so it will never pair. Keeping 34s keeps both your acceptance and the sanshoku — that is what "free" means, and it is the only kind of sanshoku worth chasing.' },
+                { tile: '4s', why: 'Throwing the shape that carries both the acceptance and the yaku, to keep a dead terminal.' },
+                { tile: '2s', why: 'Also tenpai — on 6s and 9s, of which three are already in the ponds. Three live tiles, no sanshoku, and no pair worth the name. The count and the yaku both say no.' },
                 { tile: '2m', why: 'Breaking a run that is part of the sanshoku.' },
               ],
             },
             {
               turn: 'Turn 8',
-              hand: '345m 456p 22s 78s 999s',
+              hand: '345m 567p 22s 78s 999s',
               draw: '3p',
               prompt: 'Sanshoku 345 is two tiles away: you would need 345p AND 345s. Worth it?',
               check: 'efficiency',
               options: [
-                { tile: '3p', correct: true, why: 'Yes, throw it — the sanshoku is not free here. You already hold 456p; converting it to 345p means drawing 3p and discarding 6p, then rebuilding the sou side too. Two turns of speed for two han is a bad trade on turn eight.' },
-                { tile: '8s', why: 'Breaking a two-sided shape to chase a yaku that needs two more specific tiles. This is exactly the trap.' },
-                { tile: '6p', why: 'The first step of the chase, and the point where it starts costing you. One step is how these things always begin.' },
-                { tile: '2s', why: 'Breaking your head for a yaku detour.' },
+                { tile: '3p', correct: true, why: 'Throw it — the sanshoku is not free here. You hold a finished 567p; converting it to 345p means drawing a 4p and then shedding the 6p and 7p, and rebuilding the sou side after that. Three turns of speed for two han is a bad trade on turn eight.' },
+                { tile: '8s', why: 'Breaking a two-sided shape to chase a yaku that needs several more specific tiles. This is exactly the trap the lesson is about.' },
+                { tile: '7p', why: 'The first step of the chase, and the point where it starts costing you. It breaks a completed run to start collecting a shape you do not have. One step is how these things always begin.' },
+                { tile: '2s', why: 'Breaking your head for a yaku detour, which leaves the hand with no head at all.' },
               ],
             },
             {
@@ -680,9 +706,9 @@ export const CHAPTERS: Chapter[] = [
           {
             kind: 'teach',
             turn: 'Turn 4',
-            hand: '1123p 55p 789p PP FF',
+            hand: '2334p 55p 789p PP FF',
             draw: '5m',
-            focus: '1123p 55p 789p',
+            focus: '2334p 55p 789p',
             text: [
               'Some hands are worth committing to, and all three of these change how you discard for the rest of the hand. Decide early, and read the signs when an opponent does the same.',
               'Honitsu is one suit plus honours: two han open, three closed, and usually more because the honour triplets stack yakuhai on top. Commit when you hold seven or eight tiles of one suit by the middle of the hand, especially with a yakuhai pair.',
@@ -695,7 +721,7 @@ export const CHAPTERS: Chapter[] = [
           {
             kind: 'teach',
             turn: 'Turn 4',
-            hand: '1123p 55p 789p PP FF',
+            hand: '2334p 55p 789p PP FF',
             draw: '5m',
             focus: 'PP FF',
             text: [
@@ -706,14 +732,15 @@ export const CHAPTERS: Chapter[] = [
           ...drills([
             {
               turn: 'Turn 4',
-              hand: '1123p 55p 789p PP FF 5m',
+              hand: '2334p 55p 789p PP FF',
+              draw: '5m',
               prompt: 'Nine pin tiles and two dragon pairs. Commit or stay flexible?',
               check: 'efficiency',
               options: [
-                { tile: '5m', correct: true, why: 'Commit. Nine tiles of one suit plus two dragon pairs on turn four is a honitsu with yakuhai on top — potentially a haneman. The lone 5m is the only tile in the hand that cannot be part of it.' },
-                { tile: '1p', why: 'The 1123p shape is doing three jobs and it is the backbone of the flush. Breaking it while an off-suit floater sits in the hand is the wrong order.' },
-                { tile: 'P', why: 'Breaking a dragon pair in a honitsu hand throws away the yaku that makes the hand expensive.' },
-                { tile: '9p', why: 'Breaking a finished run of the suit you are collecting.' },
+                { tile: '5m', correct: true, why: 'Commit. Nine tiles of one suit plus two dragon pairs on turn four is a honitsu with yakuhai on top — potentially a haneman. The lone 5m is the only tile in the hand that cannot be part of it, and shedding it costs the hand nothing at all.' },
+                { tile: '2p', why: 'It looks spare and it is not: 2334p is a run and a two-sided extension, so throwing the 2p halves what the block accepts. Never break the suit you are collecting while an off-suit floater is in the hand.' },
+                { tile: 'P', why: 'Breaking a dragon pair in a honitsu hand throws away the yaku that makes the hand expensive. The pair is worth more than any pin shape you hold.' },
+                { tile: '9p', why: 'Breaking a finished run of the suit you are collecting, which is the one thing this hand can least afford.' },
               ],
             },
             {
@@ -733,7 +760,6 @@ export const CHAPTERS: Chapter[] = [
               draw: '9m',
               rivers: { 2: '1m 9m 2m 8m 3m 7m' },
               focusPond: '1m 9m 2m 8m 3m 7m',
-              cardAt: 'bottom',
               table: 'The seat across from you has discarded nothing but man tiles for six turns.',
               prompt: 'What is the seat across from you doing, and what does that mean for your 9m?',
               options: [
@@ -818,17 +844,16 @@ export const CHAPTERS: Chapter[] = [
             {
               turn: 'Turn 8',
               hand: '234m 567m 234p 55s 78s',
-              draw: '9s',
+              draw: '1m',
               rivers: { 0: '6s 1z 9m' },
               focus: '78s',
               focusPond: '6s',
-              cardAt: 'top',
               table: 'Look at your own pond: you threw a 6s on turn two.',
-              prompt: 'Throwing 9s gives tenpai on 6s and 9s. But you discarded a 6s earlier. Now what?',
+              prompt: 'Throwing 1m gives tenpai on 6s and 9s. But you discarded a 6s earlier. Now what?',
               options: [
                 { label: 'Dama — you are furiten', correct: true, why: 'You discarded a 6s, which is part of your own wait, so you cannot ron either tile: only tsumo. Riichi would lock you into that for the rest of the hand with no way to fold. This is one of the four real exceptions.' },
                 { label: 'Riichi anyway — tsumo still pays', why: 'It does, and you have thrown away the ability to drop out plus most of the ways to win. Furiten riichi is a specialist play, not a default.' },
-                { label: 'Discard 5s and wait on 7s tanki instead', why: 'A four-tile tanki to escape furiten is worth considering, but you would be discarding into an eight-tile wait you can still tsumo. Dama keeps more.' },
+                { label: 'Discard 5s and wait on a 7s tanki instead', why: 'Escaping furiten by shrinking to a three-tile tanki is worth considering and it is not free: you would be giving up a seven-tile wait you can still tsumo, and throwing a 5s into the bargain. Dama keeps more.' },
               ],
             },
           ]),
@@ -988,7 +1013,6 @@ export const CHAPTERS: Chapter[] = [
               dora: '9s',
               focus: '1m',
               focusPond: '1m',
-              cardAt: 'bottom',
               table: 'Riichi from your right. Two dora in hand — and look at their pond.',
               prompt: 'Tenpai, two dora, and the tile you want to throw is already in their discards. Now?',
               options: [
@@ -1000,14 +1024,14 @@ export const CHAPTERS: Chapter[] = [
             {
               turn: 'Turn 13',
               hand: '345m 678m 234p 99p 45s',
-              draw: '3s',
+              draw: '3p',
               riichi: [3],
               rivers: { 3: '1z 9m 5z', 1: '9p 1s', 2: '1m 7z' },
               wall: 6,
-              table: 'Riichi from your left, six tiles left, and you just drew one of your own waits.',
-              prompt: 'Late, tenpai, thin wall. The 3s you drew is not safe. Do you push it?',
+              table: 'Riichi from your left, six tiles left, and you are tenpai on 3s and 6s. The 3p you drew does nothing for the hand and is not in anybody\'s pond.',
+              prompt: 'Late, tenpai, thin wall. Keeping tenpai means throwing a live 3p. Do you push it?',
               options: [
-                { label: 'Push the 3s', correct: true, why: 'Six tiles left means one or two more draws each. Tenpai is worth the noten payment on its own, your wait is two-sided, and folding now surrenders that for the sake of one turn of safety. Late tenpai pushes.' },
+                { label: 'Push the 3p', correct: true, why: 'Six tiles left means one or two more draws each. Tenpai is worth the noten payment on its own, your wait is two-sided, and folding now surrenders that for the sake of one or two discards. Late tenpai pushes.' },
                 { label: 'Fold with a safe tile', why: 'Correct earlier in the hand, wrong here: you would be paying the noten penalty to dodge one or two discards, and your hand was already tenpai with a good wait.' },
                 { label: 'Break tenpai but stay in', why: 'The worst of both — you keep discarding tiles into a riichi and you have given up the payment that made staying in worthwhile.' },
               ],
@@ -1029,7 +1053,6 @@ export const CHAPTERS: Chapter[] = [
             rivers: { 2: '3p 9m 4p 1s 7z' },
             focusPond: '3p 4p',
             focus: '3p',
-            cardAt: 'bottom',
             text: [
               'Against a riichi, some tiles are provably safe and others are merely likely to be. Take them in order.',
               'Genbutsu is a tile already in their pond. It is completely safe against that player — you cannot ron a tile you discarded yourself. Their 3p and 4p are free to you.',
@@ -1046,7 +1069,6 @@ export const CHAPTERS: Chapter[] = [
             riichi: [2],
             rivers: { 2: '3p 9m 4p 1s 7z' },
             focusPond: '4p',
-            cardAt: 'bottom',
             text: [
               'Suji is the tile four away from one they discarded. They threw a 4p, so 1p and 7p cannot complete a two-sided wait on it. That is not safety, it is a filter: about four fifths of riichi waits are two-sided, so suji removes most of the danger and leaves the rest.',
             ],
@@ -1065,7 +1087,6 @@ export const CHAPTERS: Chapter[] = [
               draw: '2p',
               riichi: [2],
               rivers: { 2: '3p 9m 4p 1s 7z' },
-              cardAt: 'bottom',
               table: 'Riichi from across. Their pond is on the table — read it.',
               prompt: 'You have decided to fold. Which tile do you throw?',
               options: [
@@ -1080,7 +1101,6 @@ export const CHAPTERS: Chapter[] = [
               draw: '4m',
               riichi: [1],
               rivers: { 1: '1s 4s 8m 2p' },
-              cardAt: 'bottom',
               table: 'Riichi from your right. Nothing of theirs is in your hand.',
               prompt: 'No tile of theirs in your hand. Which is the least dangerous?',
               options: [
@@ -1094,15 +1114,14 @@ export const CHAPTERS: Chapter[] = [
               hand: '345m 678m 234p 55p 36s',
               draw: '9m',
               riichi: [2],
-              rivers: { 2: '5s 1z 7z', 1: '5s 9p', 3: '5s 5s 1m' },
-              focusPond: '0s 5s 5s 5s',
-              cardAt: 'bottom',
-              table: 'Riichi from across. All four 5s are gone. No genbutsu, no suji.',
-              prompt: 'Nothing safe, nothing suji. What does the dead 5s tell you?',
+              rivers: { 2: '5s 8s 1z 7z', 1: '5s 8s 9p', 3: '5s 5s 8s 8s 1m' },
+              focusPond: '0s 5s 5s 5s 8s 8s 8s 8s',
+              table: 'Riichi from across. Every 5s and every 8s is already in a pond. No genbutsu, no suji.',
+              prompt: 'Nothing safe, nothing suji. What do the dead tiles tell you?',
               options: [
-                { label: 'The 6s is a no-chance tile — throw it', correct: true, why: 'A 6s can only be caught by a two-sided wait built from 45s or 78s, or by a closed 57s — and every shape needing a 5s is impossible with all four gone. That kills most of the ways 6s deals in. Counting dead tiles like this is what turns a guess into a read.' },
-                { label: 'The 3s, because it is further from the middle', why: 'The 3s is caught by 12s, 24s and 45s waits, none of which the dead 5s rules out. "Further from the middle" is a rule of thumb; a specific count beats it.' },
-                { label: 'The 9m, because terminals are safe', why: 'Terminals are safer on average, and this one has no supporting evidence at all. When you have an actual count available, use it instead of the average.' },
+                { label: 'The 6s is a no-chance tile — throw it', correct: true, why: 'Work through every shape that catches a 6s: 45s and 78s two-sided, and a closed 57s. Two of them need a 5s and one needs an 8s, and all eight of those tiles are in the ponds. Only a 6s tanki or a 6s shanpon is left. That is what no-chance means — a count, not a feeling.' },
+                { label: 'The 3s, because it is further from the middle', why: 'The 3s is caught by 12s, 24s and 45s waits, and the first two need 1s, 2s and 4s — none of which the dead tiles rule out. "Further from the middle" is a rule of thumb; a specific count beats it.' },
+                { label: 'The 9m, because terminals are safe', why: 'Terminals are safer on average, and this one has no supporting evidence at all: a 78m ryanmen or a 9m pair catches it and nothing in the ponds argues otherwise. When an actual count is available, use it instead of the average.' },
               ],
             },
           ]),
@@ -1131,7 +1150,6 @@ export const CHAPTERS: Chapter[] = [
             rivers: { 3: '1m 9s P' },
             focus: 'PP',
             focusPond: 'P',
-            cardAt: 'bottom',
             text: [
               'Opening your hand costs riichi, menzen tsumo, pinfu, ippatsu and ura dora — call it two han of expectation, gone the moment you call. The call has to buy at least that much back.',
             ],
@@ -1165,24 +1183,24 @@ export const CHAPTERS: Chapter[] = [
             },
             {
               turn: 'Turn 6',
-              hand: '234m 55m 789m 34p 678s',
+              hand: '234m 55m 789m 34p 67s 9s',
               rivers: { 3: '1m 9s 2p' },
-              table: 'The player to your left discards 2p. Chi would give you 234p and tenpai.',
+              table: 'The player to your left discards 2p. Chi it, throw the loose 9s, and you are tenpai on 5s and 8s.',
               prompt: 'A chi that brings tenpai. Your hand has no yaku and no dora. Call?',
               options: [
                 { label: 'Pass', correct: true, why: 'Name the yaku after the call: there is not one. All simples? No, you hold 789m. Yakuhai? Nothing. An open hand with no yaku cannot win, so this "tenpai" would be worthless.' },
                 { label: 'Chi — tenpai is tenpai', why: 'Tenpai you cannot win from is not tenpai, it is a noten payment with extra steps. This is the single most common melding mistake.' },
-                { label: 'Chi and switch to a terminal hand later', why: 'Chanta needs every block to touch a terminal or honour, and your 55m and 678s do not. You cannot get there from here.' },
+                { label: 'Chi and switch to a terminal hand later', why: 'Chanta needs every block to touch a terminal or honour, and your 234m, 55m and 67s do not. You cannot get there from here.' },
               ],
             },
             {
               turn: 'Turn 4',
-              hand: '234m 567m 44p 345s 78s',
+              hand: '234m 567m 44p 34p 78s 2s',
               rivers: { 3: '1z 9m 6s' },
-              table: 'A 6s is discarded to your left. Chi gives 678s and tenpai, and your hand is all simples.',
+              table: 'A 6s is discarded to your left. Chi it, throw the loose 2s, and you are tenpai on 2p and 5p — every tile in the hand a simple.',
               prompt: 'Tanyao is live and the call brings tenpai. Call?',
               options: [
-                { label: 'Chi — tanyao is your yaku', correct: true, why: 'Every tile in the hand is a simple, so tanyao survives the call and gives you a legal win. Tenpai on turn four with a yaku is worth far more than the closed hand you were two draws away from.' },
+                { label: 'Chi — tanyao is your yaku', correct: true, why: 'Every tile left in the hand is a simple, so tanyao survives the call and gives you a legal win. Tenpai on turn four with a yaku and a two-sided wait is worth far more than the closed hand you were two draws away from.' },
                 { label: 'Pass and keep it closed for riichi', why: 'Defensible with a good wait and a fast hand — but you are giving up immediate tenpai on turn four. With tanyao intact, the call is the better half of a close call.' },
                 { label: 'Pass — an open tanyao is worth almost nothing', why: 'One han is not much, but one han now beats two han three turns later, and the fold pressure of an early open tenpai is real.' },
               ],
@@ -1240,4 +1258,18 @@ export function lessonById(id: string): { chapter: Chapter; lesson: Lesson } | n
 export function nextLesson(id: string): Lesson | null {
   const i = ALL_LESSONS.findIndex((x) => x.lesson.id === id);
   return i >= 0 && i + 1 < ALL_LESSONS.length ? ALL_LESSONS[i + 1].lesson : null;
+}
+
+/**
+ * How long a lesson is and how much of it you have to answer.
+ *
+ * The contents page used to promise nothing about a lesson but its title, so
+ * every row looked like the same commitment. It is not: some are three screens
+ * and a drill, some are six and three.
+ */
+export function lessonShape(lesson: Lesson): { steps: number; drills: number } {
+  return {
+    steps: lesson.steps.length,
+    drills: lesson.steps.filter((s) => s.kind === 'drill').length,
+  };
 }

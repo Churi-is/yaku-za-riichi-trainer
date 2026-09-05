@@ -9,9 +9,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { parseHand } from '@ai/handEval';
-import { getLegalActions, kindOf, shanten } from '@engine/index';
+import { getLegalActions, isAgari, isTenpai, kindOf, shanten } from '@engine/index';
 import { scriptedState, scriptedView, tilesInHand, tilesInRivers } from '../table';
 import { ALL_LESSONS, CHAPTERS, lessonById, nextLesson, type Step } from '../course';
+import { subjectOf } from '../coach';
 
 const drillsOf = (steps: Step[]) => steps.filter((s) => s.kind === 'drill');
 const teachOf = (steps: Step[]) => steps.filter((s) => s.kind === 'teach');
@@ -152,6 +153,45 @@ describe('drills', () => {
   });
 });
 
+describe('positions say what the lesson says they say', () => {
+  it('never shows a fourteen-tile hand that is already a winning hand', () => {
+    // A drill that asks "which discard keeps you tenpai" on a hand that has
+    // already won is nonsense, and it happened twice before this test existed.
+    for (const { lesson } of ALL_LESSONS) {
+      for (const [i, step] of lesson.steps.entries()) {
+        if (!step.hand) continue;
+        const held = parseHand(`${step.hand} ${step.draw ?? ''}`);
+        if (held.length !== 14) continue;
+        expect(isAgari(held, []), `${lesson.id} step ${i + 1} is already a complete hand`)
+          .toBe(false);
+      }
+    }
+  });
+
+  it('a step that calls itself tenpai really is tenpai', () => {
+    for (const { lesson } of ALL_LESSONS) {
+      for (const [i, step] of lesson.steps.entries()) {
+        if (!step.hand) continue;
+        const prose = [step.table ?? '', ...(step.text ?? []), step.prompt ?? ''].join(' ');
+        // "two away from tenpai", "one from tenpai" describe a hand that is
+        // deliberately NOT tenpai, so they are not claims to check.
+        if (!/\btenpai\b/i.test(prose)) continue;
+        if (/(from|short of|away from|towards) tenpai/i.test(prose)) continue;
+        // A melding drill reaches tenpai through a CALL, which is a tile the
+        // player does not hold yet, so the concealed hand cannot show it.
+        if (/\b(chi|pon|kan|call|called|calling|meld)\b/i.test(prose)) continue;
+        const held = parseHand(`${step.hand} ${step.draw ?? ''}`);
+        // Either you are tenpai now (13 tiles) or a discard gets you there.
+        const reachable = held.length === 13
+          ? isTenpai(held, [])
+          : held.some((_, at) => isTenpai(held.filter((__, j) => j !== at), []));
+        expect(reachable, `${lesson.id} step ${i + 1} talks about tenpai it cannot reach`)
+          .toBe(true);
+      }
+    }
+  });
+});
+
 describe('every position is a real engine state', () => {
   it('builds through the engine, or the lesson does not ship', () => {
     // This is the check that makes hand-written positions safe. A script that
@@ -233,24 +273,24 @@ describe('the coach points at real things', () => {
   });
 
   it('keeps the card off the pond when the pond is the subject', () => {
-    // The card floats over the felt. Opponents' ponds sit at the top of the
-    // board and your own sits at the bottom, so a step pointing at a discard
-    // has to send the card the other way or it covers its own subject.
+    // Placement lives in @dojo/coach and is checked there in full. What this
+    // test guards is the content side: if a step sets `cardAt` by hand, it had
+    // better not be sending the card on top of its own subject.
     for (const { lesson } of ALL_LESSONS) {
       for (const [i, step] of lesson.steps.entries()) {
-        if (!step.focusPond || !step.hand) continue;
+        if (!step.cardAt || !step.hand) continue;
         const view = scriptedView({
           hand: step.hand, draw: step.draw, dora: step.dora,
           rivers: step.rivers, riichi: step.riichi, wall: step.wall,
           seatWind: step.seatWind,
         });
-        const lit = new Set(tilesInRivers(view, step.focusPond));
-        const mine = view.seats[0].river.some((d) => lit.has(d.tile));
-        const theirs = ([1, 2, 3] as const).some(
-          (s) => view.seats[s].river.some((d) => lit.has(d.tile)),
-        );
-        const want = theirs && !mine ? 'bottom' : 'top';
-        expect(step.cardAt, `${lesson.id} step ${i + 1} hides its own subject`).toBe(want);
+        const subject = subjectOf(step, view);
+        if (subject === 'bottom') {
+          expect(step.cardAt, `${lesson.id} step ${i + 1} hides your own hand`).toBe('top');
+        }
+        if (subject === 'top') {
+          expect(step.cardAt, `${lesson.id} step ${i + 1} hides its own pond`).toBe('bottom');
+        }
       }
     }
   });
