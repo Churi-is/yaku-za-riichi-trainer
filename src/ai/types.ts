@@ -34,6 +34,13 @@ export interface Personality {
   archetype: Archetype;
   /** One-line style description shown at match start. */
   tagline: string;
+  /**
+   * Per-player deviation from the archetype baseline. Archetype decides the
+   * shape of a player; this is what makes three aggressives three people
+   * rather than one person three times.
+   */
+  tune?: Partial<Pick<AIParams,
+    'callGreed' | 'defenseThreshold' | 'riichiPatience' | 'efficiencyNoise'>>;
 }
 
 export interface AIDecision {

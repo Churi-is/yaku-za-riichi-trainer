@@ -15,7 +15,8 @@ afterEach(() => {
 function startMatch() {
   vi.useFakeTimers();
   const r = render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: /New Match/i }));
+  fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
   act(() => { fireEvent.click(screen.getByRole('button', { name: /Start Match/i })); });
   act(() => { vi.advanceTimersByTime(2000); });
   const deal = screen.queryByRole('button', { name: /^Deal$/i });

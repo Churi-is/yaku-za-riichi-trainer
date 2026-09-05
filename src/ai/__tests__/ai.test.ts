@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createAI, paramsFor, PERSONALITIES, createAIForArchetype } from '../index';
+import {
+  ARCHETYPE_SAMPLE, createAI, paramsFor, PERSONALITIES, createAIForArchetype,
+} from '../index';
 import type { Archetype } from '../types';
 import {
   parseHand,
@@ -140,10 +142,30 @@ function discardsFor(view: PublicView): LegalAction[] {
 // ---------------------------------------------------------------------------
 
 describe('params', () => {
-  it('exposes three personalities, one per archetype', () => {
-    expect(PERSONALITIES).toHaveLength(3);
-    const arch = PERSONALITIES.map((p) => p.archetype).sort();
-    expect(arch).toEqual(['aggressive', 'balanced', 'defensive']);
+  it('exposes a full roster with every archetype represented', () => {
+    expect(PERSONALITIES.length).toBeGreaterThanOrEqual(9);
+    const byArchetype = new Map<string, number>();
+    for (const p of PERSONALITIES) {
+      byArchetype.set(p.archetype, (byArchetype.get(p.archetype) ?? 0) + 1);
+    }
+    expect([...byArchetype.keys()].sort()).toEqual(['aggressive', 'balanced', 'defensive']);
+    // Three of each, so the player can field a table of any one style.
+    for (const n of byArchetype.values()) expect(n).toBeGreaterThanOrEqual(3);
+    // Ids and names are what the UI keys on; both must be unique.
+    expect(new Set(PERSONALITIES.map((p) => p.id)).size).toBe(PERSONALITIES.length);
+    expect(new Set(PERSONALITIES.map((p) => p.name)).size).toBe(PERSONALITIES.length);
+    expect(ARCHETYPE_SAMPLE).toHaveLength(3);
+  });
+
+  it('keeps a personality inside its own archetype even after tuning', () => {
+    // A named opponent may lean, but "aggressive" must not tune itself into a
+    // defensive player — the tagline is a promise to the person reading it.
+    for (const p of PERSONALITIES) {
+      const tuned = createAI(p, 'normal', 1).params;
+      if (p.archetype === 'aggressive') expect(tuned.defenseThreshold).toBeGreaterThan(0.5);
+      if (p.archetype === 'defensive') expect(tuned.defenseThreshold).toBeLessThan(0.5);
+      expect(tuned.archetype).toBe(p.archetype);
+    }
   });
 
   it('archetypes order correctly on call greed', () => {
@@ -329,7 +351,7 @@ function idsToStr(ids: TileId[]): string {
 
 describe('createAI / decide', () => {
   it('returns an action present in the legal array (legality)', () => {
-    const ai = createAI(PERSONALITIES[1], 'normal', 123);
+    const ai = createAI(ARCHETYPE_SAMPLE[1], 'normal', 123);
     const view = makeView({ hand: '234m567p789p23sEE N' });
     const legal = discardsFor(view);
     const dec = ai.decide(view, legal);
@@ -338,7 +360,7 @@ describe('createAI / decide', () => {
   });
 
   it('always takes a winning action', () => {
-    const ai = createAI(PERSONALITIES[1], 'hard', 1);
+    const ai = createAI(ARCHETYPE_SAMPLE[1], 'hard', 1);
     const winHand = parseHand('123m456m789m123p').concat(parseHand('EE'));
     const view = makeView({ hand: idsToStr(winHand) });
     const legal: LegalAction[] = [
@@ -350,7 +372,7 @@ describe('createAI / decide', () => {
   });
 
   it('determinism: same seed + same view → same decision', () => {
-    const mk = () => createAI(PERSONALITIES[1], 'normal', 999);
+    const mk = () => createAI(ARCHETYPE_SAMPLE[1], 'normal', 999);
     const view = makeView({ hand: '234m567p789p23sEE N' });
     const legal = discardsFor(view);
     const d1 = mk().decide(view, legal).action;
@@ -412,8 +434,8 @@ describe('public-information firewall (no-cheat)', () => {
       });
     const v1 = build();
     const v2 = build();
-    const d1 = createAI(PERSONALITIES[1], 'normal', 55).decide(v1, discardsFor(v1)).action;
-    const d2 = createAI(PERSONALITIES[1], 'normal', 55).decide(v2, discardsFor(v2)).action;
+    const d1 = createAI(ARCHETYPE_SAMPLE[1], 'normal', 55).decide(v1, discardsFor(v1)).action;
+    const d2 = createAI(ARCHETYPE_SAMPLE[1], 'normal', 55).decide(v2, discardsFor(v2)).action;
     expect(d1).toEqual(d2);
   });
 

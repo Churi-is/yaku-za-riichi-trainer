@@ -19,7 +19,7 @@ import {
 import type {
   Action, Difficulty, GameState, SeatIndex, TableSettings,
 } from '@engine/types';
-import { createAI, PERSONALITIES, type AIPlayer } from '../index';
+import { ARCHETYPE_SAMPLE, createAI, type AIPlayer } from '../index';
 
 export interface BotStats {
   hands: number;
@@ -35,9 +35,15 @@ export interface BotStats {
   ippatsuWins: number;
 }
 
+/**
+ * One seat per archetype plus a second balanced seat. Fixed on purpose: the
+ * roster has nine names now, and a benchmark whose table changes when someone
+ * adds a personality is measuring the roster, not the code.
+ */
 function table(seed: number, difficulty: Difficulty): AIPlayer[] {
-  return [0, 1, 2, 3].map((i) =>
-    createAI(PERSONALITIES[i % PERSONALITIES.length], difficulty, seed * 10 + i));
+  const [aggressive, balanced, defensive] = ARCHETYPE_SAMPLE;
+  const seats = [aggressive, balanced, defensive, balanced];
+  return seats.map((p, i) => createAI(p, difficulty, seed * 10 + i));
 }
 
 /** Play `hands` complete hands and tally what happened. */

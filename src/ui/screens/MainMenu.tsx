@@ -16,13 +16,19 @@ export default function MainMenu() {
         <span className="accent">Mahjong Trainer</span>
       </h1>
       <p className="menu-sub">
-        Single-player riichi against three AI opponents, each with their own
-        style. Full Japanese rules: riichi, calls, dora, yaku and scoring.
+        Sit down against three opponents who each play their own way, or work
+        through the dojo — a course in tile efficiency and judgement.
       </p>
       <nav className="menu-list">
-        <button className="menu-item primary" onClick={() => { reset(); go('settings'); }}>
-          <span className="label">New Match</span>
+        <button className="menu-item primary" onClick={() => { reset(); go('opponents'); }}>
+          <span className="label">Play a Match</span>
+          <span className="sub">Choose three opponents and sit down</span>
           <span className="kan jp">対局</span>
+        </button>
+        <button className="menu-item" onClick={() => go('dojo')}>
+          <span className="label">The Dojo</span>
+          <span className="sub">Learn to read a hand, one lesson at a time</span>
+          <span className="kan jp">道場</span>
         </button>
       </nav>
       <div className="tile-fan" aria-hidden="true">

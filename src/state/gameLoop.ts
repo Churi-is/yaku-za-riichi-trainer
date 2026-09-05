@@ -13,7 +13,7 @@
  */
 import { create } from 'zustand';
 import {
-  createAI, PERSONALITIES, type AIPlayer,
+  createAI, DEFAULT_OPPONENTS, personalityById, PERSONALITIES, type AIPlayer,
 } from '@ai/index';
 import type {
   Action, GameState, HandResult, LegalAction, MatchResult, PublicView,
@@ -52,7 +52,7 @@ interface MatchStore {
   message: string | null;
 
   // actions
-  start: (settings: TableSettings, seed?: number) => void;
+  start: (settings: TableSettings, seed?: number, opponents?: string[]) => void;
   humanAct: (action: Action) => void;
   advanceHand: () => void;
   finish: () => void; // finalize -> returns log via getter
@@ -90,18 +90,23 @@ export const useMatch = create<MatchStore>((set, get) => ({
   matchResult: null,
   message: null,
 
-  start(settings, seed) {
+  start(settings, seed, opponents) {
     pumpToken++;
     const token = pumpToken;
     handCounter = 0;
 
     let state = createMatch(settings, seed);
 
-    // Assign personalities to seats 1..3 (seat 0 is always human).
+    // Seat the three opponents the player picked (seat 0 is always human).
+    const chosen = (opponents && opponents.length === 3 ? opponents : DEFAULT_OPPONENTS)
+      .map((id) => {
+        try { return personalityById(id); } catch { return null; }
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
     const seatPersonalities: SeatPersonality[] = [];
     ais = {};
     for (let seat = 1 as SeatIndex; seat < 4; seat = (seat + 1) as SeatIndex) {
-      const personality = PERSONALITIES[(seat - 1) % PERSONALITIES.length];
+      const personality = chosen[seat - 1] ?? PERSONALITIES[(seat - 1) % PERSONALITIES.length];
       state.players[seat].aiPersonalityId = personality.id;
       ais[seat] = createAI(personality, settings.difficulty, (seed ?? 1) + seat);
       seatPersonalities.push({ seat, id: personality.id, name: personality.name, tagline: personality.tagline });

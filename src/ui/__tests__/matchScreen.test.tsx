@@ -10,7 +10,8 @@ describe('match screen smoke', () => {
   it('deals a full hand to the human seat', () => {
     vi.useFakeTimers();
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /New Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Start Match/i })); });
     act(() => { vi.advanceTimersByTime(2000); });
     const deal = screen.queryByRole('button', { name: /^Deal$/i });
@@ -24,7 +25,8 @@ describe('match screen smoke', () => {
   it('discards in two taps: lift the tile, then confirm', () => {
     vi.useFakeTimers();
     const { container } = render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /New Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Start Match/i })); });
     act(() => { vi.advanceTimersByTime(2000); });
     const deal = screen.queryByRole('button', { name: /^Deal$/i });
@@ -56,7 +58,8 @@ describe('match screen smoke', () => {
   it('tapping the same tile twice throws it', () => {
     vi.useFakeTimers();
     const { container } = render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /New Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Start Match/i })); });
     act(() => { vi.advanceTimersByTime(2000); });
     const deal = screen.queryByRole('button', { name: /^Deal$/i });

@@ -20,7 +20,8 @@
       "@engine/*": ["src/engine/*"],
       "@ai/*": ["src/ai/*"],
       "@ui/*": ["src/ui/*"],
-      "@state/*": ["src/state/*"]
+      "@state/*": ["src/state/*"],
+      "@dojo/*": ["src/dojo/*"]
     }
   },
   "include": ["src", "vite.config.ts"]

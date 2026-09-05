@@ -13,6 +13,7 @@ export default defineConfig({
       '@ai': r('./src/ai'),
       '@ui': r('./src/ui'),
       '@state': r('./src/state'),
+      '@dojo': r('./src/dojo'),
     },
   },
   server: {
