@@ -86,9 +86,19 @@ export function parseHand(str: string): TileId[] {
   const taken = new Set<TileId>();
   let digits = '';
   const push = (kind: TileKind, red: boolean): void => {
+    if (!Number.isInteger(kind) || kind < 0 || kind >= KIND_COUNT) {
+      throw new Error(`bad tile in "${str}": no such tile kind ${kind}`);
+    }
     let copy = red ? 0 : next[kind];
     if (!red && copy === 0 && RED_FIVE_KINDS.includes(kind)) copy = 1;
-    while (taken.has(kind * 4 + copy)) copy++;
+    while (copy < 4 && taken.has(kind * 4 + copy)) copy++;
+    if (copy >= 4) {
+      // Copies 1-3 are gone; the red copy is still reserved for a '0' that
+      // never came. Spend it rather than overflowing into the next kind.
+      copy = 0;
+      while (copy < 4 && taken.has(kind * 4 + copy)) copy++;
+    }
+    if (copy >= 4) throw new Error(`too many copies of ${kind} in "${str}"`);
     taken.add(kind * 4 + copy);
     ids.push(kind * 4 + copy);
     next[kind] = copy + 1;

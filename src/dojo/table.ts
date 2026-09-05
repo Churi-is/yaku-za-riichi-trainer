@@ -13,7 +13,7 @@
  * throws, and the test suite runs every scripted position in the course.
  */
 import {
-  allTileIds, createMatch, DEFAULT_SETTINGS, kindOf, sortIds, toPublicView,
+  allTileIds, createMatch, DEFAULT_SETTINGS, improvingKinds, kindOf, sortIds, toPublicView,
 } from '@engine/index';
 import type {
   GameState, PublicView, SeatIndex, TableSettings, TileId, Wind,
@@ -46,6 +46,41 @@ const WINDS: Wind[] = ['east', 'south', 'west', 'north'];
  * something impossible (a fifth copy of a tile, a sixteen-tile hand), which is
  * exactly what we want a course full of hand-written positions to do.
  */
+/**
+ * The kind of an indicator whose dora cannot interfere with the lesson:
+ * not held, not a tile that would improve the hand, not in a pond, not in
+ * the hand's busiest suit, and not even neighbour to a held tile — so no
+ * arithmetic the coach states can quietly depend on a tile it never names.
+ */
+function harmlessIndicator(held: TileId[], used: Map<number, number>): number {
+  const heldKinds = held.map(kindOf);
+  const heldSet = new Set(heldKinds);
+  // What would improve the hand once a discard is chosen: the union over
+  // every discard, so no answer the coach might mark can make the dora live.
+  const improve = new Set<number>();
+  for (let x = 0; x < held.length; x++) {
+    const rest = [...held.slice(0, x), ...held.slice(x + 1)];
+    for (const k of improvingKinds(rest, [])) improve.add(k);
+  }
+  const suitCount = [0, 1, 2].map((s) => heldKinds.filter((k) => k < 27 && Math.floor(k / 9) === s).length);
+  const busy = suitCount.indexOf(Math.max(...suitCount));
+  const doraOf = (i: number) => (i % 9 === 8 ? i - 8 : i + 1);
+  const free = (i: number) => (used.get(i) ?? 0) < 4;
+  for (let i = 0; i < 27; i++) {
+    const d = doraOf(i);
+    if (!free(i) || heldSet.has(d) || improve.has(d)) continue;
+    if (Math.floor(d / 9) === busy) continue;
+    if (heldKinds.some((k) => k < 27 && Math.floor(k / 9) === Math.floor(d / 9) && Math.abs(k - d) <= 1)) continue;
+    return i;
+  }
+  // A dora lying in a pond is dead and cannot touch the arithmetic either.
+  for (let i = 0; i < 27; i++) {
+    const d = doraOf(i);
+    if (free(i) && !heldSet.has(d) && !improve.has(d)) return i;
+  }
+  return 0;
+}
+
 export function scriptedState(script: TableScript): GameState {
   const settings: TableSettings = { ...DEFAULT_SETTINGS, ...script.settings };
   const base = createMatch(settings, 1);
@@ -57,7 +92,12 @@ export function scriptedState(script: TableScript): GameState {
   const rivers: Record<SeatIndex, TileId[]> = { 0: [], 1: [], 2: [], 3: [] };
   for (const s of SEATS) {
     const notation = script.rivers?.[s];
-    if (notation) rivers[s] = parseHand(notation);
+    // Discards are chronological: parse token by token so the river keeps the
+    // order it was thrown in (parseHand sorts, and the last tile of a riichi
+    // seat's river is its sideways declaration tile).
+    if (notation) {
+      rivers[s] = notation.trim().split(/\s+/).filter(Boolean).flatMap((t) => parseHand(t));
+    }
   }
 
   const dora = script.dora ? parseHand(script.dora) : [];
@@ -98,6 +138,19 @@ export function scriptedState(script: TableScript): GameState {
   for (const s of SEATS) riverTiles[s] = takeExact(rivers[s]);
   const doraTiles = takeExact(dora);
 
+  // An unscripted indicator must not touch the lesson's arithmetic: its dora
+  // may not sit in the hand, complete a shape the hand holds, or lie in a
+  // pond the lesson is reading, and honours are out altogether — a honour
+  // dora starts a yaku conversation the lesson never meant to have.
+  const takeKind = (k: number): TileId => {
+    const at2 = pool.findIndex((t) => kindOf(t) === k);
+    if (at2 < 0) throw new Error(`dojo: no copies of tile kind ${k} left`);
+    return pool.splice(at2, 1)[0];
+  };
+  const indicator = doraTiles.length
+    ? doraTiles
+    : [takeKind(harmlessIndicator([...myHand, ...(myDraw !== null ? [myDraw] : [])], used))];
+
   // Whatever is left fills the opponents' hands, the wall and the dead wall.
   const rest = pool;
   let at = 0;
@@ -106,6 +159,7 @@ export function scriptedState(script: TableScript): GameState {
   const riichiSeats = new Set(script.riichi ?? []);
   const players = SEATS.map((s) => {
     const isMe = s === 0;
+    const river = riverTiles[s];
     return {
       ...base.players[s],
       seat: s,
@@ -113,8 +167,14 @@ export function scriptedState(script: TableScript): GameState {
       hand: isMe ? myHand : sortIds(deal(13)),
       drawnTile: isMe ? myDraw : null,
       melds: [],
-      river: riverTiles[s].map((tile, i) => ({
-        tile, tsumogiri: false, riichiDeclaration: false, calledBy: null, turnNumber: i,
+      river: river.map((tile, i) => ({
+        tile,
+        tsumogiri: false,
+        // A declared seat lies its declaration tile sideways in the river,
+        // exactly like the real table — the last discard it ever makes.
+        riichiDeclaration: riichiSeats.has(s) && i === river.length - 1,
+        calledBy: null,
+        turnNumber: i,
       })),
       riichi: riichiSeats.has(s),
       riichiTurn: riichiSeats.has(s) ? 0 : null,
@@ -126,7 +186,9 @@ export function scriptedState(script: TableScript): GameState {
   }) as unknown as GameState['players'];
 
   const deadWall = deal(14);
-  const wallSize = Math.max(0, Math.min(script.wall ?? 40, rest.length - at));
+  // Unscripted, the wall is simply what is left: the cloth then always shows
+  // a count the discards on it allow, at any turn.
+  const wallSize = Math.max(0, Math.min(script.wall ?? Infinity, rest.length - at));
 
   return {
     ...base,
@@ -135,7 +197,7 @@ export function scriptedState(script: TableScript): GameState {
     players,
     wall: deal(wallSize),
     deadWall,
-    doraIndicators: doraTiles.length ? doraTiles : [deadWall[0]],
+    doraIndicators: indicator,
     uraIndicators: [deadWall[5]],
     turn: 0,
     // Fourteen tiles means it is your turn to throw, whether the script
