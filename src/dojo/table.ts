@@ -57,7 +57,12 @@ export function scriptedState(script: TableScript): GameState {
   const rivers: Record<SeatIndex, TileId[]> = { 0: [], 1: [], 2: [], 3: [] };
   for (const s of SEATS) {
     const notation = script.rivers?.[s];
-    if (notation) rivers[s] = parseHand(notation);
+    // Discards are chronological: parse token by token so the river keeps the
+    // order it was thrown in (parseHand sorts, and the last tile of a riichi
+    // seat's river is its sideways declaration tile).
+    if (notation) {
+      rivers[s] = notation.trim().split(/\s+/).filter(Boolean).flatMap((t) => parseHand(t));
+    }
   }
 
   const dora = script.dora ? parseHand(script.dora) : [];
@@ -106,6 +111,7 @@ export function scriptedState(script: TableScript): GameState {
   const riichiSeats = new Set(script.riichi ?? []);
   const players = SEATS.map((s) => {
     const isMe = s === 0;
+    const river = riverTiles[s];
     return {
       ...base.players[s],
       seat: s,
@@ -113,8 +119,14 @@ export function scriptedState(script: TableScript): GameState {
       hand: isMe ? myHand : sortIds(deal(13)),
       drawnTile: isMe ? myDraw : null,
       melds: [],
-      river: riverTiles[s].map((tile, i) => ({
-        tile, tsumogiri: false, riichiDeclaration: false, calledBy: null, turnNumber: i,
+      river: river.map((tile, i) => ({
+        tile,
+        tsumogiri: false,
+        // A declared seat lies its declaration tile sideways in the river,
+        // exactly like the real table — the last discard it ever makes.
+        riichiDeclaration: riichiSeats.has(s) && i === river.length - 1,
+        calledBy: null,
+        turnNumber: i,
       })),
       riichi: riichiSeats.has(s),
       riichiTurn: riichiSeats.has(s) ? 0 : null,

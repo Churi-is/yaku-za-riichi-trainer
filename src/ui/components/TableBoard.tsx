@@ -51,7 +51,9 @@ export default function TableBoard({
 }: TableBoardProps) {
   const focus = new Set<TileId>(highlight ?? []);
   const spotlit = focus.size > 0 || focusCentre;
-  const mark = (id: TileId) => (focus.has(id) ? ' tile-focus' : '');
+  // Face-down backs all share a sentinel id; spotlighting one would light
+  // every back on the table, so they never take the mark.
+  const mark = (id: TileId, faceDown?: boolean) => (!faceDown && focus.has(id) ? ' tile-focus' : '');
   const hostRef = useRef<HTMLDivElement>(null);
   const variant: BoardVariant = orient === 'portrait' ? 'portrait' : compact ? 'compact' : 'landscape';
   const box = useBoxSize(hostRef);
@@ -91,7 +93,7 @@ export default function TableBoard({
       key={t.key}
       id={t.id}
       size="rv"
-      className={`abs${t.latest ? ' tile-latest' : ''}${t.tsumogiri ? ' tile-tsumogiri' : ''}${mark(t.id)}`}
+      className={`abs${t.latest ? ' tile-latest' : ''}${t.tsumogiri ? ' tile-tsumogiri' : ''}${mark(t.id, t.faceDown)}`}
       style={pos(t)}
       faceDown={t.faceDown}
       rotation={t.rot as TileRotation}

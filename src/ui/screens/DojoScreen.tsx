@@ -36,7 +36,9 @@ export default function DojoScreen() {
         )}
       </div>
 
-      {CHAPTERS.map((c) => (
+      {CHAPTERS.map((c) => {
+        const doneIn = c.lessons.filter((l) => completed.includes(l.id)).length;
+        return (
         <section key={c.id} className="stack" style={{ gap: 8 }}>
           <div className="chapter-head">
             <span className="jp kan">{c.kanji}</span>
@@ -44,6 +46,9 @@ export default function DojoScreen() {
               <h3 style={{ margin: 0 }}>{c.title}</h3>
               <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{c.blurb}</p>
             </div>
+            <span className="chapter-prog" aria-label={`${doneIn} of ${c.lessons.length} lessons done`}>
+              {doneIn}/{c.lessons.length}
+            </span>
             {c.book > 0 && <span className="book-tag">Book ch.{c.book}</span>}
           </div>
           <div className="lesson-list">
@@ -67,7 +72,8 @@ export default function DojoScreen() {
             })}
           </div>
         </section>
-      ))}
+        );
+      })}
     </div>
   );
 }

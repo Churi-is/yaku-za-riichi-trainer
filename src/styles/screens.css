@@ -206,8 +206,12 @@
   min-width: 2.2em; text-align: center; white-space: nowrap; flex: none;
 }
 .chapter-head h3 { font-size: 15px; }
+.chapter-prog {
+  margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap;
+}
+.chapter-prog + .book-tag { margin-left: 8px; }
 .book-tag {
-  margin-left: auto; font-size: 10px; color: var(--muted);
+  font-size: 10px; color: var(--muted);
   border: 1px solid var(--hairline); border-radius: 999px; padding: 2px 8px; white-space: nowrap;
 }
 .lesson-list { display: grid; gap: 6px; }
@@ -311,9 +315,16 @@
 }
 .lesson-bar .step-dots { flex: none; }
 
-/* the felt fills what is left, and the coach floats over it */
-.lesson-felt { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-.lesson-felt .board-host {
+/* The felt is split, not overlapped: the coach card takes a strip opposite
+   whatever it is pointing at and the board keeps the rest. Nothing on the
+   table is ever under the card. */
+.lesson-felt {
+  position: relative; flex: 1; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.lesson-felt[data-dock='bottom'] { flex-direction: column-reverse; }
+.felt-area { position: relative; flex: 1 1 auto; min-height: 0; }
+.felt-area .board-host {
   position: absolute; inset: 0;
   background:
     radial-gradient(120% 80% at 50% 15%, #2a7d59 0%, #1c5f43 45%, #12402e 100%);
@@ -321,17 +332,17 @@
 .lesson-nofelt { position: absolute; inset: 0; background: var(--lacquer); }
 
 .coach {
-  position: absolute; left: 8px; right: 8px; z-index: 20;
+  position: relative; z-index: 20; flex: 0 1 auto;
   max-height: 62%; overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; gap: 8px;
-  padding: 11px 13px; border-radius: 10px;
+  margin: 8px 8px 2px; padding: 10px 12px; border-radius: 10px;
   background: linear-gradient(180deg, rgba(20, 16, 10, 0.96), rgba(12, 9, 5, 0.97));
   border: 1px solid var(--gold-dim);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   animation: coach-in 0.25s ease;
 }
-.coach-top { top: 8px; }
-.coach-bottom { bottom: 8px; }
+.lesson-felt[data-dock='bottom'] .coach { margin: 2px 8px 8px; }
+.lesson-felt[data-collapsed='yes'] .coach { max-height: none; overflow: hidden; gap: 0; }
 @keyframes coach-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .coach { animation: none; } }
 .coach .lesson-p { font-size: 13px; line-height: 1.5; }
@@ -339,6 +350,21 @@
 .coach .lesson-note { padding: 8px 10px; }
 .coach .tile-figure { gap: 4px; }
 .coach .tile-figure figcaption { font-size: 11px; }
+
+/* the grip: always visible, collapses the card to a one-line peek */
+.coach-grip {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 0; background: none; border: 0; cursor: pointer;
+  color: var(--muted); font: inherit;
+}
+.coach-grip .turn-chip { margin: 0; flex: none; }
+.grip-word { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
+.coach-peek {
+  flex: 1; min-width: 0; text-align: left; font-size: 12px; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.grip-chev { margin-left: auto; flex: none; font-size: 11px; transition: transform 0.2s ease; }
+.lesson-felt[data-collapsed='yes'] .grip-chev { transform: rotate(180deg); }
 .tap-hint {
   margin: 0; font-size: 11.5px; color: var(--gold-hi); letter-spacing: 0.03em;
   display: flex; align-items: center; gap: 6px;
@@ -358,7 +384,9 @@
 .lesson-foot .step-count { font-size: 11px; color: var(--muted); }
 
 @media (orientation: landscape) and (min-width: 700px) {
-  /* wide enough to sit the coach beside the felt instead of over it */
-  .coach { left: auto; right: 10px; top: 10px; bottom: 10px; width: 320px; max-height: none; }
-  .coach-bottom { top: 10px; }
+  /* wide enough to sit the coach beside the felt: a column, not a strip */
+  .lesson-felt, .lesson-felt[data-dock='bottom'] { flex-direction: row; }
+  .felt-area { order: 1; }
+  .coach { order: 2; flex: 0 0 340px; width: 340px; max-height: none; margin: 10px; }
+  .lesson-felt[data-dock='bottom'] .coach { margin: 10px; }
 }

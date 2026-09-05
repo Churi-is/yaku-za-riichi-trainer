@@ -12,7 +12,7 @@
  * that is not the subject, which is less work to read than "look at the third
  * tile from the left".
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LegalAction, SeatIndex, TileId } from '@engine/types';
 import { getLegalActions, kindOf, toPublicView } from '@engine/index';
 import { parseHand } from '@ai/handEval';
@@ -57,8 +57,16 @@ export default function LessonScreen() {
 
   const [at, setAt] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const coachRef = useRef<HTMLElement>(null);
 
-  useEffect(() => { setAt(0); setPicked(null); }, [lessonId]);
+  useEffect(() => { setAt(0); setPicked(null); setCollapsed(false); }, [lessonId]);
+  useEffect(() => { setCollapsed(false); }, [at]);
+  // a long explanation may leave the card scrolled; a new step starts at its top
+  useEffect(() => {
+    const el = coachRef.current;
+    if (el && typeof el.scrollTo === 'function') el.scrollTo({ top: 0 });
+  }, [at, collapsed]);
 
   const found = lessonId ? lessonById(lessonId) : null;
   if (!found) {
@@ -105,10 +113,13 @@ export default function LessonScreen() {
     const pond = step.focusPond ? tilesInRivers(table.view, step.focusPond) : [];
     if (step.focus) return [...tilesInHand(table.view, step.focus), ...pond];
     if (pond.length) return pond;
-    // A drill with tile answers spotlights the tiles it is asking about.
-    if (step.kind === 'drill' && picked === null) {
-      const opts = (step.options ?? []).filter((o) => o.tile).map((o) => o.tile!);
-      return opts.flatMap((t) => tilesInHand(table.view, t));
+    // While a tile drill is open the whole hand stays lit: spotlighting the
+    // answer options would dim the very tiles the player has to weigh. After
+    // the answer, the board points at the correct discard while the coach
+    // explains itself.
+    if (step.kind === 'drill' && picked !== null) {
+      const right = (step.options ?? []).find((o) => o.correct && o.tile);
+      if (right) return tilesInHand(table.view, right.tile!);
     }
     return [];
   }, [table, step, picked]);
@@ -140,6 +151,7 @@ export default function LessonScreen() {
   // Keep the card off the thing being pointed at.
   const cardAt = step.cardAt
     ?? (step.focusCentre ? 'bottom' : focusTiles.length || isTileDrill ? 'top' : 'bottom');
+  const peek = (step.kind === 'drill' ? step.prompt : (step.table ?? step.text?.[0])) ?? lesson.title;
 
   return (
     <div className="lesson-live" data-orient={orient}>
@@ -159,30 +171,22 @@ export default function LessonScreen() {
         </div>
       </header>
 
-      <div className="lesson-felt">
-        {table ? (
-          <TableBoard
-            view={table.view}
-            seatName={NO_NAME}
-            aiThinking={false}
-            orient={orient}
-            compact={compact}
-            discardActions={isTileDrill && !answered ? legal : []}
-            onDiscard={() => undefined}
-            selected={null}
-            onSelect={tapTile}
-            riichiMode={false}
-            locked={!isTileDrill || answered}
-            highlight={focusTiles}
-            focusCentre={step.focusCentre}
-            tapToAnswer
-          />
-        ) : (
-          <div className="lesson-nofelt" />
-        )}
-
-        <section className={`coach coach-${cardAt}`}>
-          {step.turn && <span className="turn-chip">{step.turn}</span>}
+      <div className="lesson-felt" data-dock={cardAt} data-collapsed={collapsed ? 'yes' : 'no'}>
+        <section className="coach" ref={coachRef}>
+          <button
+            type="button"
+            className="coach-grip"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expand the coach card' : 'Collapse the coach card'}
+          >
+            {step.turn && <span className="turn-chip">{step.turn}</span>}
+            {collapsed
+              ? <span className="coach-peek">{peek}</span>
+              : <span className="grip-word">Coach</span>}
+            <span className="grip-chev" aria-hidden="true">▾</span>
+          </button>
+          {!collapsed && (<>
           {step.table && <p className="table-note">{step.table}</p>}
           {(step.text ?? []).map((t, i) => <p className="lesson-p" key={i}>{t}</p>)}
           {step.figures?.map((f, i) => (
@@ -238,7 +242,31 @@ export default function LessonScreen() {
               )}
             </>
           )}
+          </>)}
         </section>
+
+        <div className="felt-area">
+          {table ? (
+            <TableBoard
+              view={table.view}
+              seatName={NO_NAME}
+              aiThinking={false}
+              orient={orient}
+              compact={compact}
+              discardActions={isTileDrill && !answered ? legal : []}
+              onDiscard={() => undefined}
+              selected={null}
+              onSelect={tapTile}
+              riichiMode={false}
+              locked={!isTileDrill || answered}
+              highlight={focusTiles}
+              focusCentre={step.focusCentre}
+              tapToAnswer
+            />
+          ) : (
+            <div className="lesson-nofelt" />
+          )}
+        </div>
       </div>
 
       <footer className="lesson-foot">
