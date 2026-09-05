@@ -85,22 +85,43 @@ describe('modes', () => {
     vi.useRealTimers();
   });
 
-  it('opens the dojo and walks a lesson', () => {
+  it('walks a lesson turn by turn and will not skip a drill', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /The Dojo/i }));
     expect(screen.getByText(/of 14 lessons/i)).toBeTruthy();
-
     fireEvent.click(screen.getByRole('button', { name: /Start the course/i }));
-    expect(screen.getByText(/Blocks, partial sets and floaters/i)).toBeTruthy();
-    // Tiles render as real tiles, not as notation text.
-    expect(document.querySelectorAll('.lesson-body .tile').length).toBeGreaterThan(5);
 
-    // A drill only explains itself after you commit to an answer.
+    // A lesson opens on its first scripted turn, not on a wall of prose.
+    expect(screen.getByText(/Blocks, partial sets and floaters/i)).toBeTruthy();
+    expect(screen.getByText('1 / 6')).toBeTruthy();
+    expect(document.querySelector('.position')).not.toBeNull();
+    expect(document.querySelectorAll('.tile').length).toBeGreaterThan(10);
+
+    // Step through the guided example.
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
+    expect(screen.getByText('2 / 6')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
+    expect(screen.getByText('4 / 6')).toBeTruthy();
+
+    // Now a drill: it blocks until answered, and explains every option after.
+    const advance = screen.getByRole('button', { name: /Choose an answer/i });
+    expect((advance as HTMLButtonElement).disabled).toBe(true);
     expect(document.querySelector('.drill-why')).toBeNull();
     fireEvent.click(document.querySelectorAll('.drill-opt')[0] as HTMLElement);
     expect(document.querySelector('.drill-why')).not.toBeNull();
+    expect(screen.getByRole('button', { name: /Continue/i })).toBeTruthy();
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: /Done — next/i }));
-    expect(useSession.getState().completed).toContain('blocks');
+  it('marks a lesson complete only at the end and moves to the next', () => {
+    useSession.setState({ lessonId: 'source', screen: 'lesson' });
+    render(<App />);
+    // The credits lesson is two steps and has no drills.
+    expect(screen.getByText('1 / 2')).toBeTruthy();
+    expect(useSession.getState().completed).not.toContain('source');
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Finish the course/i }));
+    expect(useSession.getState().completed).toContain('source');
+    expect(useSession.getState().screen).toBe('dojo');
   });
 });
