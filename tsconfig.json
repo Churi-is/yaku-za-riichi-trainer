@@ -19,10 +19,9 @@
     "paths": {
       "@engine/*": ["src/engine/*"],
       "@ai/*": ["src/ai/*"],
-      "@analysis/*": ["src/analysis/*"],
       "@ui/*": ["src/ui/*"],
-      "@replay/*": ["src/replay/*"],
-      "@state/*": ["src/state/*"]
+      "@state/*": ["src/state/*"],
+      "@dojo/*": ["src/dojo/*"]
     }
   },
   "include": ["src", "vite.config.ts"]

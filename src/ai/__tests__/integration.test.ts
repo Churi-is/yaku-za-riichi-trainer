@@ -19,6 +19,7 @@ import {
   nextHand,
   DEFAULT_SETTINGS,
   type Action,
+  type Difficulty,
   type GameState,
   type LegalAction,
   type SeatIndex,
@@ -188,31 +189,42 @@ describe('AI vs real engine (integration)', () => {
     expect(totalThrows).toBe(0);
   });
 
-  it('difficulty separation: harder bots win more over real scored matches', () => {
-    // Measure on the real engine (accurate scoring). For each difficulty, run
-    // several matches with four same-difficulty balanced bots; a stronger field
-    // converts more hands into wins. Compare total win counts per difficulty.
-    const winsFor = (difficulty: 'easy' | 'normal' | 'hard'): { wins: number; illegal: number } => {
-      let wins = 0;
+  it('difficulty separation: the same seat plays better on hard than on easy', () => {
+    // The original version compared how many hands each same-strength FIELD
+    // resolved to a win, which is not a strength measure at all: a stronger
+    // player folds more, so a strong field draws MORE hands. It sat one win
+    // from failing and finally did.
+    //
+    // This is a paired experiment instead. The field is three normal bots and
+    // the wall comes from the same seeds in both arms; the only thing that
+    // changes between arm A and arm B is seat 0's difficulty. Placement is the
+    // measure rather than raw points, because points in mahjong have a tail
+    // that a small sample cannot see past.
+    const SEEDS = [11, 22, 33, 44, 55, 66, 77, 88, 99, 110, 121, 132, 143, 154, 165, 176, 187, 198];
+
+    const meanPlacement = (seatDiff: Difficulty): number => {
+      let total = 0;
       let illegal = 0;
-      for (const seed of [101, 202, 303, 404, 505]) {
+      for (const seed of SEEDS) {
         const bots = [0, 1, 2, 3].map((s) =>
-          createAI(makePersonality('balanced'), difficulty, seed * 10 + s),
-        );
+          createAI(makePersonality('balanced'), s === 0 ? seatDiff : 'normal', seed * 10 + s));
         const r = playMatchWith(bots, seed);
         illegal += r.illegal + r.throws;
-        wins += Object.values(r.wins).reduce((a, b) => a + b, 0);
+        const mine = r.finalPoints[0];
+        // 1st = 1, 4th = 4.
+        const place = 1 + ([1, 2, 3] as SeatIndex[]).filter((s) => r.finalPoints[s] > mine).length;
+        total += place;
       }
-      return { wins, illegal };
+      expect(illegal).toBe(0);
+      return total / SEEDS.length;
     };
-    const easy = winsFor('easy');
-    const normal = winsFor('normal');
-    const hard = winsFor('hard');
-    expect(easy.illegal + normal.illegal + hard.illegal).toBe(0);
-    // Stronger play resolves more hands to a win (vs exhaustive draw).
-    expect(hard.wins).toBeGreaterThanOrEqual(normal.wins);
-    expect(normal.wins).toBeGreaterThanOrEqual(easy.wins);
-    // And the spread should be non-trivial at the extremes.
-    expect(hard.wins).toBeGreaterThan(easy.wins);
-  });
+
+    const hard = meanPlacement('hard');
+    const easy = meanPlacement('easy');
+    // eslint-disable-next-line no-console
+    console.log(`mean placement in a normal field — hard seat ${hard.toFixed(2)}, easy seat ${easy.toFixed(2)}`);
+    // Lower placement is better. The gap is generous because eighteen matches
+    // is still a small sample, but the sign has to be right.
+    expect(hard).toBeLessThan(easy);
+  }, 180_000);
 });

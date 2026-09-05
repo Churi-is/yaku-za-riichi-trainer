@@ -1,54 +1,92 @@
-/** TableCenter — the middle of the table: dead wall dora tray, wind cube,
- *  honba/riichi sticks and the live wall count. */
-import type { PublicView, Wind } from '@engine/types';
+/**
+ * TableCenter — the middle of the table: the dead-wall dora tray, the round
+ * cube (which doubles as the "whose turn is it" compass), the honba/riichi
+ * sticks and the live wall count.
+ *
+ * Every size comes from the layout model so the block always fits the free
+ * rectangle between the four ponds — nothing here is content-sized, so it can
+ * never grow into a river.
+ */
+import type { CSSProperties } from 'react';
+import type { PublicView, SeatIndex, Wind } from '@engine/types';
+import type { CenterBlock } from '@ui/table/layout';
 import Tile from './Tile';
 
 const WIND_KANJI: Record<Wind, string> = { east: '東', south: '南', west: '西', north: '北' };
 const WIND_LABEL: Record<Wind, string> = { east: 'East', south: 'South', west: 'West', north: 'North' };
-const CORNERS: { wind: Wind; cls: string }[] = [
-  { wind: 'east', cls: 'tl' }, { wind: 'south', cls: 'tr' },
-  { wind: 'west', cls: 'br' }, { wind: 'north', cls: 'bl' },
+
+/** where each seat sits on screen, relative to the viewer at the bottom */
+const SEAT_POS: { seat: SeatIndex; cls: string }[] = [
+  { seat: 0, cls: 'b' }, { seat: 1, cls: 'r' }, { seat: 2, cls: 't' }, { seat: 3, cls: 'l' },
 ];
 
 export interface TableCenterProps {
   view: PublicView;
+  center: CenterBlock;
+  /** an opponent is deciding right now */
+  thinking?: boolean;
 }
 
-export default function TableCenter({ view }: TableCenterProps) {
+export default function TableCenter({ view, center, thinking = false }: TableCenterProps) {
   const indicators = view.doraIndicators;
   const hidden = Math.max(0, 5 - indicators.length);
+  const slot: CSSProperties = { '--tw': `${center.dora.w}px`, '--th': `${center.dora.h}px` } as CSSProperties;
+
   return (
-    <div className="center-block">
-      <div className="dora-tray" aria-label="dora indicators">
-        <span className="lbl">Dora</span>
-        {indicators.map((id, i) => <Tile key={i} id={id} size="rv" />)}
-        {Array.from({ length: hidden }).map((_, i) => <Tile key={`h${i}`} id={0} size="rv" faceDown />)}
+    <div
+      className="center-block"
+      style={{ width: center.w, height: center.h, '--cube': `${center.cube}px` } as CSSProperties}
+    >
+      <div className="dora-tray" aria-label={`${indicators.length} dora indicator${indicators.length === 1 ? '' : 's'}`}>
+        <div className="dora-slots">
+          {indicators.map((id, i) => <Tile key={i} id={id} size="rv" style={slot} />)}
+          {Array.from({ length: hidden }).map((_, i) => (
+            <Tile key={`h${i}`} id={0} size="rv" faceDown style={slot} />
+          ))}
+        </div>
+        <span className="dora-label">Dora</span>
       </div>
 
-      <div className="wind-cube" aria-label={`${WIND_LABEL[view.roundWind]} ${view.roundNumber}`}>
-        {CORNERS.map((c) => (
-          <span key={c.cls} className={`corner ${c.cls}${c.wind === view.roundWind ? ' on' : ''}`}>
-            {WIND_KANJI[c.wind]}
-          </span>
-        ))}
+      <div
+        className="wind-cube"
+        aria-label={`Round ${WIND_LABEL[view.roundWind]} ${view.roundNumber}, ${view.turn === 0 ? 'your turn' : 'opponent to act'}`}
+      >
+        {SEAT_POS.map((p) => {
+          const seat = view.seats[p.seat];
+          const on = view.turn === p.seat;
+          return (
+            <span
+              key={p.cls}
+              className={[
+                'seat-mark', p.cls,
+                on ? 'on' : '',
+                view.dealer === p.seat ? 'dealer' : '',
+                seat.riichi ? 'riichi' : '',
+                on && thinking ? 'thinking' : '',
+              ].filter(Boolean).join(' ')}
+            >
+              {WIND_KANJI[seat.seatWind]}
+            </span>
+          );
+        })}
         <span className="big">{WIND_KANJI[view.roundWind]}</span>
-        <span className="rnd">{WIND_LABEL[view.roundWind]} {view.roundNumber}</span>
+        <span className="rnd">{view.roundNumber}</span>
       </div>
 
       <div className="sticks-row">
         {view.honba > 0 && (
-          <span className="stick-group" title={`honba ${view.honba}`}>
-            {Array.from({ length: Math.min(view.honba, 4) }).map((_, i) => <span key={i} className="stick-honba" />)}
-            {view.honba > 4 && <span className="n">×{view.honba}</span>}
+          <span className="stick-group" title={`${view.honba} honba`}>
+            <span className="stick-honba" />
+            <span className="n">{view.honba}</span>
           </span>
         )}
         {view.riichiSticks > 0 && (
-          <span className="stick-group" title={`${view.riichiSticks} riichi sticks`}>
-            {Array.from({ length: Math.min(view.riichiSticks, 4) }).map((_, i) => <span key={i} className="stick-riichi" />)}
-            {view.riichiSticks > 4 && <span className="n">×{view.riichiSticks}</span>}
+          <span className="stick-group" title={`${view.riichiSticks} riichi stick${view.riichiSticks === 1 ? '' : 's'}`}>
+            <span className="stick-riichi" />
+            <span className="n">{view.riichiSticks}</span>
           </span>
         )}
-        <span className="wall-count">{view.tilesRemaining} left</span>
+        <span className="wall-count" title="tiles left in the live wall">{view.tilesRemaining}</span>
       </div>
     </div>
   );

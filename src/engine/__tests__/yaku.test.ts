@@ -3,9 +3,12 @@
  * plus the win-legality gate. Worker A.
  */
 import { describe, it, expect } from 'vitest';
-import { scoreHand, isLegalWin, type ScoreInput } from '../index';
+import {
+  scoreHand, isLegalWin, createMatch, applyAction, getLegalActions,
+  type ScoreInput,
+} from '../index';
 import { basePoints, ceil100 } from '../scoring';
-import { DEFAULT_SETTINGS, type Meld, type TableSettings } from '../types';
+import { DEFAULT_SETTINGS, type GameState, type Meld, type SeatIndex, type TableSettings } from '../types';
 import { parse, meld } from './helpers';
 
 const CLEAN: TableSettings = { ...DEFAULT_SETTINGS, redDora: false };
@@ -245,5 +248,73 @@ describe('yaku — decomposition choice', () => {
     expect(r.yaku).toEqual([]);
     expect(r.points).toBe(0);
     expect(r.payments).toEqual({ 0: 0, 1: 0, 2: 0, 3: 0 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ippatsu is a one-go-around window, not a permanent flag
+// ---------------------------------------------------------------------------
+
+describe('ippatsu expiry', () => {
+  const settings: TableSettings = { ...DEFAULT_SETTINGS, gameLength: 'east' };
+
+  /** Play until `seat` is offered a riichi discard, then declare it. */
+  function declareRiichi(seed: number): { state: GameState; seat: SeatIndex } | null {
+    let s = createMatch(settings, seed);
+    for (let i = 0; i < 600 && !s.handOver; i++) {
+      let acted = false;
+      for (const seat of [0, 1, 2, 3] as SeatIndex[]) {
+        const legal = getLegalActions(s, seat);
+        if (!legal.length) continue;
+        const r = legal.find(
+          (l) => l.action.type === 'discard' && (l.action as { riichi?: boolean }).riichi,
+        );
+        if (r) return { state: applyAction(s, r.action), seat };
+        // never call: a call would end the ippatsu window for a different reason
+        const pass = legal.find((l) => l.action.type === 'pass');
+        const draw = legal.find((l) => l.action.type === 'draw');
+        const disc = legal.find((l) => l.action.type === 'discard');
+        const pick = draw ?? pass ?? disc;
+        if (!pick) continue;
+        s = applyAction(s, pick.action);
+        acted = true;
+        break;
+      }
+      if (!acted) break;
+    }
+    return null;
+  }
+
+  it('is live the moment riichi is declared and dies on the declarer\'s next draw', () => {
+    let found = false;
+    for (let seed = 1; seed < 40 && !found; seed++) {
+      const got = declareRiichi(seed);
+      if (!got) continue;
+      found = true;
+      let { state } = got;
+      const seat = got.seat;
+      expect(state.players[seat].ippatsu).toBe(true);
+
+      // Walk forward with no calls until that seat draws again.
+      let drewAgain = false;
+      for (let i = 0; i < 40 && !state.handOver && !drewAgain; i++) {
+        for (const s2 of [0, 1, 2, 3] as SeatIndex[]) {
+          const legal = getLegalActions(state, s2);
+          if (!legal.length) continue;
+          const draw = legal.find((l) => l.action.type === 'draw');
+          const pass = legal.find((l) => l.action.type === 'pass');
+          const disc = legal.find((l) => l.action.type === 'discard');
+          const pick = draw ?? pass ?? disc;
+          if (!pick) continue;
+          const wasDraw = pick.action.type === 'draw' && s2 === seat;
+          state = applyAction(state, pick.action);
+          if (wasDraw) drewAgain = true;
+          break;
+        }
+      }
+      expect(drewAgain).toBe(true);
+      expect(state.players[seat].ippatsu).toBe(false);
+    }
+    expect(found).toBe(true);
   });
 });

@@ -3,17 +3,19 @@ import { useSession } from '@state/session';
 import MainMenu from './screens/MainMenu';
 import TableSettingsScreen from './screens/TableSettingsScreen';
 import MatchScreen from './screens/MatchScreen';
-import ReplayScreen from './screens/ReplayScreen';
-import SessionSummaryScreen from './screens/SessionSummaryScreen';
+import OpponentSelectScreen from './screens/OpponentSelectScreen';
+import DojoScreen from './screens/DojoScreen';
+import LessonScreen from './screens/LessonScreen';
 
 export default function App() {
   const screen = useSession((s) => s.screen);
   switch (screen) {
     case 'menu': return <MainMenu />;
+    case 'opponents': return <OpponentSelectScreen />;
     case 'settings': return <TableSettingsScreen />;
+    case 'dojo': return <DojoScreen />;
+    case 'lesson': return <LessonScreen />;
     case 'match': return <MatchScreen />;
-    case 'replay': return <ReplayScreen />;
-    case 'summary': return <SessionSummaryScreen />;
     default: return <MainMenu />;
   }
 }

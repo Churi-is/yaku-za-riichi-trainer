@@ -84,6 +84,7 @@ export function paramsFor(archetype: Archetype, difficulty: Difficulty): AIParam
   const riichiPatience = clamp01(p.riichiPatience * e.patience + (difficulty === 'easy' ? 0.05 : 0));
 
   return {
+    archetype,
     efficiencyNoise,
     callGreed,
     defenseThreshold,

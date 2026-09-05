@@ -4,11 +4,17 @@
 
 /* ---------- main menu ---------- */
 .menu-shell {
-  min-height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 20px; padding: 32px 18px calc(24px + env(safe-area-inset-bottom, 0px));
-  text-align: center; position: relative; overflow: hidden;
+  height: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 20px;
+  padding: calc(32px + env(safe-area-inset-top, 0px)) 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  text-align: center; position: relative;
+  overflow-y: auto; overscroll-behavior: contain;
 }
+/* centre the menu vertically, but let it scroll instead of clipping when a
+   short (landscape phone) viewport can't fit it */
+.menu-shell .menu-crest { margin-top: auto; }
+.menu-shell .menu-foot { margin-bottom: auto; }
 .menu-kanji {
   position: absolute; top: 18px; right: 14px;
   writing-mode: vertical-rl; font-size: 20px; letter-spacing: 0.35em;
@@ -51,6 +57,14 @@
 
 /* ---------- settings ---------- */
 .setting-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; }
+/* a segmented control must never run off the edge of a phone: below 560px the
+   control drops onto its own full-width line under the label */
+.setting-row.seg-row .seg { flex: 0 1 auto; min-width: 0; }
+.setting-row.seg-row .seg button { flex: 1 1 0; min-width: 0; padding: 8px 10px; white-space: nowrap; }
+@media (max-width: 560px) {
+  .setting-row.seg-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .setting-row.seg-row .seg { display: flex; width: 100%; }
+}
 .setting-row + .setting-row { border-top: 1px solid rgba(216, 180, 90, 0.1); }
 .setting-row .lab { font-size: 14px; }
 .setting-row .hint { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -58,13 +72,16 @@
 @media (min-width: 760px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
 .rules-summary { display: flex; flex-wrap: wrap; gap: 8px; }
 .start-bar {
+  /* auto top margin keeps the primary action pinned to the bottom edge even
+     when the settings list is short; sticky keeps it there while scrolling */
   position: sticky; bottom: 0; z-index: 5;
-  margin: 14px -14px -32px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  margin: auto -14px calc(-32px - env(safe-area-inset-bottom, 0px));
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(180deg, rgba(13, 10, 6, 0.2), #0d0a06 40%);
   border-top: 1px solid var(--hairline);
 }
 .start-bar .btn { width: 100%; font-size: 16px; min-height: 50px; }
-@media (min-width: 760px) { .start-bar { margin: 14px 0 0; border-top: 0; background: none; padding: 0; } }
+@media (min-width: 760px) { .start-bar { margin: auto 0 0; border-top: 0; background: none; padding: 16px 0 0; } }
 
 /* ---------- hand end / reveal ---------- */
 .handend-card { width: min(600px, 96vw); }
@@ -85,43 +102,6 @@
 .yaku-list { display: flex; flex-direction: column; gap: 3px; }
 .score-line { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
 
-/* ---------- replay ---------- */
-.timeline { display: flex; flex-direction: column; gap: 8px; }
-.turn-card { border: 1px solid var(--panel-border); border-radius: var(--radius); overflow: hidden; background: rgba(0, 0, 0, 0.25); }
-.turn-head {
-  width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-  cursor: pointer; background: none; border: 0; text-align: left; color: var(--ink);
-}
-.turn-head:hover { background: rgba(255, 255, 255, 0.04); }
-.grade-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
-.grade-Excellent { background: #14532d; color: #86efac; }
-.grade-Good { background: #166534; color: #bbf7d0; }
-.grade-Fair { background: #78350f; color: #fcd34d; }
-.grade-Poor { background: #7c2d12; color: #fdba74; }
-.grade-Blunder { background: #7f1d1d; color: #fecaca; }
-.turn-body { padding: 10px 12px; border-top: 1px solid var(--panel-border); font-size: 13px; }
-.alt-item { padding: 6px 0; border-top: 1px dashed rgba(255, 255, 255, 0.12); }
-.alt-item:first-child { border-top: 0; }
-.metric { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.round-section-head {
-  margin: 20px 0 10px; color: var(--gold);
-  border-bottom: 1px solid var(--hairline); padding-bottom: 5px; font-size: 15px;
-}
-
-/* ---------- summary ---------- */
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-.stat {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.3));
-  border: 1px solid var(--panel-border); border-radius: var(--radius);
-  padding: 12px 8px; text-align: center;
-}
-.stat .num { font-size: 24px; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
-.stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.bar-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
-.bar-label { width: 90px; font-size: 12px; }
-.bar-track { flex: 1; height: 14px; background: rgba(0, 0, 0, 0.45); border-radius: 8px; overflow: hidden; }
-.bar-fill { height: 100%; }
-
 /* ---------- personalities intro ---------- */
 .intro-table {
   display: grid; gap: 8px;
@@ -135,4 +115,250 @@
 .intro-seat .tl { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
 @media (max-width: 460px) {
   .intro-table { grid-template-columns: 1fr; grid-template-areas: 'top' 'left' 'right'; }
+}
+
+/* ---------- pause-menu legend ---------- */
+.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.legend li {
+  display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 9px;
+  font-size: 12.5px; color: var(--ink); line-height: 1.35;
+}
+.legend .lg { width: 18px; height: 24px; border-radius: 3px; position: relative; justify-self: center;
+  background: linear-gradient(175deg, #fefcf4, #ddd2b6); border: 1px solid #b3a888; }
+.legend .lg-ring { outline: 1.5px solid var(--gold-hi); outline-offset: 1px; }
+.legend .lg-pip::after { content: ''; position: absolute; right: 2px; bottom: 2px; width: 4px; height: 4px;
+  border-radius: 50%; background: rgba(35, 39, 51, 0.45); }
+.legend .lg-turn { width: 24px; height: 18px; }
+.legend .lg-draw::after { content: ''; position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%);
+  width: 60%; height: 2px; border-radius: 2px; background: var(--gold); }
+.legend .lg-cube { background: linear-gradient(145deg, #2b2013, #140e07 70%); border-color: var(--gold-dim);
+  width: 22px; height: 22px; border-radius: 5px; }
+.legend .lg-cube::after { content: ''; position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%);
+  width: 6px; height: 6px; border-radius: 2px; background: var(--gold-hi); }
+
+/* ---------- simulation settings (pause menu) ---------- */
+.setting-row .lab .sub {
+  display: block; margin-top: 2px; max-width: 34ch;
+  font-size: 10.5px; line-height: 1.35; color: var(--muted); font-weight: 400;
+}
+.seg button .cost {
+  display: block; font-size: 9.5px; letter-spacing: 0.02em; opacity: 0.75;
+  font-variant-numeric: tabular-nums; font-weight: 400;
+}
+.seg button.on .cost { opacity: 0.85; }
+
+/* ---------- menu items with a subtitle ---------- */
+.menu-item { flex-wrap: wrap; }
+.menu-item .sub {
+  flex-basis: 100%; order: 3; margin-top: 2px;
+  font-size: 11.5px; color: var(--muted); font-weight: 400;
+}
+
+/* ---------- opponent roster ---------- */
+.roster { display: grid; gap: 8px; grid-template-columns: 1fr; }
+@media (min-width: 620px) { .roster { grid-template-columns: 1fr 1fr; } }
+.roster-card {
+  position: relative; text-align: left; cursor: pointer;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 4px 9px; align-items: center;
+  padding: 11px 12px; border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.28));
+  border: 1px solid var(--panel-border); border-left: 3px solid var(--hairline);
+  color: var(--ink); font: inherit;
+}
+.roster-card:hover { filter: brightness(1.12); }
+.roster-card.on {
+  border-color: var(--gold-dim); border-left-color: var(--gold);
+  background: linear-gradient(180deg, rgba(216, 180, 90, 0.12), rgba(0, 0, 0, 0.3));
+}
+.roster-card .arch {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid currentColor;
+}
+.roster-card .arch .jp { font-family: var(--font-jp); font-size: 12px; }
+.arch-aggressive { color: #e08a72; }
+.arch-balanced { color: #d8b45a; }
+.arch-defensive { color: #86b7a0; }
+.roster-card .who { font-weight: 700; font-size: 14.5px; }
+.roster-card .seat-tag {
+  font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: #221704; background: linear-gradient(180deg, #e7c476, #a8802c);
+  padding: 2px 8px; border-radius: 999px; font-weight: 700;
+}
+.roster-card .tag {
+  grid-column: 1 / -1; font-size: 11.5px; line-height: 1.45; color: var(--muted);
+}
+
+/* ---------- dojo ---------- */
+.course-bar { height: 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.45); overflow: hidden; }
+.course-bar span {
+  display: block; height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold-hi));
+  transition: width 0.4s ease;
+}
+.chapter-head {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--hairline);
+}
+.chapter-head .kan {
+  font-family: var(--font-jp); font-size: 20px; color: var(--gold-dim);
+  min-width: 2.2em; text-align: center; white-space: nowrap; flex: none;
+}
+.chapter-head h3 { font-size: 15px; }
+.book-tag {
+  margin-left: auto; font-size: 10px; color: var(--muted);
+  border: 1px solid var(--hairline); border-radius: 999px; padding: 2px 8px; white-space: nowrap;
+}
+.lesson-list { display: grid; gap: 6px; }
+.lesson-row {
+  display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px;
+  text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+  padding: 10px 11px; border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.22); border: 1px solid var(--panel-border);
+}
+.lesson-row:hover { border-color: var(--gold-dim); }
+.lesson-row .tick {
+  width: 18px; height: 18px; border-radius: 50%; font-size: 11px;
+  display: grid; place-items: center;
+  border: 1px solid var(--hairline); color: var(--gold-hi);
+}
+.lesson-row.done .tick { border-color: var(--gold-dim); background: rgba(216, 180, 90, 0.15); }
+.lesson-row .lesson-title { display: block; font-weight: 600; font-size: 13.5px; }
+.lesson-row .lesson-sum { display: block; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.lesson-row .chev { color: var(--gold-dim); font-size: 18px; }
+
+/* ---------- lesson body ---------- */
+.crumb {
+  display: block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.lesson-body { display: flex; flex-direction: column; gap: 12px; }
+.lesson-p { margin: 0; font-size: 14px; line-height: 1.6; }
+.lesson-list-items { margin: 0; padding-left: 20px; display: grid; gap: 5px; }
+.lesson-list-items li { font-size: 13.5px; line-height: 1.5; }
+.tile-figure { margin: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.tile-row { display: flex; gap: 2px; flex-wrap: wrap; }
+.tile-figure figcaption { font-size: 11.5px; color: var(--muted); line-height: 1.45; }
+.lesson-note {
+  display: grid; gap: 3px; padding: 10px 12px; border-radius: var(--radius);
+  background: rgba(216, 180, 90, 0.07); border: 1px solid rgba(216, 180, 90, 0.22);
+  border-left: 3px solid var(--gold-dim);
+}
+.lesson-note strong { color: var(--gold-hi); font-size: 12.5px; }
+.lesson-note span { font-size: 13px; line-height: 1.5; }
+
+/* ---------- lesson stepper ---------- */
+.step-dots { display: flex; align-items: center; gap: 5px; }
+.step-dots .dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: rgba(255, 255, 255, 0.14);
+}
+.step-dots .dot.drill { border-radius: 2px; transform: rotate(45deg); }
+.step-dots .dot.past { background: var(--gold-dim); }
+.step-dots .dot.on { background: var(--gold-hi); box-shadow: 0 0 0 3px rgba(216, 180, 90, 0.18); }
+.step-count {
+  margin-left: auto; font-size: 11px; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.table-note {
+  margin: 0; font-size: 12px; line-height: 1.5; color: var(--gold-dim);
+  border-left: 2px solid var(--gold-dim); padding-left: 9px;
+}
+.prompt { font-weight: 600; }
+
+/* ---------- drills ---------- */
+.drill-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.drill-opt {
+  display: grid; justify-items: center; gap: 3px; cursor: pointer;
+  padding: 8px 10px; border-radius: var(--radius); font: inherit; color: var(--ink);
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--panel-border);
+  min-height: 44px;
+}
+.drill-opt.wide { flex: 1 1 100%; justify-items: start; text-align: left; }
+.drill-opt .opt-word { font-size: 13.5px; line-height: 1.4; }
+.drill-opt:hover:not(:disabled) { border-color: var(--gold-dim); }
+.drill-opt .opt-label {
+  font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.drill-opt.right { border-color: #4ade80; background: rgba(74, 222, 128, 0.12); }
+.drill-opt.wrong { border-color: #f87171; background: rgba(248, 113, 113, 0.12); }
+.drill-opt.dim { opacity: 0.45; }
+.drill-opt:disabled { cursor: default; }
+.verdict-line { font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em; }
+.verdict-line.ok { color: #86efac; }
+.verdict-line.no { color: #fdba74; }
+.drill-why { display: grid; gap: 7px; }
+.drill-why .why { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.drill-why .why.right { color: var(--ink); }
+.drill-why .why.wrong { color: #fca5a5; }
+.drill-why strong { color: var(--gold-dim); margin-right: 3px; }
+
+/* ---------- a lesson played on the felt ---------- */
+.lesson-live {
+  height: 100%; display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.lesson-bar {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  border-bottom: 1px solid var(--hairline); background: var(--lacquer);
+}
+.lesson-bar-title { min-width: 0; flex: 1; line-height: 1.15; }
+.lesson-bar-title .crumb { font-size: 9.5px; }
+.lesson-bar-title strong {
+  display: block; font-size: 13px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.lesson-bar .step-dots { flex: none; }
+
+/* the felt fills what is left, and the coach floats over it */
+.lesson-felt { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.lesson-felt .board-host {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% 15%, #2a7d59 0%, #1c5f43 45%, #12402e 100%);
+}
+.lesson-nofelt { position: absolute; inset: 0; background: var(--lacquer); }
+
+.coach {
+  position: absolute; left: 8px; right: 8px; z-index: 20;
+  max-height: 62%; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 11px 13px; border-radius: 10px;
+  background: linear-gradient(180deg, rgba(20, 16, 10, 0.96), rgba(12, 9, 5, 0.97));
+  border: 1px solid var(--gold-dim);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  animation: coach-in 0.25s ease;
+}
+.coach-top { top: 8px; }
+.coach-bottom { bottom: 8px; }
+@keyframes coach-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .coach { animation: none; } }
+.coach .lesson-p { font-size: 13px; line-height: 1.5; }
+.coach .turn-chip { align-self: flex-start; }
+.coach .lesson-note { padding: 8px 10px; }
+.coach .tile-figure { gap: 4px; }
+.coach .tile-figure figcaption { font-size: 11px; }
+.tap-hint {
+  margin: 0; font-size: 11.5px; color: var(--gold-hi); letter-spacing: 0.03em;
+  display: flex; align-items: center; gap: 6px;
+}
+.tap-hint::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold-hi); animation: sim-pulse 1.1s ease-in-out infinite;
+}
+@keyframes sim-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+.lesson-foot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--hairline); background: var(--lacquer);
+}
+.lesson-foot .btn-primary { flex: 1; }
+.lesson-foot .step-count { font-size: 11px; color: var(--muted); }
+
+@media (orientation: landscape) and (min-width: 700px) {
+  /* wide enough to sit the coach beside the felt instead of over it */
+  .coach { left: auto; right: 10px; top: 10px; bottom: 10px; width: 320px; max-height: none; }
+  .coach-bottom { top: 10px; }
 }

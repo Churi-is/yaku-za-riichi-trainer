@@ -573,6 +573,10 @@ function doDraw(state: GameState, seat: SeatIndex): void {
     return;
   }
   const p = state.players[seat];
+  // Ippatsu survives exactly one uninterrupted go-around: it dies here, when
+  // the declarer draws again, and in applyCall when anyone calls a tile. Any
+  // win before this point is inside the window.
+  if (p.ippatsu) p.ippatsu = false;
   p.drawnTile = drawFromWall(state);
   state.rinshanPending = false;
   state.phase = 'awaitingDiscard';

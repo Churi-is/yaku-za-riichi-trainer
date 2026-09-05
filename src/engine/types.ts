@@ -314,7 +314,7 @@ export interface MatchResult {
 }
 
 // ---------------------------------------------------------------------------
-// Public view (the ONLY thing AI + overlays may read)
+// Public view (the ONLY thing the AI may read)
 // ---------------------------------------------------------------------------
 
 /**

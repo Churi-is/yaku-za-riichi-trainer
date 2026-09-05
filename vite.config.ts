@@ -11,10 +11,9 @@ export default defineConfig({
     alias: {
       '@engine': r('./src/engine'),
       '@ai': r('./src/ai'),
-      '@analysis': r('./src/analysis'),
       '@ui': r('./src/ui'),
-      '@replay': r('./src/replay'),
       '@state': r('./src/state'),
+      '@dojo': r('./src/dojo'),
     },
   },
   server: {

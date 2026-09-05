@@ -5,7 +5,6 @@ import Tile from '@ui/components/Tile';
 
 export default function MainMenu() {
   const go = useSession((s) => s.go);
-  const matchLog = useSession((s) => s.matchLog);
   const reset = useMatch((s) => s.reset);
 
   return (
@@ -17,28 +16,20 @@ export default function MainMenu() {
         <span className="accent">Mahjong Trainer</span>
       </h1>
       <p className="menu-sub">
-        Single-player riichi practice with three live coaching overlays —
-        yaku direction, opponent reads, and wait guessing — plus turn-by-turn
-        grading after every match. You already know how to play; this sharpens
-        your judgment.
+        Sit down against three opponents who each play their own way, or work
+        through the dojo — a course in tile efficiency and judgement.
       </p>
       <nav className="menu-list">
-        <button className="menu-item primary" onClick={() => { reset(); go('settings'); }}>
-          <span className="label">New Match</span>
+        <button className="menu-item primary" onClick={() => { reset(); go('opponents'); }}>
+          <span className="label">Play a Match</span>
+          <span className="sub">Choose three opponents and sit down</span>
           <span className="kan jp">対局</span>
         </button>
-        {matchLog && (
-          <>
-            <button className="menu-item" onClick={() => go('replay')}>
-              <span className="label">Review Last Match</span>
-              <span className="kan jp">牌譜</span>
-            </button>
-            <button className="menu-item" onClick={() => go('summary')}>
-              <span className="label">Session Summary</span>
-              <span className="kan jp">戦績</span>
-            </button>
-          </>
-        )}
+        <button className="menu-item" onClick={() => go('dojo')}>
+          <span className="label">The Dojo</span>
+          <span className="sub">Learn to read a hand, one lesson at a time</span>
+          <span className="kan jp">道場</span>
+        </button>
       </nav>
       <div className="tile-fan" aria-hidden="true">
         <Tile id={31 * 4} size="md" />

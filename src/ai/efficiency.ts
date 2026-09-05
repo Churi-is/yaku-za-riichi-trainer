@@ -1,6 +1,9 @@
 /**
- * Discard selection. Shanten-first, ukeire tiebreak, value-aware (dora / yaku
- * direction), and safety-weighted when folding. Perturbed by efficiencyNoise.
+ * Discard selection. Shanten first, then acceptance, then value, then safety —
+ * decided, not drawn from a hat. Mistakes are made deliberately and only as
+ * often as `efficiencyNoise` says, which is what separates the difficulty
+ * tiers; everything else is the bot playing as well as it knows how.
+ *
  * Pure: reads a PublicView + params + seeded RNG, returns a tile to discard.
  */
 import type { PublicView, TileId, TileKind, Wind } from '@engine/types';
@@ -12,12 +15,24 @@ import {
   kindOf,
   isHonor,
   isDragon,
+  isRed,
   doraKindForIndicator,
   yakuhaiKinds,
   countsOf,
   type DiscardEval,
 } from './handEval';
 import { buildSafetyContext, dangerOf, type SafetyContext } from './defense';
+
+/** 5m / 5p / 5s — the kinds that can carry a red copy. */
+const RED_FIVE_KINDS = new Set<TileKind>([4, 13, 22]);
+
+/**
+ * Draws the viewer still gets. Below a handful, a hand that is not nearly
+ * finished should be chasing the noten penalty rather than the win.
+ */
+function drawsLeft(view: PublicView): number {
+  return Math.ceil(view.tilesRemaining / 4);
+}
 
 export interface DiscardChoice {
   tile: TileId;
@@ -55,6 +70,8 @@ function discardReluctance(
 
   let rel = 0;
   if (doraKinds.has(kind)) rel += 1.4; // never want to shed dora
+  // A red five is a han in its own right, on top of any dora it may also be.
+  if (RED_FIVE_KINDS.has(kind) && pool.some((t) => isRed(t) && kindOf(t) === kind)) rel += 1.2;
   if (valueKinds.has(kind)) {
     if (counts[kind] >= 3) rel += 2.0; // live yakuhai triplet
     else if (counts[kind] === 2) rel += 1.1; // yakuhai pair (atozuke/pon)
@@ -116,29 +133,48 @@ export function chooseDiscard(
     };
   }
 
-  // -- Pushing: shanten-first, ukeire/value tiebreak, noise on top. ----------
+  // -- Pushing ---------------------------------------------------------------
+  // Shanten is a hard tier: never accept a worse shape for a prettier tile.
+  // Inside the tier, acceptance is the efficiency number that matters, value
+  // pulls back on tiles worth keeping, and danger breaks near-ties towards the
+  // safer discard even while pushing.
   const bestShanten = evals[0].shanten;
   const optimal = evals.filter((e) => e.shanten === bestShanten);
   const suboptimal = evals.filter((e) => e.shanten > bestShanten);
 
-  // Weight within a tier: acceptance dominates; value reluctance nudges.
-  const weight = (e: DiscardEval): number => {
+  const late = drawsLeft(view) <= 4;
+  const score = (e: DiscardEval): number => {
     const rel = reluctance.get(e.kind) ?? 0;
-    const w = e.acceptance + 8 + rel * 6;
-    return Math.max(0.1, w);
+    let v = e.acceptance + e.acceptKinds * 0.6;
+    v -= rel * 5;                       // keep dora, red fives and yakuhai
+    v -= (danger.get(e.kind) ?? 0) * 3; // free safety when the shape allows it
+    // With the wall nearly gone, width stops paying and tenpai starts paying:
+    // the noten penalty is real money and a wide 2-shanten hand is not.
+    if (late) v = v * 0.4 - rel * 3;
+    return v;
   };
 
-  let pool: DiscardEval[];
+  const byScore = (list: DiscardEval[]) =>
+    list.slice().sort((a, b) => score(b) - score(a) || a.kind - b.kind);
+
+  // A deliberate mistake: give up a shanten tier. This is the ONLY randomness
+  // in the pushing path, and its rate is exactly what difficulty tunes.
   if (suboptimal.length > 0 && rng.chance(params.efficiencyNoise)) {
-    // Efficiency mistake: drop one shanten tier (usually just +1 shanten).
     const near = suboptimal.filter((e) => e.shanten <= bestShanten + 1);
-    pool = near.length > 0 ? near : suboptimal;
-  } else {
-    pool = optimal;
+    const pick = byScore(near.length > 0 ? near : suboptimal)[0];
+    return {
+      tile: pick.tile,
+      kind: pick.kind,
+      rationale: `push (loose): shanten ${pick.shanten}, accept ${pick.acceptance}`,
+    };
   }
 
-  const idx = rng.weightedIndex(pool.map(weight));
-  const pick = pool[idx];
+  const ranked = byScore(optimal);
+  // A smaller slip: right tier, second-best tile.
+  const pick = ranked.length > 1 && rng.chance(params.efficiencyNoise * 0.5)
+    ? ranked[1]
+    : ranked[0];
+
   return {
     tile: pick.tile,
     kind: pick.kind,

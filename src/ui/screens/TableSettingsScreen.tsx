@@ -28,7 +28,7 @@ function Segmented<T extends string>({
   label, value, options, onChange,
 }: { label: string; value: T; options: { v: T; l: string }[]; onChange: (v: T) => void }) {
   return (
-    <div className="setting-row">
+    <div className="setting-row seg-row">
       <span className="lab">{label}</span>
       <div className="seg" role="group" aria-label={label}>
         {options.map((o) => (
@@ -61,10 +61,11 @@ export default function TableSettingsScreen() {
   const go = useSession((s) => s.go);
   const settings = useSession((s) => s.settings);
   const setSettings = useSession((s) => s.setSettings);
+  const opponents = useSession((s) => s.opponents);
   const start = useMatch((s) => s.start);
 
   const startMatch = () => {
-    start(settings, Math.floor(Math.random() * 1e9));
+    start(settings, Math.floor(Math.random() * 1e9), opponents);
     go('match');
   };
 
@@ -72,7 +73,7 @@ export default function TableSettingsScreen() {
     <div className="screen screen-narrow stack">
       <div className="screen-head">
         <h1>Table Settings<span className="kan jp">ルール</span></h1>
-        <button className="btn btn-ghost btn-sm" onClick={() => go('menu')}>← Menu</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => go('opponents')}>← Opponents</button>
       </div>
 
       <div className="card">

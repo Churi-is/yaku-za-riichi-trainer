@@ -10,14 +10,16 @@ import type {
   LegalAction,
   PublicView,
 } from '@engine/types';
-import type { AIDecision, AIPlayer, Archetype, Personality } from './types';
+import type { AIDecision, AIParams, AIPlayer, Archetype, Personality } from './types';
 import { paramsFor } from './params';
 import { PERSONALITIES } from './personalities';
 import { Rng, hashSeed } from './rng';
 import { decideAction } from './player';
 
 export * from './types';
-export { PERSONALITIES, personalityById } from './personalities';
+export {
+  PERSONALITIES, personalityById, ARCHETYPE_SAMPLE, DEFAULT_OPPONENTS,
+} from './personalities';
 export { paramsFor } from './params';
 
 /**
@@ -29,7 +31,15 @@ export function createAI(
   difficulty: Difficulty,
   seed = 0,
 ): AIPlayer {
-  const params = paramsFor(personality.archetype, difficulty);
+  // Archetype × difficulty sets the baseline; the personality's own tuning is
+  // applied on top, clamped, so a named opponent always plays like themselves.
+  const base = paramsFor(personality.archetype, difficulty);
+  const params: AIParams = { ...base };
+  for (const [k, v] of Object.entries(personality.tune ?? {})) {
+    if (typeof v === 'number') {
+      (params as unknown as Record<string, number>)[k] = Math.max(0, Math.min(1, v));
+    }
+  }
   // Each seat gets an independent, reproducible RNG stream.
   const rng = new Rng(hashSeed('ai', personality.id, difficulty, seed));
 

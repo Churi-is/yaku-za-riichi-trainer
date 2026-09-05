@@ -3,24 +3,29 @@ import { act, render, screen, cleanup, fireEvent } from '@testing-library/react'
 import App from '@ui/App';
 import { useSession } from '@state/session';
 import { useMatch } from '@state/gameLoop';
+import { DEFAULT_OPPONENTS } from '@ai/index';
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   useMatch.getState().reset();
-  useSession.setState({ screen: 'menu', matchLog: null });
+  useSession.setState({
+    screen: 'menu', opponents: [...DEFAULT_OPPONENTS], lessonId: null, completed: [],
+  });
 });
 
 describe('App shell + screen wiring', () => {
   it('renders the main menu', () => {
     render(<App />);
     expect(screen.getByText(/Mahjong Trainer/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /New Match/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Play a Match/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /The Dojo/i })).toBeTruthy();
   });
 
-  it('navigates menu → settings and shows the rules summary card', () => {
+  it('navigates menu → opponents → settings and shows the rules summary card', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /New Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
     expect(screen.getByText(/Table Settings/i)).toBeTruthy();
     expect(screen.getByText(/Current rules/i)).toBeTruthy();
     // toggles present
@@ -30,7 +35,8 @@ describe('App shell + screen wiring', () => {
   it('starts a match, deals a hand, and renders the table without crashing', () => {
     vi.useFakeTimers();
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /New Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /Start Match/i }));
     });
@@ -42,5 +48,86 @@ describe('App shell + screen wiring', () => {
     expect(state.view).not.toBeNull();
     // human hand has 13 or 14 tiles
     expect(state.view!.hand.length).toBeGreaterThanOrEqual(13);
+  });
+});
+
+describe('modes', () => {
+  it('routes the menu into a match through opponent selection', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
+    expect(screen.getByText(/Choose Your Table/i)).toBeTruthy();
+
+    // Three are preselected by default, so the table is always playable.
+    expect(useSession.getState().opponents).toHaveLength(3);
+
+    // Choosing a fourth replaces the oldest rather than doing nothing.
+    const before = useSession.getState().opponents;
+    fireEvent.click(screen.getByRole('button', { name: /Goro the Bulldozer/i }));
+    const after = useSession.getState().opponents;
+    expect(after).toHaveLength(3);
+    expect(after).toContain('goro');
+    expect(after[2]).toBe('goro');
+    expect(after[0]).toBe(before[1]);
+  });
+
+  it('seats exactly the three opponents the player chose', () => {
+    vi.useFakeTimers();
+    useSession.setState({ opponents: ['ryu', 'nao', 'hoshi'] });
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /Start Match/i })); });
+    act(() => { vi.advanceTimersByTime(1500); });
+
+    const seated = useMatch.getState().seatPersonalities;
+    expect(seated.map((s) => s.id)).toEqual(['ryu', 'nao', 'hoshi']);
+    expect(seated.map((s) => s.seat)).toEqual([1, 2, 3]);
+    vi.useRealTimers();
+  });
+
+  it('walks a lesson turn by turn and will not skip a drill', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /The Dojo/i }));
+    expect(screen.getByText(/of 14 lessons/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Start the course/i }));
+
+    // A lesson opens on a live board, not on a wall of prose.
+    expect(screen.getByText(/Blocks, partial sets and floaters/i)).toBeTruthy();
+    expect(screen.getByText('1 / 6')).toBeTruthy();
+    expect(document.querySelector('.board')).not.toBeNull();
+    expect(document.querySelector('.coach')).not.toBeNull();
+    // The whole table is there: the player's hand, the opponents' backs.
+    expect(document.querySelectorAll('.board .tile').length).toBeGreaterThan(40);
+    // and the coach is pointing at something.
+    expect(document.querySelectorAll('.board .tile-focus').length).toBeGreaterThan(0);
+
+    // Step through the guided example.
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
+    expect(screen.getByText('2 / 6')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
+    expect(screen.getByText('4 / 6')).toBeTruthy();
+
+    // Now a drill: answered by tapping the felt, and it blocks until you do.
+    const advance = screen.getByRole('button', { name: /Tap a tile/i });
+    expect((advance as HTMLButtonElement).disabled).toBe(true);
+    expect(document.querySelector('.drill-why')).toBeNull();
+    const playable = document.querySelectorAll('.board .hand-tile:not(:disabled)');
+    expect(playable.length).toBeGreaterThan(0);
+    fireEvent.click(playable[0] as HTMLElement);
+    expect(document.querySelector('.drill-why')).not.toBeNull();
+    expect(screen.getByRole('button', { name: /Continue/i })).toBeTruthy();
+  });
+
+  it('marks a lesson complete only at the end and moves to the next', () => {
+    useSession.setState({ lessonId: 'source', screen: 'lesson' });
+    render(<App />);
+    // The credits lesson is two steps and has no drills.
+    expect(screen.getByText('1 / 2')).toBeTruthy();
+    expect(useSession.getState().completed).not.toContain('source');
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Finish$/i }));
+    expect(useSession.getState().completed).toContain('source');
+    expect(useSession.getState().screen).toBe('dojo');
   });
 });

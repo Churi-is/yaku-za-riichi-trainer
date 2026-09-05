@@ -19,6 +19,7 @@ import {
   hasOpenYakuPath,
   isHandClosed,
   kindOf,
+  ownTiles,
   yakuhaiKinds,
   countsOf,
 } from './handEval';
@@ -210,24 +211,39 @@ export function chooseCall(
   options.sort((a, b) => b.score - a.score || a.postShanten - b.postShanten);
   const best = options[0];
 
-  // Acceptance gate. A call is worth taking when it preserves a yaku path and
-  // either improves shanten (speed) or scores value. callGreed sets how eager
-  // the bot is to open even for a neutral/keep-alive call:
-  //   aggressive greed ~0.82 → takes most safe openings;
-  //   balanced   ~0.45 → takes gain/value, declines marginal;
-  //   defensive  ~0.18 → opens only for clear gain/value.
+  // Acceptance gate.
+  //
+  // Calling is not free. Opening a closed hand forfeits riichi, menzen tsumo,
+  // pinfu, ippatsu and ura — call it two han of expectation — so a call out of
+  // a closed hand has to buy real speed or real value, not merely "a shanten
+  // that was going spare". The old gate let the greedy archetypes take
+  // zero-gain calls half the time, and it showed: the two calling bots reached
+  // tenpai in 44% and 38% of hands against the closed bot's 69%.
+  //
+  // Once the hand is already open there is nothing left to protect, so a
+  // one-shanten gain is enough and archetype greed decides the rest.
   const bestKeepsYaku = best.score > -50;
-  const improves = best.gain >= 1;
-  const valueCall = best.score >= 3.0;
+  const valueCall = best.score >= 3.0;      // yakuhai pon and the like
+  const bringsTenpai = best.postShanten <= 0;
+  const alreadyOpen = !wasClosed;
 
   let callProb: number;
   if (!bestKeepsYaku) {
     callProb = 0; // an open no-yaku hand is worthless — never strand it
-  } else if (improves || valueCall) {
-    callProb = 0.45 + params.callGreed * 0.5; // good call: 0.54 (def) .. 0.86 (agg)
+  } else if (alreadyOpen) {
+    callProb = best.gain >= 1 || valueCall
+      ? 0.5 + params.callGreed * 0.45
+      : params.callGreed * 0.35;
+  } else if (bringsTenpai || valueCall || best.gain >= 2) {
+    // Worth breaking the hand open for.
+    callProb = 0.45 + params.callGreed * 0.5;
+  } else if (best.gain >= 1) {
+    // A single shanten in exchange for the whole closed-hand bonus. Whether
+    // that trade is worth it is exactly what separates a koikoi caller from a
+    // patient one, so archetype greed decides it and nothing else does.
+    callProb = params.callGreed * 0.6;
   } else {
-    // Neutral call (keeps yaku, no shanten gain): mostly archetype flavor.
-    callProb = params.callGreed * 0.6; // 0.11 (def) .. 0.49 (agg)
+    callProb = 0;
   }
   const take = rng.chance(callProb);
 
@@ -259,10 +275,32 @@ export function chooseSelfKan(
   // Kans add dora risk for everyone and commit tiles; only aggressive-ish or
   // clearly-winning hands bother. When folding, never kan.
   if (folding) return { action: null, rationale: 'no kan while folding' };
+
+  // "Only when it does not wreck the hand" was the stated intent, but nothing
+  // checked it: an ankan of a tile that was doing duty in a run costs a whole
+  // block. Take only kans that leave the shape no worse.
+  const seat = ownSeat(view);
+  const before = shanten(ownTiles(view), seat.melds);
+  const safe = kans.filter((k) => {
+    const kind = k.action.type === 'ankan'
+      ? k.action.kind
+      : kindOf((k.action as { tile: TileId }).tile);
+    const kept = ownTiles(view).filter((t: TileId) => kindOf(t) !== kind);
+    const meldsAfter = [...seat.melds, {
+      type: k.action.type as Meld['type'],
+      tiles: ownTiles(view).filter((t: TileId) => kindOf(t) === kind).slice(0, 4),
+      calledFrom: null,
+      calledTile: null,
+      concealed: k.action.type === 'ankan',
+    } as Meld];
+    return shanten(kept, meldsAfter) <= before;
+  });
+  if (safe.length === 0) return { action: pass ?? null, rationale: 'kan would break the hand' };
+
   // Base probability: modest, scaled down for patient bots.
   const p = 0.25 * (0.4 + params.callGreed) * (1 - params.riichiPatience * 0.5);
   if (rng.chance(Math.max(0.05, p))) {
-    return { action: kans[0], rationale: 'self-kan' };
+    return { action: safe[0], rationale: 'self-kan' };
   }
   return { action: pass ?? null, rationale: 'decline self-kan' };
 }
