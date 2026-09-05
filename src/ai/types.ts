@@ -7,6 +7,13 @@ export type Archetype = 'aggressive' | 'balanced' | 'defensive';
 
 /** Tunable knobs; archetype × difficulty resolves to one of these. */
 export interface AIParams {
+  /**
+   * The archetype these knobs came from. Carried explicitly because the
+   * decision layers need to know WHO they are; inferring it from a derived
+   * number (defenseThreshold > 0.7) silently mislabelled aggressive-on-hard
+   * and balanced-on-easy.
+   */
+  archetype: Archetype;
   /** 0-1 chance of picking a sub-optimal efficiency choice. */
   efficiencyNoise: number;
   /** 0-1 eagerness to call pon/chi. */

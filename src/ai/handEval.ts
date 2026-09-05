@@ -241,10 +241,14 @@ export function evaluateDiscards(
   const counts = countsFromIds(hand);
   const meldCount = melds.length;
   const evals: DiscardEval[] = [];
+  // One representative id per kind. Prefer a NON-RED copy: ids are sorted and
+  // a red five is copy zero, so taking the first id would throw the red five
+  // every single time the policy decided to discard "a five".
   const tileOfKind = new Map<TileKind, TileId>();
   for (const t of hand) {
     const k = kindOf(t);
-    if (!tileOfKind.has(k)) tileOfKind.set(k, t);
+    const held = tileOfKind.get(k);
+    if (held === undefined || (isRed(held) && !isRed(t))) tileOfKind.set(k, t);
   }
 
   for (let k = 0; k < KIND_COUNT; k++) {

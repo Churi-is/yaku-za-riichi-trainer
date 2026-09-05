@@ -1,8 +1,11 @@
 /**
  * Riichi declaration timing. Closed tenpai only (the engine only offers the
- * `riichi` flag on legal discards). Gated by riichiPatience, wait quality,
- * hand value, lateness, and table threat. Aggressive declares instantly;
- * defensive/balanced may hold dama for a better wait, more value, or safety.
+ * `riichi` flag on legal discards).
+ *
+ * Riichi is the DEFAULT: for a closed tenpai hand it is worth about a han and
+ * a third once ippatsu and ura are counted, so the question is what would stop
+ * us, not whether to bother. Each reason to hold dama is named and checked;
+ * patience decides which of them a given archetype actually respects.
  */
 import type { PublicView } from '@engine/types';
 import type { AIParams } from './types';
@@ -76,35 +79,57 @@ export function shouldRiichi(
   });
   const dora = doraCount(waiting, seat.melds, view.doraIndicators, view.settings.redDora);
 
-  // Patience is the core axis: low patience (aggressive) → always declare.
-  let p = 1 - params.riichiPatience;
+  // ---- the decision ------------------------------------------------------
+  // Riichi is the default for a closed tenpai hand. It is worth roughly a han
+  // and a third once ippatsu and ura are priced in, it denies information to
+  // nobody but ourselves, and the alternative — dama — only pays when the hand
+  // is already big or the wait is hopeless. So this asks what would stop us,
+  // not whether to bother.
+  let reason = '';
+  let decline = false;
 
-  // Wide waits want riichi (locked in, ippatsu/ura upside); narrow waits prefer
-  // to wait for a better shape — but only patient bots can afford to.
-  if (wideWait >= 14) p += 0.18;
-  else if (wideWait <= 6) p -= 0.28;
+  // A hand that is already worth a lot does not need the stick, and dama keeps
+  // the option of folding. Only patient archetypes actually take that option.
+  if ((value >= 4 || dora >= 3) && params.riichiPatience >= 0.45 && wideWait <= 8) {
+    decline = true;
+    reason = 'dama: already valuable, narrow wait';
+  }
 
-  // High-value hands lean dama when patient (already big, no need for the
-  // stick and the forced push); low-value hands want riichi's han.
-  if (value >= 4 || dora >= 3) p -= 0.15;
-  if (value === 0) p += 0.2;
+  // A wait nobody will ever deal into, late, is not worth locking the hand.
+  if (!decline && wideWait <= 3 && view.tilesRemaining < 30) {
+    decline = true;
+    reason = 'dama: dead wait, late';
+  }
 
-  // Late game: riichi only leaves a few draws but blocks folding.
-  const late = 1 - Math.min(1, view.tilesRemaining / 40);
-  p -= late * 0.2;
+  // Somebody else is committed. Pushing a cheap hand on a thin wait into a
+  // declared riichi is how careful players lose their stack.
+  if (!decline && someoneRiichi && params.riichiPatience >= 0.45 && value <= 1 && wideWait <= 8) {
+    decline = true;
+    reason = 'dama: cheap hand into a live riichi';
+  }
 
-  // Declared threat: careful archetypes avoid riichi (forced push).
-  if (someoneRiichi) p -= 0.35 * (params.riichiPatience + 0.3);
+  // Riichi in the last go-around buys almost no draws but forfeits folding.
+  if (!decline && view.tilesRemaining < 8) {
+    decline = true;
+    reason = 'dama: no draws left to win on';
+  }
 
-  // Aggressive archetype nearly always declares regardless of above.
-  if (params.defenseThreshold > 0.7) p = Math.max(p, 0.9);
+  // The aggressive archetype declares regardless of all of the above.
+  if (params.archetype === 'aggressive') {
+    decline = false;
+    reason = '';
+  }
 
-  p = Math.max(0.05, Math.min(0.98, p));
-  const riichi = rng.chance(p);
+  // Difficulty noise: a bot that never errs is not a character. The flip is a
+  // mistake, applied to a decision, rather than the decision itself being a
+  // dice roll re-thrown every turn.
+  let riichi = !decline;
+  if (rng.chance(params.efficiencyNoise * 0.5)) riichi = !riichi;
+
   return {
     riichi,
     rationale: riichi
-      ? `riichi (p=${p.toFixed(2)}, wait ${wideWait}, han ${value})`
-      : `dama (p=${p.toFixed(2)}, wait ${wideWait}, han ${value})`,
+      ? `riichi (wait ${wideWait}, han ${value}, dora ${dora})`
+      : `${reason || 'dama'} (wait ${wideWait}, han ${value})`,
   };
 }

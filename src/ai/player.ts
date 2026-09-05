@@ -19,6 +19,8 @@ import {
   isHandClosed,
   ownTiles,
   kindOf,
+  ukeireAcceptance,
+  doraCount,
 } from './handEval';
 import { tableThreat } from './defense';
 import { chooseDiscard } from './efficiency';
@@ -45,20 +47,74 @@ function classify(legal: LegalAction[]): DecisionKind {
 }
 
 /**
- * Whether the bot should fold this turn. Folds when the table threat crosses
- * its defenseThreshold AND its own hand is not already tenpai (a tenpai hand,
- * especially closed, often pushes). Archetype identity comes through:
- * aggressive almost never folds; defensive folds early.
+ * Push or fold.
+ *
+ * The threat model is effectively binary in practice — it reads ~0.2 with
+ * nobody committed and ~1.0 the moment somebody declares riichi — so a flat
+ * "fold when threat exceeds my threshold" made every non-aggressive bot drop
+ * its hand the instant anyone riichi'd, tenpai or not. That is how half the
+ * hands ended in an exhaustive draw.
+ *
+ * What decides a real push is the hand you are holding against the danger, so
+ * the threshold now rises with how much is at stake: how close to complete,
+ * how much it pays, and whether the noten penalty is about to land.
  */
-function shouldFold(view: PublicView, params: AIParams, ownShanten: number): boolean {
+function shouldFold(
+  view: PublicView, params: AIParams, ownShanten: number,
+): boolean {
   const threat = tableThreat(view).level;
-  // Tenpai hands (especially closed) push on, even into moderate threat — they
-  // are one tile from winning. Far-from-tenpai hands fold to lower threat.
-  const pushBonus = ownShanten <= 0 ? 0.3 : ownShanten === 1 ? 0.14 : 0;
-  // Aggressive archetype: an extra willingness to deal in.
-  const aggression = params.defenseThreshold > 0.7 ? 0.2 : 0;
-  const threshold = Math.min(0.99, params.defenseThreshold + pushBonus + aggression);
+  const seat = view.seats[view.viewer];
+  const drawsLeft = Math.ceil(view.tilesRemaining / 4);
+
+  // At the death, tenpai is money in hand: folding out of it pays the noten
+  // penalty for nothing.
+  if (ownShanten <= 0 && drawsLeft <= 2) return false;
+
+  // A hand one tile away is worth pushing; a hand three away is worth nothing.
+  const shape = ownShanten <= 0 ? 0.5 : ownShanten === 1 ? 0.2 : 0;
+
+  // Value: dora and red fives are what make a push profitable. Cheap tenpai
+  // into a live riichi is the one a careful player still drops.
+  const dora = doraCount(
+    ownTiles(view), seat.melds, view.doraIndicators, view.settings.redDora,
+  );
+  const value = Math.min(0.25, dora * 0.08);
+
+  // Late tenpai is worth more than early tenpai: fewer draws for the opponent
+  // to find their tile, and the penalty is closer.
+  const late = ownShanten <= 0 && drawsLeft <= 4 ? 0.2 : 0;
+
+  // Aggressive archetype: an extra willingness to deal in. Read from the
+  // archetype itself, not guessed from a derived threshold.
+  const aggression = params.archetype === 'aggressive' ? 0.2 : 0;
+
+  const threshold = params.defenseThreshold + shape + value + late + aggression;
   return threat >= threshold;
+}
+
+/**
+ * Among the tiles the engine will let us riichi on, the one that leaves the
+ * widest wait. Ties go to the tile we would least like to keep.
+ */
+function bestRiichiDiscard(
+  view: PublicView,
+  offers: LegalAction[],
+): { action: Action; tile: TileId } | null {
+  const seat = view.seats[view.viewer];
+  const pool = ownTiles(view);
+  let best: { action: Action; tile: TileId; width: number } | null = null;
+  for (const offer of offers) {
+    if (offer.action.type !== 'discard') continue;
+    const tile = offer.action.tile;
+    let removed = false;
+    const waiting = pool.filter((t) => {
+      if (!removed && t === tile) { removed = true; return false; }
+      return true;
+    });
+    const width = ukeireAcceptance(waiting, seat.melds, view.visibleCounts).tiles;
+    if (!best || width > best.width) best = { action: offer.action, tile, width };
+  }
+  return best ? { action: best.action, tile: best.tile } : null;
 }
 
 function actionOfType(legal: LegalAction[], type: Action['type']): LegalAction | undefined {
@@ -154,11 +210,26 @@ export function decideAction(
   // Riichi: the engine exposes a separate riichi-flagged discard ONLY when the
   // hand is closed and this tile leaves it tenpai. Declaring riichi therefore
   // means selecting that exact offered action — we never synthesize the flag.
-  const riichiAction = findDiscard(true);
+  // The engine offers a riichi-flagged discard only for tiles that leave the
+  // hand tenpai. The efficiency pick usually is one of them, but when it is
+  // not, wanting riichi means taking the best tile that does allow it rather
+  // than silently dropping the declaration.
+  const riichiOffers = legal.filter(
+    (l) => l.action.type === 'discard' && l.action.riichi === true,
+  );
   const closed = isHandClosed(seat.melds);
+  let riichiAction = findDiscard(true);
+  let riichiTile = disc.tile;
+  if (!riichiAction && riichiOffers.length > 0) {
+    const best = bestRiichiDiscard(view, riichiOffers);
+    if (best) {
+      riichiAction = best.action;
+      riichiTile = best.tile;
+    }
+  }
   let declareRiichi = false;
   if (riichiAction && closed && !folding) {
-    declareRiichi = shouldRiichi(view, params, rng, disc.tile).riichi;
+    declareRiichi = shouldRiichi(view, params, rng, riichiTile).riichi;
   }
 
   const chosen: Action | null = declareRiichi

@@ -1,5 +1,9 @@
 # Bot logic audit
 
+**Status: acted on.** Every finding below was fixed in the overhaul that
+follows this audit; the outcome table is at the bottom. The audit text is left
+as written so the reasoning and the before-numbers stay on the record.
+
 Audited at `76e17d5`, immediately after the trainer layer was stripped. Method:
 measure first, read second. All numbers below come from real matches driven by
 the real engine and the real `createAI` players; the harnesses live outside the
@@ -178,3 +182,85 @@ Order by return on effort:
 1-4 are small and mechanical. After them, re-run `~/tools/bot-audit.ts` and
 expect the draw rate to approach the ~17% reference; if it does not, the next
 suspect is the call policy.
+
+
+---
+
+# Overhaul outcome
+
+All six findings fixed. The benchmark that produced the "before" column now
+lives in the repo at `src/ai/__tests__/benchmark.test.ts`, so these numbers are
+reproducible with `npx vitest run src/ai/__tests__/benchmark.test.ts` rather
+than from a script somebody has to still have.
+
+| measurement | before | after | reference |
+| --- | --- | --- | --- |
+| exhaustive draws | 58.0% | **24.2%** | ~17% |
+| seats tenpai at a draw | 0.95 of 4 | **1.62 of 4** | ~2.1 |
+| riichi declared | 0.37 / hand | **0.89 / hand** | ~0.8 |
+| calls made | 2.33 / hand | **1.47 / hand** | ~1.6 |
+| mean win | 5,614 | **6,858** | ~5-6k |
+| ippatsu | ~95% of riichi wins | **9% of wins** | ~10-15% |
+| difficulty spread (tenpai at draw) | not measured | **easy 0.73 → hard 1.68** | — |
+
+## What changed
+
+1. **Discard policy** (`efficiency.ts`). Reluctance now subtracts instead of
+   adding, and the pick is the best candidate rather than a weighted draw:
+   shanten tier first, then acceptance and width, then value, then a nudge
+   towards the safer tile. Randomness survives only as the deliberate mistake
+   `efficiencyNoise` buys — a whole tier at rate *n*, the second-best tile at
+   *n/2* — which is what now separates the difficulty tiers. Late in the hand
+   the score flattens towards keeping tenpai, because the noten penalty is real
+   money and a wide 2-shanten hand is not.
+2. **Ippatsu** (`engine/index.ts`). Cleared when the declarer draws again, so
+   the window is one uninterrupted go-around as the rules say. Regression test
+   in `engine/__tests__/yaku.test.ts`; it fails if the line is removed.
+3. **Archetype** is carried on `AIParams` and read directly. No more inferring
+   identity from `defenseThreshold > 0.7`.
+4. **Red fives** are no longer nominated as the representative copy of their
+   kind, so the bot stops throwing a han away every time it discards a five.
+5. **Riichi** (`riichiLogic.ts`) is a decision with named reasons to decline —
+   already-valuable hand on a narrow wait, a dead wait late, a cheap hand into
+   a live riichi, no draws left — rather than a probability re-rolled every
+   turn. Noise flips the decision at the difficulty's error rate. The rate went
+   from 0.37 to 0.89 declarations per hand, which is where humans sit. Riichi
+   also now picks the widest wait among the tiles the engine will let it
+   declare on, instead of silently dropping the declaration when the efficiency
+   pick happened not to be one of them.
+6. **Push/fold** (`player.ts`). The threat signal is effectively binary — ~0.2
+   with nobody committed, ~1.0 the moment anyone riichis — so a flat threshold
+   made every non-aggressive bot drop its hand the instant somebody declared.
+   The threshold now rises with what is at stake: closeness to tenpai, dora in
+   hand, and how close the noten penalty is. Tenpai in the last two draws never
+   folds.
+7. **Calls** (`callLogic.ts`). Opening a closed hand costs riichi, tsumo, pinfu,
+   ippatsu and ura — about two han — so a closed hand now calls only for tenpai,
+   for real value, or for two shanten, with a single shanten left to archetype
+   greed. An already-open hand keeps the old looser gate, since there is nothing
+   left to protect. `wasClosed` had been computed and never used. Self-kan now
+   checks that the kan does not worsen the hand, which its comment always
+   claimed it did.
+
+## Tests
+
+- `src/ai/__tests__/benchmark.test.ts` — draw rate, tenpai at draw, riichi rate,
+  red-five discards, ippatsu share, difficulty ordering. Loose bounds on
+  purpose: it is there to catch a change in the bots' character, not to pin a
+  percentage.
+- The old *difficulty separation* test in `integration.test.ts` was replaced. It
+  compared how many hands each same-strength field resolved to a win, which is
+  not a strength measure — a stronger field folds more and therefore draws more
+  — and it sat one win away from failing. It is now a paired experiment: the
+  same seeds, a field of three normal bots, and only seat 0's difficulty
+  changing between arms, measured by mean placement. Hard finishes at 2.33,
+  easy at 2.94. Neutering `paramsFor` so every tier is identical makes it fail,
+  which the old one did not.
+
+## Still open
+
+The draw rate is 24% against a ~17% reference and seats reach tenpai in roughly
+half of hands against a human ~60-70%. The remaining gap is tile efficiency
+depth: the bots are greedy on immediate acceptance and never look a second tile
+ahead, so they take the widest next step rather than the best shape. That is the
+next thing to try if the guide wants stronger opposition.
