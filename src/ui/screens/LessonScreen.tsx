@@ -15,9 +15,9 @@
  * bar, so a long explanation can hand the whole table back.
  *
  * Pointing is done by dimming: the spotlight in TableBoard fades everything
- * that is not the subject. While a discard drill is open the hand stays fully
- * lit — the player has to read all fourteen tiles, not four candidates — and
- * once answered the board lights the correct discard while the coach explains.
+ * that is not the subject. While a discard drill is open it narrows the hand
+ * to the coach's options — the decision is between those tiles — and once
+ * answered the board lights the correct discard while the coach explains.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LegalAction, SeatIndex, TileId } from '@engine/types';
@@ -129,25 +129,28 @@ export default function LessonScreen() {
   );
 
   const answered = picked !== null;
+  const chosen = answered ? step.options![picked!] : null;
+  const isTileDrill = step.kind === 'drill' && (step.options ?? []).some((o) => o.tile);
+  const blocked = step.kind === 'drill' && !answered;
+
   const focusTiles = useMemo(() => {
     if (!table) return [];
     const pond = step.focusPond ? tilesInRivers(table.view, step.focusPond) : [];
     if (step.focus) return [...tilesInHand(table.view, step.focus), ...pond];
     if (pond.length) return pond;
-    // While a tile drill is open the whole hand stays lit: spotlighting the
-    // answer options would dim the very tiles the player has to weigh. After
-    // the answer, the board points at the correct discard while the coach
-    // explains itself.
+    // While a discard drill is open the spotlight narrows the hand to the
+    // coach's options: the decision is between those tiles, and dimming the
+    // rest keeps the felt readable. After the answer the board lights the
+    // correct discard while the coach explains itself.
+    if (isTileDrill && !answered) {
+      return (step.options ?? []).flatMap((o) => (o.tile ? tilesInHand(table.view, o.tile) : []));
+    }
     if (answered) {
       const right = (step.options ?? []).find((o) => o.correct && o.tile);
       if (right) return tilesInHand(table.view, right.tile!);
     }
     return [];
-  }, [table, step, answered]);
-
-  const chosen = answered ? step.options![picked!] : null;
-  const isTileDrill = step.kind === 'drill' && (step.options ?? []).some((o) => o.tile);
-  const blocked = step.kind === 'drill' && !answered;
+  }, [table, step, answered, isTileDrill]);
 
   /** Tapping a tile on the felt answers a discard drill. */
   const tapTile = (tile: TileId | null) => {
@@ -276,7 +279,7 @@ export default function LessonScreen() {
             <>
               <p className="lesson-p prompt">{step.prompt}</p>
               {isTileDrill && !answered && (
-                <p className="tap-hint">Tap a tile on the table.</p>
+                <p className="tap-hint">Tap a lit tile on the table.</p>
               )}
               {(!isTileDrill || answered) && (
                 <div className="drill-options">
