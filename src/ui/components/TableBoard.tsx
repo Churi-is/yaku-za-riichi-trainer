@@ -33,12 +33,25 @@ export interface TableBoardProps {
   onSelect: (tile: TileId | null) => void;
   riichiMode: boolean;
   locked: boolean;
+  /**
+   * Dojo mode: tiles to spotlight. Everything else on the felt dims, so the
+   * coach can point at a shape without describing where to look.
+   */
+  highlight?: TileId[];
+  /** Spotlight the centre block (dora, wall count, round) instead of tiles. */
+  focusCentre?: boolean;
+  /** One tap answers, instead of lift-then-confirm. */
+  tapToAnswer?: boolean;
 }
 
 export default function TableBoard({
   view, seatName: _seatName, aiThinking, orient, compact = false,
   discardActions, onDiscard, selected, onSelect, riichiMode, locked,
+  highlight, focusCentre = false, tapToAnswer = false,
 }: TableBoardProps) {
+  const focus = new Set<TileId>(highlight ?? []);
+  const spotlit = focus.size > 0 || focusCentre;
+  const mark = (id: TileId) => (focus.has(id) ? ' tile-focus' : '');
   const hostRef = useRef<HTMLDivElement>(null);
   const variant: BoardVariant = orient === 'portrait' ? 'portrait' : compact ? 'compact' : 'landscape';
   const box = useBoxSize(hostRef);
@@ -61,6 +74,7 @@ export default function TableBoard({
   };
   const tapTile = (t: TileId) => {
     if (!canDiscard(t)) return;
+    if (tapToAnswer) { onSelect(t); return; }
     if (selected === t) onDiscard(t, riichiMode && riichiable.has(t));
     else onSelect(t);
   };
@@ -77,7 +91,7 @@ export default function TableBoard({
       key={t.key}
       id={t.id}
       size="rv"
-      className={`abs${t.latest ? ' tile-latest' : ''}${t.tsumogiri ? ' tile-tsumogiri' : ''}`}
+      className={`abs${t.latest ? ' tile-latest' : ''}${t.tsumogiri ? ' tile-tsumogiri' : ''}${mark(t.id)}`}
       style={pos(t)}
       faceDown={t.faceDown}
       rotation={t.rot as TileRotation}
@@ -88,7 +102,7 @@ export default function TableBoard({
   return (
     <div className="board-host" ref={hostRef}>
       <div
-        className="board"
+        className={`board${spotlit ? ' spotlit' : ''}`}
         data-orient={orient}
         style={{ width: L.m.W, height: L.m.H, transform: `translate(-50%, -50%) scale(${scale})` }}
       >
@@ -110,7 +124,10 @@ export default function TableBoard({
           />
         ))}
 
-        <div className="abs board-center" style={{ left: L.center.x, top: L.center.y }}>
+        <div
+          className={`abs board-center${focusCentre ? ' tile-focus' : ''}`}
+          style={{ left: L.center.x, top: L.center.y }}
+        >
           <TableCenter view={view} center={L.center} thinking={aiThinking} />
         </div>
 
@@ -123,7 +140,7 @@ export default function TableBoard({
               key={t.key}
               id={t.id}
               size="rv"
-              className={`abs hand-tile${t.key === 'h-drawn' ? ' drawn' : ''}`}
+              className={`abs hand-tile${t.key === 'h-drawn' ? ' drawn' : ''}${mark(t.id)}`}
               style={pos(t, L.m.hand)}
               onClick={() => tapTile(t.id)}
               disabled={!playable}

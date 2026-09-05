@@ -9,7 +9,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { parseHand } from '@ai/handEval';
-import { kindOf, shanten } from '@engine/index';
+import { getLegalActions, kindOf, shanten } from '@engine/index';
+import { scriptedState, scriptedView, tilesInHand, tilesInRivers } from '../table';
 import { ALL_LESSONS, CHAPTERS, lessonById, nextLesson, type Step } from '../course';
 
 const drillsOf = (steps: Step[]) => steps.filter((s) => s.kind === 'drill');
@@ -146,6 +147,110 @@ describe('drills', () => {
             `${lesson.id}: discarding ${right.tile} should not be worse than ${o.tile}`,
           ).toBeLessThanOrEqual(after(o.tile));
         }
+      }
+    }
+  });
+});
+
+describe('every position is a real engine state', () => {
+  it('builds through the engine, or the lesson does not ship', () => {
+    // This is the check that makes hand-written positions safe. A script that
+    // asks for a fifth copy of a tile, a sixteen-tile hand or a pond holding a
+    // tile the player is also holding throws here rather than rendering an
+    // empty board to a reader.
+    for (const { lesson } of ALL_LESSONS) {
+      for (const [i, step] of lesson.steps.entries()) {
+        if (!step.hand) continue;
+        expect(
+          () => scriptedState({
+            hand: step.hand!,
+            draw: step.draw,
+            dora: step.dora,
+            rivers: step.rivers,
+            riichi: step.riichi,
+            wall: step.wall,
+            seatWind: step.seatWind,
+          }),
+          `${lesson.id} step ${i + 1}`,
+        ).not.toThrow();
+      }
+    }
+  });
+
+  it('spotlights only tiles the player is actually holding', () => {
+    for (const { lesson } of ALL_LESSONS) {
+      for (const [i, step] of lesson.steps.entries()) {
+        if (!step.focus || !step.hand) continue;
+        const view = scriptedView({
+          hand: step.hand, draw: step.draw, dora: step.dora,
+          rivers: step.rivers, riichi: step.riichi, wall: step.wall,
+          seatWind: step.seatWind,
+        });
+        const want = parseHand(step.focus).length;
+        const got = tilesInHand(view, step.focus).length;
+        expect(got, `${lesson.id} step ${i + 1}: focus "${step.focus}"`).toBe(want);
+      }
+    }
+  });
+
+  it('lets the engine offer the discards a tile drill asks for', () => {
+    for (const { lesson } of ALL_LESSONS) {
+      for (const step of drillsOf(lesson.steps)) {
+        const tileOptions = (step.options ?? []).filter((o) => o.tile);
+        if (tileOptions.length === 0 || !step.hand) continue;
+        const state = scriptedState({
+          hand: step.hand, draw: step.draw, dora: step.dora,
+          rivers: step.rivers, riichi: step.riichi, wall: step.wall,
+          seatWind: step.seatWind,
+        });
+        const legal = getLegalActions(state, 0)
+          .filter((l) => l.action.type === 'discard')
+          .map((l) => kindOf((l.action as { tile: number }).tile));
+        for (const o of tileOptions) {
+          expect(legal, `${lesson.id}: ${o.tile} is not a legal discard`)
+            .toContain(kindOf(parseHand(o.tile!)[0]));
+        }
+      }
+    }
+  });
+});
+
+describe('the coach points at real things', () => {
+  it('every pond spotlight names a tile that is really in a pond', () => {
+    for (const { lesson } of ALL_LESSONS) {
+      for (const [i, step] of lesson.steps.entries()) {
+        if (!step.focusPond || !step.hand) continue;
+        const view = scriptedView({
+          hand: step.hand, draw: step.draw, dora: step.dora,
+          rivers: step.rivers, riichi: step.riichi, wall: step.wall,
+          seatWind: step.seatWind,
+        });
+        const want = parseHand(step.focusPond).length;
+        const got = tilesInRivers(view, step.focusPond).length;
+        expect(got, `${lesson.id} step ${i + 1}: pond focus "${step.focusPond}"`).toBe(want);
+      }
+    }
+  });
+
+  it('keeps the card off the pond when the pond is the subject', () => {
+    // The card floats over the felt. Opponents' ponds sit at the top of the
+    // board and your own sits at the bottom, so a step pointing at a discard
+    // has to send the card the other way or it covers its own subject.
+    for (const { lesson } of ALL_LESSONS) {
+      for (const [i, step] of lesson.steps.entries()) {
+        if (!step.focusPond || !step.hand) continue;
+        const view = scriptedView({
+          hand: step.hand, draw: step.draw, dora: step.dora,
+          rivers: step.rivers, riichi: step.riichi, wall: step.wall,
+          seatWind: step.seatWind,
+        });
+        const lit = new Set(tilesInRivers(view, step.focusPond));
+        const mine = view.seats[0].river.some((d) => lit.has(d.tile));
+        const theirs = ([1, 2, 3] as const).some(
+          (s) => view.seats[s].river.some((d) => lit.has(d.tile)),
+        );
+        const want = theirs && !mine ? 'bottom' : 'top';
+        expect(step.cardAt, `${lesson.id} step ${i + 1} hides its own subject`).toBe(want);
       }
     }
   });

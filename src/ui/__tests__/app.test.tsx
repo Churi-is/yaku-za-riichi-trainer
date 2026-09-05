@@ -91,11 +91,15 @@ describe('modes', () => {
     expect(screen.getByText(/of 14 lessons/i)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Start the course/i }));
 
-    // A lesson opens on its first scripted turn, not on a wall of prose.
+    // A lesson opens on a live board, not on a wall of prose.
     expect(screen.getByText(/Blocks, partial sets and floaters/i)).toBeTruthy();
     expect(screen.getByText('1 / 6')).toBeTruthy();
-    expect(document.querySelector('.position')).not.toBeNull();
-    expect(document.querySelectorAll('.tile').length).toBeGreaterThan(10);
+    expect(document.querySelector('.board')).not.toBeNull();
+    expect(document.querySelector('.coach')).not.toBeNull();
+    // The whole table is there: the player's hand, the opponents' backs.
+    expect(document.querySelectorAll('.board .tile').length).toBeGreaterThan(40);
+    // and the coach is pointing at something.
+    expect(document.querySelectorAll('.board .tile-focus').length).toBeGreaterThan(0);
 
     // Step through the guided example.
     fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
@@ -104,11 +108,13 @@ describe('modes', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
     expect(screen.getByText('4 / 6')).toBeTruthy();
 
-    // Now a drill: it blocks until answered, and explains every option after.
-    const advance = screen.getByRole('button', { name: /Choose an answer/i });
+    // Now a drill: answered by tapping the felt, and it blocks until you do.
+    const advance = screen.getByRole('button', { name: /Tap a tile/i });
     expect((advance as HTMLButtonElement).disabled).toBe(true);
     expect(document.querySelector('.drill-why')).toBeNull();
-    fireEvent.click(document.querySelectorAll('.drill-opt')[0] as HTMLElement);
+    const playable = document.querySelectorAll('.board .hand-tile:not(:disabled)');
+    expect(playable.length).toBeGreaterThan(0);
+    fireEvent.click(playable[0] as HTMLElement);
     expect(document.querySelector('.drill-why')).not.toBeNull();
     expect(screen.getByRole('button', { name: /Continue/i })).toBeTruthy();
   });
@@ -120,7 +126,7 @@ describe('modes', () => {
     expect(screen.getByText('1 / 2')).toBeTruthy();
     expect(useSession.getState().completed).not.toContain('source');
     fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Finish the course/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Finish$/i }));
     expect(useSession.getState().completed).toContain('source');
     expect(useSession.getState().screen).toBe('dojo');
   });
