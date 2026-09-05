@@ -1,10 +1,13 @@
 /**
  * DojoScreen — the course contents page.
  *
- * A linear syllabus, in reading order, with the chapter it came from and how
- * far through you are. Progress is session-only, like everything else here.
+ * A linear syllabus in reading order. Every row says what the lesson is about
+ * AND what it costs you: how many screens, how many drills. A row that is the
+ * next thing to do is marked as such, and a chapter you have finished says so
+ * on its own header rather than making you scan fourteen ticks. Progress is
+ * session-only, like everything else here.
  */
-import { CHAPTERS, ALL_LESSONS } from '@dojo/course';
+import { CHAPTERS, ALL_LESSONS, lessonShape } from '@dojo/course';
 import { useSession } from '@state/session';
 
 export default function DojoScreen() {
@@ -29,49 +32,63 @@ export default function DojoScreen() {
           <span className="muted" style={{ fontSize: 12 }}>session progress</span>
         </div>
         <div className="course-bar"><span style={{ width: `${(done / total) * 100}%` }} /></div>
-        {next && (
-          <button className="btn btn-primary" onClick={() => openLesson(next.lesson.id)}>
-            {done === 0 ? 'Start the course' : 'Continue'} — {next.lesson.title}
+        {next ? (
+          <button className="btn btn-primary course-cta" onClick={() => openLesson(next.lesson.id)}>
+            <span className="cta-kicker">{done === 0 ? 'Start the course' : 'Continue'}</span>
+            <span className="cta-title">{next.lesson.title}</span>
           </button>
+        ) : (
+          <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+            Every lesson done. Play a match and see how much of it survives contact.
+          </p>
         )}
       </div>
 
       {CHAPTERS.map((c) => {
-        const doneIn = c.lessons.filter((l) => completed.includes(l.id)).length;
+        const chDone = c.lessons.filter((l) => completed.includes(l.id)).length;
         return (
-        <section key={c.id} className="stack" style={{ gap: 8 }}>
-          <div className="chapter-head">
-            <span className="jp kan">{c.kanji}</span>
-            <div>
-              <h3 style={{ margin: 0 }}>{c.title}</h3>
-              <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{c.blurb}</p>
+          <section key={c.id} className="stack" style={{ gap: 8 }}>
+            <div className="chapter-head">
+              <span className="jp kan">{c.kanji}</span>
+              <div className="chapter-text">
+                <h3 style={{ margin: 0 }}>{c.title}</h3>
+                <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{c.blurb}</p>
+              </div>
+              <span className="chapter-meta">
+                {c.book > 0 && <span className="book-tag">Book ch.{c.book}</span>}
+                <span className={`chapter-count${chDone === c.lessons.length ? ' all' : ''}`}>
+                  {chDone}/{c.lessons.length}
+                </span>
+              </span>
             </div>
-            <span className="chapter-prog" aria-label={`${doneIn} of ${c.lessons.length} lessons done`}>
-              {doneIn}/{c.lessons.length}
-            </span>
-            {c.book > 0 && <span className="book-tag">Book ch.{c.book}</span>}
-          </div>
-          <div className="lesson-list">
-            {c.lessons.map((l) => {
-              const isDone = completed.includes(l.id);
-              return (
-                <button
-                  key={l.id}
-                  type="button"
-                  className={`lesson-row${isDone ? ' done' : ''}`}
-                  onClick={() => openLesson(l.id)}
-                >
-                  <span className="tick" aria-hidden="true">{isDone ? '✓' : ''}</span>
-                  <span className="lesson-text">
-                    <span className="lesson-title">{l.title}</span>
-                    <span className="lesson-sum">{l.summary}</span>
-                  </span>
-                  <span className="chev" aria-hidden="true">›</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+            <div className="lesson-list">
+              {c.lessons.map((l) => {
+                const isDone = completed.includes(l.id);
+                const isNext = next?.lesson.id === l.id;
+                const { steps, drills } = lessonShape(l);
+                return (
+                  <button
+                    key={l.id}
+                    type="button"
+                    className={`lesson-row${isDone ? ' done' : ''}${isNext ? ' next' : ''}`}
+                    onClick={() => openLesson(l.id)}
+                  >
+                    <span className="tick" aria-hidden="true">{isDone ? '✓' : ''}</span>
+                    <span className="lesson-text">
+                      <span className="lesson-title">{l.title}</span>
+                      <span className="lesson-sum">{l.summary}</span>
+                      <span className="lesson-meta">
+                        <span>{steps} screens</span>
+                        {drills > 0 && <span>{drills} drills</span>}
+                        {isNext && <span className="up-next">Up next</span>}
+                      </span>
+                    </span>
+                    <span className="chev" aria-hidden="true">›</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         );
       })}
     </div>

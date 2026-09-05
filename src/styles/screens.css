@@ -206,10 +206,13 @@
   min-width: 2.2em; text-align: center; white-space: nowrap; flex: none;
 }
 .chapter-head h3 { font-size: 15px; }
-.chapter-prog {
-  margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap;
+.chapter-head .chapter-text { flex: 1; min-width: 0; }
+.chapter-meta { display: flex; align-items: center; gap: 6px; flex: none; }
+.chapter-count {
+  font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums;
+  border: 1px solid var(--hairline); border-radius: 999px; padding: 2px 7px;
 }
-.chapter-prog + .book-tag { margin-left: 8px; }
+.chapter-count.all { color: var(--gold-hi); border-color: var(--gold-dim); }
 .book-tag {
   font-size: 10px; color: var(--muted);
   border: 1px solid var(--hairline); border-radius: 999px; padding: 2px 8px; white-space: nowrap;
@@ -231,6 +234,27 @@
 .lesson-row .lesson-title { display: block; font-weight: 600; font-size: 13.5px; }
 .lesson-row .lesson-sum { display: block; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
 .lesson-row .chev { color: var(--gold-dim); font-size: 18px; }
+.lesson-row .lesson-meta {
+  display: flex; gap: 10px; margin-top: 5px;
+  font-size: 10px; color: var(--muted); letter-spacing: 0.04em;
+}
+.lesson-row .lesson-meta .up-next {
+  color: var(--gold-hi); text-transform: uppercase; font-weight: 700;
+}
+/* the one row you are meant to press next is not a needle in a haystack */
+.lesson-row.next {
+  border-color: var(--gold-dim);
+  background: linear-gradient(90deg, rgba(216, 180, 90, 0.12), rgba(0, 0, 0, 0.22) 60%);
+}
+.lesson-row.done .lesson-title { color: var(--muted); }
+.lesson-row.done .lesson-sum { opacity: 0.75; }
+
+/* the continue button says what it is doing and what it will open */
+.course-cta { display: grid; gap: 1px; padding-block: 9px; text-align: center; }
+.course-cta .cta-kicker {
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.75;
+}
+.course-cta .cta-title { font-size: 14px; font-weight: 700; }
 
 /* ---------- lesson body ---------- */
 .crumb {
@@ -315,56 +339,97 @@
 }
 .lesson-bar .step-dots { flex: none; }
 
-/* The felt is split, not overlapped: the coach card takes a strip opposite
-   whatever it is pointing at and the board keeps the rest. Nothing on the
-   table is ever under the card. */
+/* the felt fills what is left; the coach takes a band of it, never a seat */
 .lesson-felt {
   position: relative; flex: 1; min-height: 0; overflow: hidden;
-  display: flex; flex-direction: column;
-}
-.lesson-felt[data-dock='bottom'] { flex-direction: column-reverse; }
-.felt-area { position: relative; flex: 1 1 auto; min-height: 0; }
-.felt-area .board-host {
-  position: absolute; inset: 0;
   background:
-    radial-gradient(120% 80% at 50% 15%, #2a7d59 0%, #1c5f43 45%, #12402e 100%);
+    radial-gradient(120% 80% at 50% 20%, #2a7d59 0%, #1c5f43 45%, #12402e 100%);
 }
+/* a wooden rim, so the lesson felt reads like the match table it is */
+.lesson-felt::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 30;
+  border: 4px solid #241a10;
+  box-shadow: inset 0 0 0 1px var(--hairline), inset 0 0 24px rgba(0, 0, 0, 0.55);
+}
+/* the board occupies the felt minus whatever band the coach card claims */
+.lesson-board { position: absolute; inset: 0; transition: top 0.25s ease, bottom 0.25s ease; }
+/* on a wide screen the felt is a row: board, then the coach rail beside it */
+.lesson-live[data-coach="rail"] .lesson-felt { display: flex; }
+.lesson-live[data-coach="rail"] .lesson-board { position: relative; inset: auto; flex: 1; min-width: 0; }
+.lesson-board .board-host { position: absolute; inset: 0; }
 .lesson-nofelt { position: absolute; inset: 0; background: var(--lacquer); }
+@media (prefers-reduced-motion: reduce) { .lesson-board { transition: none; } }
 
 .coach {
-  position: relative; z-index: 20; flex: 0 1 auto;
-  max-height: 62%; overflow-y: auto; overscroll-behavior: contain;
+  position: absolute; z-index: 20;
+  overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; gap: 8px;
-  margin: 8px 8px 2px; padding: 10px 12px; border-radius: 10px;
-  background: linear-gradient(180deg, rgba(20, 16, 10, 0.96), rgba(12, 9, 5, 0.97));
+  padding: 11px 13px; border-radius: 12px;
+  background: linear-gradient(180deg, rgba(20, 16, 10, 0.97), rgba(12, 9, 5, 0.98));
   border: 1px solid var(--gold-dim);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   animation: coach-in 0.25s ease;
+  transition: max-height 0.25s ease;
 }
-.lesson-felt[data-dock='bottom'] .coach { margin: 2px 8px 8px; }
-.lesson-felt[data-collapsed='yes'] .coach { max-height: none; overflow: hidden; gap: 0; }
-@keyframes coach-in { from { opacity: 0; transform: translateY(6px); } }
-@media (prefers-reduced-motion: reduce) { .coach { animation: none; } }
-.coach .lesson-p { font-size: 13px; line-height: 1.5; }
-.coach .turn-chip { align-self: flex-start; }
-.coach .lesson-note { padding: 8px 10px; }
-.coach .tile-figure { gap: 4px; }
-.coach .tile-figure figcaption { font-size: 11px; }
+/* the card sits at whichever end of the felt the step is NOT pointing at */
+.coach-top { top: 6px; left: 6px; right: 6px; }
+.coach-bottom { bottom: 6px; left: 6px; right: 6px; }
+/* a small card does not need the full width either */
+.coach-top.coach-sm, .coach-bottom.coach-sm { left: 10px; right: 10px; }
+/* on a wide screen the card is a rail beside the board, overlapping nothing */
+.coach-rail {
+  position: relative; flex: 0 0 clamp(280px, 34vw, 380px);
+  margin: 8px 8px 8px 0; max-height: none;
+}
+.coach-rail.coach-sm { flex-basis: clamp(250px, 28vw, 320px); }
 
-/* the grip: always visible, collapses the card to a one-line peek */
+/* a card with more to say than fits scrolls, and says so with a fade */
+.coach::after {
+  content: ''; position: sticky; bottom: -11px; margin: -14px -13px -11px; height: 22px;
+  flex: none; pointer-events: none;
+  background: linear-gradient(180deg, rgba(12, 9, 5, 0), rgba(12, 9, 5, 0.95));
+}
+.coach { scrollbar-width: thin; scrollbar-color: var(--gold-dim) transparent; }
+.coach::-webkit-scrollbar { width: 4px; }
+.coach::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+/* the grip: collapses the card to a one-line peek bar, so a long
+   explanation can hand the whole table back on a phone */
 .coach-grip {
-  display: flex; align-items: center; gap: 8px; width: 100%;
+  display: flex; align-items: center; gap: 8px; width: 100%; flex: none;
   padding: 0; background: none; border: 0; cursor: pointer;
   color: var(--muted); font: inherit;
 }
-.coach-grip .turn-chip { margin: 0; flex: none; }
+.coach-grip .turn-chip { margin: 0; flex: none; align-self: center; }
 .grip-word { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
 .coach-peek {
   flex: 1; min-width: 0; text-align: left; font-size: 12px; color: var(--ink);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .grip-chev { margin-left: auto; flex: none; font-size: 11px; transition: transform 0.2s ease; }
-.lesson-felt[data-collapsed='yes'] .grip-chev { transform: rotate(180deg); }
+.coach-collapsed { overflow: hidden; }
+.coach-collapsed::after { display: none; }
+.coach-collapsed .grip-chev { transform: rotate(180deg); }
+/* beside the board the card overlaps nothing, so there is nothing to peek */
+.lesson-live[data-coach="rail"] .coach-grip .grip-chev { display: none; }
+
+@keyframes coach-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .coach { animation: none; transition: none; } }
+.coach .lesson-p { font-size: 13px; line-height: 1.5; }
+.coach.coach-lg .lesson-p { font-size: 12.5px; line-height: 1.45; }
+.coach .turn-chip { align-self: flex-start; }
+.coach .lesson-note { padding: 8px 10px; }
+/* A shape lesson shows four or five little diagrams. Stacked, they push the
+   real table off the screen; as tiles-then-caption rows they cost one line
+   each and the figure is still the first thing your eye lands on. */
+.coach .tile-figure {
+  flex-direction: row; align-items: center; gap: 8px;
+  padding: 4px 0; border-top: 1px solid rgba(216, 180, 90, 0.14);
+}
+.coach .tile-figure:first-of-type { border-top: none; }
+.coach .tile-figure .tile-row { flex: none; flex-wrap: nowrap; }
+.coach .tile-figure figcaption { font-size: 11px; flex: 1; min-width: 0; }
+.coach.coach-lg .tile-figure figcaption { font-size: 10.5px; }
 .tap-hint {
   margin: 0; font-size: 11.5px; color: var(--gold-hi); letter-spacing: 0.03em;
   display: flex; align-items: center; gap: 6px;
@@ -383,10 +448,11 @@
 .lesson-foot .btn-primary { flex: 1; }
 .lesson-foot .step-count { font-size: 11px; color: var(--muted); }
 
-@media (orientation: landscape) and (min-width: 700px) {
-  /* wide enough to sit the coach beside the felt: a column, not a strip */
-  .lesson-felt, .lesson-felt[data-dock='bottom'] { flex-direction: row; }
-  .felt-area { order: 1; }
-  .coach { order: 2; flex: 0 0 340px; width: 340px; max-height: none; margin: 10px; }
-  .lesson-felt[data-dock='bottom'] .coach { margin: 10px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  /* phone on its side: the bars steal too much height, so shrink them */
+  .lesson-bar { padding: 3px 8px; }
+  .lesson-bar-title strong { font-size: 12px; }
+  .lesson-foot { padding: 5px 8px calc(5px + env(safe-area-inset-bottom, 0px)); }
+  .coach { padding: 8px 10px; gap: 6px; }
+  .coach .lesson-p { font-size: 12px; line-height: 1.4; }
 }

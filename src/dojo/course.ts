@@ -1272,6 +1272,14 @@ export function lessonById(id: string): { chapter: Chapter; lesson: Lesson } | n
   return ALL_LESSONS.find((x) => x.lesson.id === id) ?? null;
 }
 
+/** How many steps and drills a lesson holds, for the dojo contents page. */
+export function lessonShape(lesson: Lesson): { steps: number; drills: number } {
+  return {
+    steps: lesson.steps.length,
+    drills: lesson.steps.filter((s) => s.kind === 'drill').length,
+  };
+}
+
 /** The lesson after `id` in reading order, or null at the end of the course. */
 export function nextLesson(id: string): Lesson | null {
   const i = ALL_LESSONS.findIndex((x) => x.lesson.id === id);
