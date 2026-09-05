@@ -151,7 +151,7 @@ export const CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              turn: 'Turn 2',
+              turn: 'Turn 1',
               hand: '234m 678m 22p 45p 789s',
               draw: 'N',
               seatWind: 'south',
@@ -165,7 +165,7 @@ export const CHAPTERS: Chapter[] = [
               ],
             },
             {
-              turn: 'Turn 3',
+              turn: 'Turn 1',
               hand: '345m 55m 789m 123p 78p',
               draw: '9s',
               prompt: 'Six blocks want to be five. Which tile goes?',
@@ -178,7 +178,7 @@ export const CHAPTERS: Chapter[] = [
               ],
             },
             {
-              turn: 'Turn 4',
+              turn: 'Turn 1',
               hand: '234m 789m 12p 46p 55s 78s',
               prompt: 'Six blocks and not one of them is junk. Which is weakest?',
               check: 'efficiency',
@@ -244,7 +244,7 @@ export const CHAPTERS: Chapter[] = [
               ],
             },
             {
-              turn: 'Turn 6',
+              turn: 'Turn 1',
               hand: '1123m 456m 789p 345s',
               draw: '9s',
               prompt: 'The 1123m shape is a pair AND a two-sided shape in four tiles. Prove it.',
@@ -280,7 +280,7 @@ export const CHAPTERS: Chapter[] = [
         steps: [
           {
             kind: 'teach',
-            turn: 'Turn 4',
+            turn: 'Turn 1',
             hand: '234m 567m 234p 55s 78s',
             focus: '78s',
             text: [
@@ -295,7 +295,7 @@ export const CHAPTERS: Chapter[] = [
           },
           {
             kind: 'teach',
-            turn: 'Turn 5',
+            turn: 'Turn 1',
             hand: '234m 567m 234p PP 78s',
             draw: 'P',
             focus: 'PPP',
@@ -306,7 +306,7 @@ export const CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              turn: 'Turn 5',
+              turn: 'Turn 1',
               hand: '234m 567m 234p PPP 78s',
               prompt: 'Three of your discards are tenpai. Which wait do you actually want?',
               check: 'efficiency',
@@ -372,7 +372,7 @@ export const CHAPTERS: Chapter[] = [
         steps: [
           {
             kind: 'teach',
-            turn: 'Turn 3',
+            turn: 'Turn 1',
             hand: '234m 88m 345p 12p 456s',
             draw: '3s',
             text: [
@@ -381,7 +381,7 @@ export const CHAPTERS: Chapter[] = [
           },
           {
             kind: 'teach',
-            turn: 'Turn 3',
+            turn: 'Turn 1',
             hand: '234m 88m 345p 12p 456s',
             draw: '3s',
             focus: '234m 88m 345p 12p 456s',
@@ -396,6 +396,7 @@ export const CHAPTERS: Chapter[] = [
           {
             kind: 'teach',
             turn: 'Turn 3',
+            rivers: { 0: '1z 2z', 1: '3z 4z', 2: '2z 3z', 3: '4z 1z' },
             hand: '234m 88m 345p 12p 456s',
             draw: '3s',
             focus: '12p',
@@ -406,7 +407,7 @@ export const CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              turn: 'Turn 4',
+              turn: 'Turn 1',
               hand: '234m 88m 345p 12p 456s',
               draw: '3s',
               prompt: 'Five blocks and a spare. What goes?',
@@ -419,7 +420,7 @@ export const CHAPTERS: Chapter[] = [
               ],
             },
             {
-              turn: 'Turn 5',
+              turn: 'Turn 1',
               hand: '567m 99m 234p 78p 456s',
               draw: '2s',
               prompt: 'Count first, then choose.',
@@ -435,7 +436,7 @@ export const CHAPTERS: Chapter[] = [
               turn: 'Turn 6',
               hand: '3456m 789m 22p 456p 3s',
               draw: '8s',
-              rivers: { 0: '1z 9p', 1: '9s 1z', 2: '9s 9m', 3: '7z 6s' },
+              rivers: { 0: '1z 9p 2z 3z 4z', 1: '9s 1z 4z 2z 3z', 2: '9s 9m 3z 4z 2z', 3: '7z 6s 2z 4z 3z' },
               focusPond: '9s 9s',
               cardAt: 'bottom',
               table: 'Two 9s are already in the ponds.',
@@ -458,7 +459,7 @@ export const CHAPTERS: Chapter[] = [
         steps: [
           {
             kind: 'teach',
-            turn: 'Turn 6',
+            turn: 'Turn 1',
             hand: '345m 89m 345p FF 456s',
             focus: '89m',
             text: [
@@ -473,7 +474,7 @@ export const CHAPTERS: Chapter[] = [
           },
           {
             kind: 'teach',
-            turn: 'Turn 6',
+            turn: 'Turn 1',
             hand: '345m 89m 345p FF 456s',
             focus: 'FF',
             text: [
@@ -486,7 +487,7 @@ export const CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              turn: 'Turn 6',
+              turn: 'Turn 1',
               hand: '345m 89m 345p FF 456s 1s',
               prompt: 'Throw the floater and this hand is tenpai. What leaves?',
               check: 'efficiency',
@@ -534,7 +535,7 @@ export const CHAPTERS: Chapter[] = [
         steps: [
           {
             kind: 'teach',
-            turn: 'Turn 2',
+            turn: 'Turn 1',
             hand: '456m 789m 22p 4567s 1m',
             draw: '5p',
             focus: '5p 1m',
@@ -550,7 +551,7 @@ export const CHAPTERS: Chapter[] = [
           },
           {
             kind: 'teach',
-            turn: 'Turn 2',
+            turn: 'Turn 1',
             hand: '456m 789m 22p 4567s 1m',
             draw: '5p',
             focus: '1m',
@@ -564,7 +565,7 @@ export const CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              turn: 'Turn 2',
+              turn: 'Turn 1',
               hand: '456m 789m 22p 4567s 1m',
               draw: '5p',
               prompt: 'Four blocks and two floaters. Which floater goes?',
@@ -577,7 +578,7 @@ export const CHAPTERS: Chapter[] = [
               ],
             },
             {
-              turn: 'Turn 3',
+              turn: 'Turn 1',
               hand: '2345m 567m 88s 123p 9p',
               draw: '4s',
               prompt: 'Same question, different floaters.',
@@ -676,7 +677,7 @@ export const CHAPTERS: Chapter[] = [
               ],
             },
             {
-              turn: 'Turn 5',
+              turn: 'Turn 1',
               hand: '234m 567m 345p 33s 78s',
               draw: '9m',
               table: 'Your hand is closed and every tile is a simple.',
@@ -697,7 +698,7 @@ export const CHAPTERS: Chapter[] = [
         steps: [
           {
             kind: 'teach',
-            turn: 'Turn 4',
+            turn: 'Turn 1',
             hand: '1123p 55p 789p PP FF',
             draw: '5m',
             focus: '1123p 55p 789p',
@@ -712,7 +713,7 @@ export const CHAPTERS: Chapter[] = [
           },
           {
             kind: 'teach',
-            turn: 'Turn 4',
+            turn: 'Turn 1',
             hand: '1123p 55p 789p PP FF',
             draw: '5m',
             focus: 'PP FF',
@@ -723,7 +724,7 @@ export const CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              turn: 'Turn 4',
+              turn: 'Turn 1',
               hand: '1123p 55p 789p PP FF 5m',
               prompt: 'Nine pin tiles and two dragon pairs. Commit or stay flexible?',
               check: 'efficiency',
@@ -738,7 +739,7 @@ export const CHAPTERS: Chapter[] = [
               turn: 'Turn 6',
               hand: '11m 8m 44m 77p 99p 33s 56s',
               draw: '8s',
-              rivers: { 0: '9p 1z', 1: '7z 1z', 2: '8m 8m', 3: '7z 6p' },
+              rivers: { 0: '9p 1z 3z 4z 2z', 1: '7z 1z 3z 4z 2z', 2: '8m 8m 3z 4z 2z', 3: '7z 6p 3z 4z 2z' },
               focusPond: '8m 8m',
               cardAt: 'bottom',
               table: 'Two 8m are already in the ponds.',
@@ -830,6 +831,7 @@ export const CHAPTERS: Chapter[] = [
             },
             {
               turn: 'Turn 3',
+              rivers: { 0: '1z 2z', 1: '2z 3z', 2: '3z 4z', 3: '4z 1z' },
               hand: '345m 678m 234p 55s 46s',
               draw: '9p',
               table: 'Closed. Turn three. Nobody has discarded a 5s.',
@@ -1157,7 +1159,7 @@ export const CHAPTERS: Chapter[] = [
         steps: [
           {
             kind: 'teach',
-            turn: 'Turn 5',
+            turn: 'Turn 4',
             hand: '234m 67m 44p 5p 789s PP',
             rivers: { 0: '1z 9p 9m', 1: '2z 7z 8p', 2: '1z 9p 9m', 3: '1m 9s P' },
             calling: 'P',
@@ -1174,7 +1176,7 @@ export const CHAPTERS: Chapter[] = [
           },
           {
             kind: 'teach',
-            turn: 'Turn 5',
+            turn: 'Turn 4',
             hand: '234m 67m 44p 5p 789s PP',
             rivers: { 0: '1z 9p 9m', 1: '2z 7z 8p', 2: '1z 9p 9m', 3: '1m 9s P' },
             calling: 'P',
@@ -1185,7 +1187,7 @@ export const CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              turn: 'Turn 5',
+              turn: 'Turn 4',
               hand: '234m 67m 44p 5p 789s PP',
               rivers: { 0: '1z 9p 9m', 1: '2z 7z 8p', 2: '1z 9p 9m', 3: '1m 9s P' },
             calling: 'P',
@@ -1198,7 +1200,7 @@ export const CHAPTERS: Chapter[] = [
               ],
             },
             {
-              turn: 'Turn 6',
+              turn: 'Turn 4',
               hand: '234m 55m 789m 34p 678s',
               rivers: { 0: '1z 9p 9m', 1: '2z 7z 8p', 2: '1z 9p 9m', 3: '1m 9s 2p' },
             calling: '2p',

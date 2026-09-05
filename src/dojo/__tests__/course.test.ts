@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { parseHand } from '@ai/handEval';
-import { getLegalActions, isAgari, kindOf, shanten, ukeire, waits } from '@engine/index';
+import { getLegalActions, improvingKinds, isAgari, kindOf, shanten, ukeire, waits } from '@engine/index';
 import { scriptedState, scriptedView, tilesInHand, tilesInRivers } from '../table';
 import { ALL_LESSONS, CHAPTERS, lessonById, nextLesson, type Step } from '../course';
 
@@ -323,23 +323,19 @@ describe('the table tells the truth', () => {
     // step names a turn late enough to have a history, every seat shows it.
     for (const { lesson } of ALL_LESSONS) {
       for (const [i, s] of lesson.steps.entries()) {
+        if (!s.hand || !s.turn) continue; // the credits page holds no position
         const t = turnOf(s);
         const lens = riverLens(s);
         const shown = lens.some((n) => n > 0);
+        // Nobody has discarded before turn 1: an empty cloth is turn 1, and
+        // from then on every seat's pond is exactly the turns it has had.
         if (!shown) {
-          expect(t, `${lesson.id} step ${i + 1}: turn ${t} with empty ponds`).toBeLessThan(7);
+          expect(t, `${lesson.id} step ${i + 1}: turn ${t} with empty ponds`).toBe(1);
           continue;
         }
-        if (t >= 7) {
-          for (const [seat, n] of lens.entries()) {
-            expect(n, `${lesson.id} step ${i + 1}: seat ${seat} pond at ${s.turn}`).toBe(t - 1);
-          }
-        } else {
-          for (const n of lens) {
-            expect(n, `${lesson.id} step ${i + 1}: pond from the future`).toBeLessThanOrEqual(t - 1);
-          }
-          expect(Math.max(...lens) - Math.min(...lens), `${lesson.id} step ${i + 1}: lopsided ponds`)
-            .toBeLessThanOrEqual(1);
+        for (const [seat, n] of lens.entries()) {
+          // a call window opens on seat 3's discard: it is their (t-1)th too
+          expect(n, `${lesson.id} step ${i + 1}: seat ${seat} pond at ${s.turn}`).toBe(t - 1);
         }
       }
     }
@@ -350,11 +346,17 @@ describe('the table tells the truth', () => {
     // every discard on the cloth is one tile gone from it.
     for (const { lesson } of ALL_LESSONS) {
       for (const [i, s] of lesson.steps.entries()) {
-        if (s.wall === undefined) continue;
+        if (!s.hand) continue;
         const spent = riverLens(s).reduce((a, b) => a + b, 0);
+        const held = parseHand(`${s.hand} ${s.draw ?? ''}`).length;
+        const state = scriptedState(scriptOf(s));
+        // 136 tiles, 14 dead, 39 in opponent hands, one indicator face up:
+        // the live wall is what is left after your hand and every discard.
+        const natural = (held === 14 ? 68 : 69) - spent;
+        const shown = s.wall ?? state.wall.length;
         expect(
-          Math.abs(s.wall - (69 - spent)),
-          `${lesson.id} step ${i + 1}: wall ${s.wall} with ${spent} discards shown`,
+          Math.abs(shown - natural),
+          `${lesson.id} step ${i + 1}: wall ${shown} with ${spent} discards shown`,
         ).toBeLessThanOrEqual(1);
       }
     }
@@ -378,6 +380,82 @@ describe('the table tells the truth', () => {
             `${lesson.id}: ${right.tile} (${best.sh}/${best.n}) must beat ${o.tile} (${alt.sh}/${alt.n})`,
           ).toBe(true);
         }
+      }
+    }
+  });
+});
+
+describe('the table never contradicts the coach', () => {
+  it('picks an unscripted dora that cannot touch the arithmetic', () => {
+    // A lesson that never mentions dora must not quietly depend on one: the
+    // indicator the table chooses may not sit in the hand, and no discard the
+    // coach recommends may make it a useful draw.
+    for (const { lesson } of ALL_LESSONS) {
+      for (const [i, s] of lesson.steps.entries()) {
+        if (!s.hand || s.dora) continue;
+        const state = scriptedState(scriptOf(s));
+        const me = state.players[0];
+        const all = [...me.hand, ...(me.drawnTile !== null ? [me.drawnTile] : [])];
+        const ind = kindOf(state.doraIndicators[0]);
+        const tag = `${lesson.id} step ${i + 1}`;
+        expect(ind, `${tag}: honour indicator`).toBeLessThan(27);
+        const dora = ind % 9 === 8 ? ind - 8 : ind + 1;
+        expect(all.some((x) => kindOf(x) === dora), `${tag}: dora in hand`).toBe(false);
+        const right = (s.options ?? []).find((o) => o.correct)?.tile;
+        const shapes = all.length === 13 ? [all] : [];
+        if (all.length === 14 && right) {
+          const k = kindOf(parseHand(right)[0]);
+          let dropped = false;
+          shapes.push(all.filter((x) => {
+            if (!dropped && kindOf(x) === k) { dropped = true; return false; }
+            return true;
+          }));
+        }
+        for (const shape of shapes) {
+          expect(improvingKinds(shape, []), `${tag}: dora is a useful draw`).not.toContain(dora);
+        }
+      }
+    }
+  });
+
+  it('makes every table note about the ponds true of the ponds', () => {
+    // "Two 9p are already in the ponds" had better mean two 9p are visible.
+    for (const { lesson } of ALL_LESSONS) {
+      for (const [i, s] of lesson.steps.entries()) {
+        const m = /(one|two|three|all four|four) (\d[mps]|[1-9][mps]) are/i.exec(s.table ?? '');
+        if (!m || !s.hand) continue;
+        const n = { one: 1, two: 2, three: 3, four: 4, 'all four': 4 }[m[1].toLowerCase()]!;
+        const view = scriptedView(scriptOf(s));
+        const k = kindOf(parseHand(m[2])[0]);
+        const inPonds = ([0, 1, 2, 3] as const).reduce<number>(
+          (a, seat) => a + view.seats[seat].river.filter((d) => kindOf(d.tile) === k).length, 0);
+        expect(inPonds, `${lesson.id} step ${i + 1}: "${m[0]}"`).toBe(n);
+      }
+    }
+  });
+
+  it('keeps lessons to a guided example then three drills', () => {
+    for (const { lesson } of ALL_LESSONS) {
+      if (lesson.id === 'source') continue;
+      const first = lesson.steps.findIndex((s) => s.kind === 'drill');
+      expect(lesson.steps.filter((s) => s.kind === 'teach').length, `${lesson.id} teach steps`)
+        .toBeGreaterThanOrEqual(2);
+      expect(lesson.steps.filter((s) => s.kind === 'drill').length, `${lesson.id} drills`).toBe(3);
+      expect(lesson.steps.slice(first).every((s) => s.kind === 'drill'), `${lesson.id} order`).toBe(true);
+    }
+  });
+
+  it('explains every option, and offers distinct tiles from the hand', () => {
+    for (const { lesson } of ALL_LESSONS) {
+      for (const q of drillsOf(lesson.steps)) {
+        const opts = q.options ?? [];
+        expect(opts.length, `${lesson.id} options`).toBeGreaterThanOrEqual(3);
+        for (const o of opts) {
+          expect(o.why.length, `${lesson.id}: thin explanation`).toBeGreaterThan(25);
+          expect(Boolean(o.tile) !== Boolean(o.label), `${lesson.id}: tile xor label`).toBe(true);
+        }
+        const kinds = opts.filter((o) => o.tile).map((o) => kindOf(parseHand(o.tile!)[0]));
+        expect(new Set(kinds).size, `${lesson.id}: duplicate option`).toBe(kinds.length);
       }
     }
   });
