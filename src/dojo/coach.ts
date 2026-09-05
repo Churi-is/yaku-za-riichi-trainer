@@ -13,12 +13,13 @@
  *          it never overlaps the board at all.
  *
  *   SIZE.  A one-paragraph teach step gets a small card; a drill with four
- *          options and four explanations gets a large one. The felt is inset
- *          by exactly the card's band, so the board scales into what is left
- *          rather than being covered by it.
+ *          options and four explanations gets a large one. The band limits
+ *          the expanded overlay in portrait without resizing the board.
+ *          Portrait peeks live in a fixed-height strip above the board;
+ *          landscape keeps its existing rail or band layout.
  *
- * This is pure data so the test suite can check every step in the course
- * points somewhere the card is not.
+ * This is pure data so the test suite can check every expanded step prefers
+ * the opposite end from the subject it is pointing at.
  */
 import type { PublicView, SeatIndex } from '@engine/types';
 import type { Step } from './course';
@@ -91,9 +92,9 @@ export function coachPlacement(
   if (wide) return { slot: 'rail', size, band: 0 };
   const subject = subjectOf(step, view);
   // Your own hand is always along the bottom edge, so 'top' is the safe
-  // default; only a step pointing at somebody else's pond sends it the other
-  // way. Either way the felt is inset by the band, so nothing is truly hidden
-  // — the slot decides what you read first, not what you can see.
+  // default; only a step pointing at somebody else's pond sends the expanded
+  // overlay the other way. In portrait, the screen docks every collapsed card
+  // at the top without resizing the board. Landscape keeps this placement.
   const slot: CoachSlot = step.cardAt ?? (subject === 'top' ? 'bottom' : 'top');
   // A step pointing at both ends of the board cannot dodge cleanly, so it gets
   // the smallest card it can and lets the reader see past it.

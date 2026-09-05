@@ -9,17 +9,17 @@
  * `@dojo/coach`, from what the step is pointing at and how much it has to say
  * — top when the subject is your hand, bottom when the subject is somebody
  * else's pond, a side rail when the screen is wide enough for the board and
- * the card to sit apart. The felt is inset by exactly the card's band, so the
- * board scales into the space that is actually free and the card can never
- * sit on top of a seat. On a phone the card also collapses to a one-line peek
- * bar, so a long explanation can hand the whole table back.
+ * the card to sit apart. In portrait it overlays the regular game board; the
+ * board never resizes to make room for an explanation. A fixed, small gutter
+ * above the board keeps the collapsed coach visible. Drills start collapsed
+ * there, and answering reopens the feedback over the same full-size table.
  *
  * Pointing is done by dimming: the spotlight in TableBoard fades everything
  * that is not the subject. While a discard drill is open it narrows the hand
  * to the coach's options — the decision is between those tiles — and once
  * answered the board lights the correct discard while the coach explains.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { LegalAction, SeatIndex, TileId } from '@engine/types';
 import { getLegalActions, kindOf, toPublicView } from '@engine/index';
 import { parseHand } from '@ai/handEval';
@@ -56,21 +56,21 @@ function OptionFace({ o }: { o: DrillOption }) {
   return <span className="opt-word">{o.label}</span>;
 }
 
-/** A wide screen can sit the card beside the felt rather than over it. */
+/** Keep the existing landscape rail, including on short, sideways phones. */
+function canUseRail(): boolean {
+  return typeof window !== 'undefined'
+    && window.innerWidth >= 760 && window.innerWidth > window.innerHeight;
+}
+
 function useWide(): boolean {
-  const [wide, setWide] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth >= 760 && window.innerWidth > window.innerHeight,
-  );
+  const [wide, setWide] = useState(canUseRail);
   useEffect(() => {
-    const update = () => setWide(window.innerWidth >= 760 && window.innerWidth > window.innerHeight);
+    const update = () => setWide(canUseRail());
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
   return wide;
 }
-
-/** The collapsed card is a peek bar: one line of grip, no band of felt. */
-const PEEK_BAND = 0.075;
 
 export default function LessonScreen() {
   const go = useSession((s) => s.go);
@@ -78,15 +78,17 @@ export default function LessonScreen() {
   const openLesson = useSession((s) => s.openLesson);
   const completeLesson = useSession((s) => s.completeLesson);
   const { orient, compact } = useOrientation();
+  const portrait = orient === 'portrait';
   const wide = useWide();
 
   const [at, setAt] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const cardRef = useRef<HTMLElement>(null);
+  // Only portrait drills default to a peek; landscape coaching stays open.
+  const [collapseOverride, setCollapseOverride] = useState<boolean | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const contentId = useId();
 
-  useEffect(() => { setAt(0); setPicked(null); setCollapsed(false); }, [lessonId]);
-  useEffect(() => { setCollapsed(false); }, [at]);
+  useEffect(() => { setAt(0); setPicked(null); setCollapseOverride(null); }, [lessonId]);
 
   const found = lessonId ? lessonById(lessonId) : null;
   if (!found) {
@@ -129,9 +131,24 @@ export default function LessonScreen() {
   );
 
   const answered = picked !== null;
-  const chosen = answered ? step.options![picked!] : null;
+  const chosen = answered ? step.options?.[picked!] : null;
   const isTileDrill = step.kind === 'drill' && (step.options ?? []).some((o) => o.tile);
   const blocked = step.kind === 'drill' && !answered;
+  const collapsed = !wide && (collapseOverride ?? (portrait && blocked));
+  // Judgement drills need buttons rather than a tile tap. The footer opens
+  // their choices while the coach is collapsed; it never skips the question.
+  const showChoices = blocked && !isTileDrill && collapsed;
+
+  const answer = (option: number) => {
+    setPicked(option);
+    setCollapseOverride(false);
+  };
+
+  const changeStep = (index: number) => {
+    setAt(index);
+    setPicked(null);
+    setCollapseOverride(null);
+  };
 
   const focusTiles = useMemo(() => {
     if (!table) return [];
@@ -158,7 +175,7 @@ export default function LessonScreen() {
     const i = (step.options ?? []).findIndex(
       (o) => o.tile && kindOf(parseHand(o.tile)[0]) === kindOf(tile),
     );
-    setPicked(i >= 0 ? i : -1);
+    answer(i >= 0 ? i : -1);
   };
 
   const advance = () => {
@@ -167,27 +184,24 @@ export default function LessonScreen() {
       if (next) openLesson(next.id); else go('dojo');
       return;
     }
-    setAt(at + 1);
-    setPicked(null);
+    changeStep(at + 1);
   };
 
-  // --- where the card goes and how much room it takes ---------------------
+  // --- portrait overlays; the existing landscape layout stays unchanged ---
   const place = useMemo(
     () => coachPlacement(step, table?.view ?? null, wide),
     [step, table, wide],
   );
-  // An answered drill has the verdict and every explanation to show, so it is
-  // always the biggest the card ever gets; a collapsed card is just its grip.
-  const band = place.slot === 'rail'
-    ? 0
-    : collapsed
-      ? PEEK_BAND
-      : answered ? 0.62 : place.band;
-  // The felt gives up exactly the card's band, so the board scales into the
-  // rest instead of hiding underneath it.
-  const feltStyle = place.slot === 'rail'
+  // In portrait, every explanation collapses UP into a fixed-height strip.
+  // Landscape keeps its rail (or the existing band on very narrow windows).
+  const slot = portrait && collapsed ? 'top' : place.slot;
+  const band = collapsed ? 0.075 : answered ? 0.62 : place.band;
+  const coachStyle = slot === 'rail' || (portrait && collapsed)
     ? undefined
-    : place.slot === 'top'
+    : { maxHeight: `${band * 100}%` };
+  const feltStyle = portrait || wide
+    ? undefined
+    : slot === 'top'
       ? { top: `calc(${band * 100}% + 8px)` }
       : { bottom: `calc(${band * 100}% + 8px)` };
 
@@ -199,8 +213,31 @@ export default function LessonScreen() {
     if (el && typeof el.scrollTo === 'function') el.scrollTo({ top: 0 });
   }, [at, collapsed, answered]);
 
+  const grip = (
+    <>
+      {step.turn && <span className="turn-chip">{step.turn}</span>}
+      {collapsed
+        ? <span className="coach-peek">{peek}</span>
+        : <span className="grip-word">Coach</span>}
+      {!wide && <span className="grip-chev" aria-hidden="true">▾</span>}
+    </>
+  );
+
+  const coachGrip = wide ? <div className="coach-grip">{grip}</div> : (
+    <button
+      type="button"
+      className="coach-grip"
+      onClick={() => setCollapseOverride(!collapsed)}
+      aria-expanded={!collapsed}
+      aria-controls={contentId}
+      aria-label={collapsed ? 'Expand the coach card' : 'Collapse the coach card'}
+    >
+      {grip}
+    </button>
+  );
+
   return (
-    <div className="lesson-live" data-orient={orient} data-coach={place.slot}>
+    <div className="lesson-live" data-orient={orient} data-coach={slot}>
       <header className="lesson-bar">
         <button className="btn btn-ghost btn-sm" aria-label="Back to the dojo" onClick={() => go('dojo')}>←</button>
         <div className="lesson-bar-title">
@@ -242,89 +279,83 @@ export default function LessonScreen() {
         </div>
 
         <section
-          ref={cardRef}
-          className={`coach coach-${place.slot} coach-${place.size}${answered ? ' coach-open' : ''}${collapsed ? ' coach-collapsed' : ''}`}
-          style={place.slot === 'rail' ? undefined : { maxHeight: `${band * 100}%` }}
+          className={`coach coach-${slot} coach-${place.size}${answered ? ' coach-open' : ''}${collapsed ? ' coach-collapsed' : ''}`}
+          style={coachStyle}
+          aria-label="Lesson coach"
         >
-          <button
-            type="button"
-            className="coach-grip"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? 'Expand the coach card' : 'Collapse the coach card'}
-          >
-            {step.turn && <span className="turn-chip">{step.turn}</span>}
-            {collapsed
-              ? <span className="coach-peek">{peek}</span>
-              : <span className="grip-word">Coach</span>}
-            <span className="grip-chev" aria-hidden="true">▾</span>
-          </button>
-          {(place.slot === 'rail' || !collapsed) && (<>
-          {step.table && <p className="table-note">{step.table}</p>}
-          {(step.text ?? []).map((t, i) => <p className="lesson-p" key={i}>{t}</p>)}
-          {step.figures?.map((f, i) => (
-            <figure className="tile-figure" key={i}>
-              <TileRow notation={f.tiles} />
-              <figcaption>{f.caption}</figcaption>
-            </figure>
-          ))}
-          {step.note && (
-            <aside className="lesson-note">
-              <strong>{step.note.title}</strong>
-              <span>{step.note.text}</span>
-            </aside>
-          )}
+          {coachGrip}
+          <div className="coach-body" id={contentId} ref={cardRef} hidden={collapsed}>
+            {!collapsed && (<>
+              {step.table && <p className="table-note">{step.table}</p>}
+              {(step.text ?? []).map((t, i) => <p className="lesson-p" key={i}>{t}</p>)}
+              {step.figures?.map((f, i) => (
+                <figure className="tile-figure" key={i}>
+                  <TileRow notation={f.tiles} />
+                  <figcaption>{f.caption}</figcaption>
+                </figure>
+              ))}
+              {step.note && (
+                <aside className="lesson-note">
+                  <strong>{step.note.title}</strong>
+                  <span>{step.note.text}</span>
+                </aside>
+              )}
 
-          {step.kind === 'drill' && (
-            <>
-              <p className="lesson-p prompt">{step.prompt}</p>
-              {isTileDrill && !answered && (
-                <p className="tap-hint">Tap a lit tile on the table.</p>
-              )}
-              {(!isTileDrill || answered) && (
-                <div className="drill-options">
-                  {(step.options ?? []).map((o, i) => {
-                    const state = !answered ? '' : o.correct ? ' right' : i === picked ? ' wrong' : ' dim';
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        className={`drill-opt${o.label ? ' wide' : ''}${state}`}
-                        disabled={answered}
-                        onClick={() => setPicked(i)}
-                      >
-                        <OptionFace o={o} />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {answered && (
+              {step.kind === 'drill' && (
                 <>
-                  <div className={`verdict-line ${chosen?.correct ? 'ok' : 'no'}`}>
-                    {chosen?.correct ? 'Correct' : picked === -1 ? 'Not one of the choices' : 'Not the best answer'}
-                  </div>
-                  <div className="drill-why">
-                    {(step.options ?? []).map((o, i) => (
-                      <p key={i} className={o.correct ? 'why right' : i === picked ? 'why wrong' : 'why'}>
-                        <strong>{o.correct ? '✓' : i === picked ? '✕' : '·'}</strong> {o.why}
-                      </p>
-                    ))}
-                  </div>
+                  {answered && (
+                    <div className={`verdict-line ${chosen?.correct ? 'ok' : 'no'}`} role="status">
+                      {chosen?.correct ? 'Correct' : picked === -1 ? 'Not one of the choices' : 'Not the best answer'}
+                    </div>
+                  )}
+                  <p className="lesson-p prompt">{step.prompt}</p>
+                  {isTileDrill && !answered && (
+                    <p className="tap-hint">Tap a lit tile on the table.</p>
+                  )}
+                  {(!isTileDrill || answered) && (
+                    <div className="drill-options">
+                      {(step.options ?? []).map((o, i) => {
+                        const state = !answered ? '' : o.correct ? ' right' : i === picked ? ' wrong' : ' dim';
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            className={`drill-opt${o.label ? ' wide' : ''}${state}`}
+                            disabled={answered}
+                            onClick={() => answer(i)}
+                          >
+                            <OptionFace o={o} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {answered && (
+                    <div className="drill-why">
+                      {(step.options ?? []).map((o, i) => (
+                        <p key={i} className={o.correct ? 'why right' : i === picked ? 'why wrong' : 'why'}>
+                          <strong>{o.correct ? '✓' : i === picked ? '✕' : '·'}</strong> {o.why}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
-            </>
-          )}
-          </>)}
+            </>)}
+          </div>
         </section>
       </div>
 
       <footer className="lesson-foot">
         {at > 0 && (
-          <button className="btn btn-ghost" aria-label="Previous step" onClick={() => { setAt(at - 1); setPicked(null); }}>←</button>
+          <button className="btn btn-ghost" aria-label="Previous step" onClick={() => changeStep(at - 1)}>←</button>
         )}
         <span className="step-count">{at + 1} / {steps.length}</span>
-        <button className="btn btn-primary" disabled={blocked} onClick={advance}>
+        <button
+          className="btn btn-primary"
+          disabled={blocked && !showChoices}
+          onClick={showChoices ? () => setCollapseOverride(false) : advance}
+        >
           {blocked
             ? (isTileDrill ? 'Tap a tile' : 'Choose an answer')
             : last

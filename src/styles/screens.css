@@ -324,10 +324,12 @@
 
 /* ---------- a lesson played on the felt ---------- */
 .lesson-live {
+  --coach-peek-height: 46px;
   height: 100%; display: flex; flex-direction: column;
   padding-top: env(safe-area-inset-top, 0px);
 }
 .lesson-bar {
+  flex: none;
   display: flex; align-items: center; gap: 8px; padding: 6px 10px;
   border-bottom: 1px solid var(--hairline); background: var(--lacquer);
 }
@@ -339,7 +341,8 @@
 }
 .lesson-bar .step-dots { flex: none; }
 
-/* the felt fills what is left; the coach takes a band of it, never a seat */
+/* The felt fills the screen without a score strip. In portrait, the coach
+   overlays it so explanations and answers never change the table's size. */
 .lesson-felt {
   position: relative; flex: 1; min-height: 0; overflow: hidden;
   background:
@@ -351,73 +354,83 @@
   border: 4px solid #241a10;
   box-shadow: inset 0 0 0 1px var(--hairline), inset 0 0 24px rgba(0, 0, 0, 0.55);
 }
-/* the board occupies the felt minus whatever band the coach card claims */
 .lesson-board { position: absolute; inset: 0; transition: top 0.25s ease, bottom 0.25s ease; }
-/* on a wide screen the felt is a row: board, then the coach rail beside it */
+/* Portrait only: a fixed gutter keeps the peek above a full-size game board. */
+.lesson-live[data-orient="portrait"] .lesson-board {
+  inset: calc(var(--coach-peek-height) + 12px) 0 0; transition: none;
+}
+@media (prefers-reduced-motion: reduce) { .lesson-board { transition: none; } }
+/* Landscape keeps its existing board + side rail layout. */
 .lesson-live[data-coach="rail"] .lesson-felt { display: flex; }
 .lesson-live[data-coach="rail"] .lesson-board { position: relative; inset: auto; flex: 1; min-width: 0; }
 .lesson-board .board-host { position: absolute; inset: 0; }
 .lesson-nofelt { position: absolute; inset: 0; background: var(--lacquer); }
-@media (prefers-reduced-motion: reduce) { .lesson-board { transition: none; } }
 
 .coach {
   position: absolute; z-index: 20;
-  overflow-y: auto; overscroll-behavior: contain;
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 11px 13px; border-radius: 12px;
+  display: flex; flex-direction: column; overflow: hidden;
+  min-height: var(--coach-peek-height); border-radius: 12px;
   background: linear-gradient(180deg, rgba(20, 16, 10, 0.97), rgba(12, 9, 5, 0.98));
   border: 1px solid var(--gold-dim);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   animation: coach-in 0.25s ease;
   transition: max-height 0.25s ease;
 }
-/* the card sits at whichever end of the felt the step is NOT pointing at */
+/* Expanded cards dodge the subject. Portrait peeks always dock at the top. */
 .coach-top { top: 6px; left: 6px; right: 6px; }
 .coach-bottom { bottom: 6px; left: 6px; right: 6px; }
-/* a small card does not need the full width either */
 .coach-top.coach-sm, .coach-bottom.coach-sm { left: 10px; right: 10px; }
-/* on a wide screen the card is a rail beside the board, overlapping nothing */
+/* Keep the original landscape rail sizes, using the space beside the board. */
 .coach-rail {
   position: relative; flex: 0 0 clamp(280px, 34vw, 380px);
   margin: 8px 8px 8px 0; max-height: none;
 }
 .coach-rail.coach-sm { flex-basis: clamp(250px, 28vw, 320px); }
 
-/* a card with more to say than fits scrolls, and says so with a fade */
-.coach::after {
-  content: ''; position: sticky; bottom: -11px; margin: -14px -13px -11px; height: 22px;
+/* Only the body scrolls: the collapse control stays visible above long text. */
+.coach-body {
+  min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 0 13px 12px;
+  scrollbar-width: thin; scrollbar-color: var(--gold-dim) transparent;
+}
+.coach-body[hidden] { display: none; }
+.coach-body > * { flex: none; }
+.coach-body::after {
+  content: ''; position: sticky; bottom: -12px; margin: -14px -13px -12px; height: 22px;
   flex: none; pointer-events: none;
   background: linear-gradient(180deg, rgba(12, 9, 5, 0), rgba(12, 9, 5, 0.95));
 }
-.coach { scrollbar-width: thin; scrollbar-color: var(--gold-dim) transparent; }
-.coach::-webkit-scrollbar { width: 4px; }
-.coach::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+.coach-body::-webkit-scrollbar { width: 4px; }
+.coach-body::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
 
-/* the grip: collapses the card to a one-line peek bar, so a long
-   explanation can hand the whole table back on a phone */
+/* A real 44px tap target, not a percentage-height sliver on a short phone. */
 .coach-grip {
   display: flex; align-items: center; gap: 8px; width: 100%; flex: none;
-  padding: 0; background: none; border: 0; cursor: pointer;
+  min-height: 44px; padding: 8px 12px; background: none; border: 0;
   color: var(--muted); font: inherit;
 }
-.coach-grip .turn-chip { margin: 0; flex: none; align-self: center; }
+button.coach-grip { cursor: pointer; }
+.coach-grip:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: -3px; }
+.coach-grip .turn-chip {
+  margin: 0; flex: none; align-self: center; white-space: nowrap;
+  font-size: 11px; color: var(--gold); letter-spacing: 0.02em;
+}
 .grip-word { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
 .coach-peek {
   flex: 1; min-width: 0; text-align: left; font-size: 12px; color: var(--ink);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .grip-chev { margin-left: auto; flex: none; font-size: 11px; transition: transform 0.2s ease; }
-.coach-collapsed { overflow: hidden; }
-.coach-collapsed::after { display: none; }
-.coach-collapsed .grip-chev { transform: rotate(180deg); }
-/* beside the board the card overlaps nothing, so there is nothing to peek */
-.lesson-live[data-coach="rail"] .coach-grip .grip-chev { display: none; }
+.coach-grip[aria-expanded="true"] .grip-chev { transform: rotate(180deg); }
+.lesson-live[data-orient="portrait"] .coach.coach-collapsed {
+  height: var(--coach-peek-height); left: 6px; right: 6px;
+}
 
 @keyframes coach-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .coach { animation: none; transition: none; } }
 .coach .lesson-p { font-size: 13px; line-height: 1.5; }
 .coach.coach-lg .lesson-p { font-size: 12.5px; line-height: 1.45; }
-.coach .turn-chip { align-self: flex-start; }
 .coach .lesson-note { padding: 8px 10px; }
 /* A shape lesson shows four or five little diagrams. Stacked, they push the
    real table off the screen; as tiles-then-caption rows they cost one line
@@ -441,6 +454,7 @@
 @keyframes sim-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
 .lesson-foot {
+  flex: none;
   display: flex; align-items: center; gap: 10px;
   padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--hairline); background: var(--lacquer);
@@ -453,6 +467,7 @@
   .lesson-bar { padding: 3px 8px; }
   .lesson-bar-title strong { font-size: 12px; }
   .lesson-foot { padding: 5px 8px calc(5px + env(safe-area-inset-bottom, 0px)); }
-  .coach { padding: 8px 10px; gap: 6px; }
+  .coach-body { padding: 0 10px 8px; gap: 6px; }
+  .coach-body::after { bottom: -8px; margin: -14px -10px -8px; }
   .coach .lesson-p { font-size: 12px; line-height: 1.4; }
 }
