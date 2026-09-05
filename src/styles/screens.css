@@ -311,8 +311,21 @@
 }
 .lesson-bar .step-dots { flex: none; }
 
-/* the felt fills what is left, and the coach floats over it */
-.lesson-felt { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+/* ---------- the stage: felt + coach share the screen ----------
+   The card is a real flex item, not an overlay, so the felt is always fully
+   visible and the board rescales to whatever is left. Portrait stacks them
+   (card at the top or the bottom); wide landscape puts them side by side
+   (card left or right). The stage-* class is chosen per step from what the
+   step is pointing at — see dojo/coach.ts. */
+.lesson-stage {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  padding: 6px; gap: 6px;
+}
+.lesson-stage.stage-top { flex-direction: column-reverse; }
+.lesson-stage.stage-left { flex-direction: row-reverse; }
+.lesson-stage.stage-right { flex-direction: row; }
+
+.lesson-felt { position: relative; flex: 1; min-height: 0; min-width: 0; overflow: hidden; border-radius: 8px; }
 .lesson-felt .board-host {
   position: absolute; inset: 0;
   background:
@@ -320,9 +333,9 @@
 }
 .lesson-nofelt { position: absolute; inset: 0; background: var(--lacquer); }
 
+/* ---------- the coach card ---------- */
 .coach {
-  position: absolute; left: 8px; right: 8px; z-index: 20;
-  max-height: 62%; overflow-y: auto; overscroll-behavior: contain;
+  flex: none; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; gap: 8px;
   padding: 11px 13px; border-radius: 10px;
   background: linear-gradient(180deg, rgba(20, 16, 10, 0.96), rgba(12, 9, 5, 0.97));
@@ -330,8 +343,11 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   animation: coach-in 0.25s ease;
 }
-.coach-top { top: 8px; }
-.coach-bottom { bottom: 8px; }
+/* portrait: the card is as tall as its text, up to a cap that depends on how
+   much it has to say, so a one-line prompt leaves the table almost whole */
+.coach-top, .coach-bottom { max-height: 32%; }
+.coach-md.coach-top, .coach-md.coach-bottom { max-height: 42%; }
+.coach-lg.coach-top, .coach-lg.coach-bottom { max-height: 54%; }
 @keyframes coach-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .coach { animation: none; } }
 .coach .lesson-p { font-size: 13px; line-height: 1.5; }
@@ -357,8 +373,27 @@
 .lesson-foot .btn-primary { flex: 1; }
 .lesson-foot .step-count { font-size: 11px; color: var(--muted); }
 
-@media (orientation: landscape) and (min-width: 700px) {
-  /* wide enough to sit the coach beside the felt instead of over it */
-  .coach { left: auto; right: 10px; top: 10px; bottom: 10px; width: 320px; max-height: none; }
-  .coach-bottom { top: 10px; }
+/* landscape: the card is a column beside the felt, as tall as its text. Its
+   width follows how much it has to say, within limits that keep the table a
+   table. */
+.coach-left, .coach-right {
+  width: clamp(250px, 30vw, 330px); max-height: 100%; align-self: flex-start;
+  animation: coach-side-in 0.25s ease;
+}
+.coach-md.coach-left, .coach-md.coach-right { width: clamp(270px, 34vw, 360px); }
+.coach-lg.coach-left, .coach-lg.coach-right { width: clamp(290px, 38vw, 400px); }
+.coach-left .lesson-p, .coach-right .lesson-p { font-size: 13.5px; }
+@keyframes coach-side-in { from { opacity: 0; transform: translateX(6px); } }
+
+/* a phone on its side: every pixel counts, so the answered options shrink
+   to a strip and the explanation gets the height */
+@media (orientation: landscape) and (max-height: 520px) {
+  .lesson-stage { padding: 4px; gap: 4px; }
+  .coach-left, .coach-right { padding: 9px 11px; gap: 6px; }
+  .coach-left .turn-chip, .coach-right .turn-chip { display: none; }
+  .coach-left .lesson-p, .coach-right .lesson-p { font-size: 12.5px; line-height: 1.45; }
+  .coach-left .drill-opt, .coach-right .drill-opt { padding: 5px 7px; min-height: 36px; }
+  .coach-left .drill-opt .tile-sm, .coach-right .drill-opt .tile-sm { --tw: 22px; --th: 30px; }
+  .coach-left .drill-opt .opt-label, .coach-right .drill-opt .opt-label { display: none; }
+  .coach-left .drill-why .why, .coach-right .drill-why .why { font-size: 12px; line-height: 1.45; }
 }

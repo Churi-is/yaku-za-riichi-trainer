@@ -3,10 +3,15 @@
  *
  * Every position in the course is a genuine engine state: the board below is
  * the same component the match uses, fed by `scriptedState`, and the tiles you
- * are allowed to tap are the ones the engine says are legal discards. The
- * coach speaks from a card that floats over the felt and moves out of the way
- * of whatever it is pointing at — talk about the hand and the card sits up by
- * the wall, talk about the dora and it drops to the bottom.
+ * are allowed to tap are the ones the engine says are legal discards.
+ *
+ * The coach speaks from a card that takes real room on the screen rather than
+ * floating over the felt, so it can never cover its own subject: the board
+ * rescales to whatever is left. In portrait the card sits above or below the
+ * felt, sized to what it has to say and placed next to whatever is lit — talk
+ * about the hand and it sits just above the hand, point at the far pond or the
+ * dora and it moves to the top. In landscape it docks in a column beside the
+ * felt, on the side of the seat being discussed.
  *
  * Pointing is done by dimming: the spotlight in TableBoard fades everything
  * that is not the subject, which is less work to read than "look at the third
@@ -20,7 +25,8 @@ import TableBoard from '@ui/components/TableBoard';
 import Tile from '@ui/components/Tile';
 import { useOrientation } from '@ui/hooks/useOrientation';
 import { lessonById, nextLesson, type DrillOption, type Step } from '@dojo/course';
-import { scriptedState, tilesInHand, tilesInRivers } from '@dojo/table';
+import { scriptedState, stepScript, tilesInHand, tilesInRivers } from '@dojo/table';
+import { cardSize, landscapeSide, portraitEnd, subjectOf } from '@dojo/coach';
 import { useSession } from '@state/session';
 
 const NO_NAME = (s: SeatIndex) => (s === 0 ? 'You' : `Seat ${s}`);
@@ -48,12 +54,15 @@ function OptionFace({ o }: { o: DrillOption }) {
   return <span className="opt-word">{o.label}</span>;
 }
 
+const wordCount = (parts: (string | undefined)[]) =>
+  parts.filter(Boolean).join(' ').split(/\s+/).filter(Boolean).length;
+
 export default function LessonScreen() {
   const go = useSession((s) => s.go);
   const lessonId = useSession((s) => s.lessonId);
   const openLesson = useSession((s) => s.openLesson);
   const completeLesson = useSession((s) => s.completeLesson);
-  const { orient, compact } = useOrientation();
+  const { orient, compact, width } = useOrientation();
 
   const [at, setAt] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -78,17 +87,10 @@ export default function LessonScreen() {
 
   // --- the position, built by the engine ----------------------------------
   const table = useMemo(() => {
-    if (!step.hand) return null;
+    const script = stepScript(step);
+    if (!script) return null;
     try {
-      const state = scriptedState({
-        hand: step.hand,
-        draw: step.draw,
-        dora: step.dora,
-        rivers: step.rivers,
-        riichi: step.riichi,
-        wall: step.wall,
-        seatWind: step.seatWind,
-      });
+      const state = scriptedState(script);
       return { state, view: toPublicView(state, 0) };
     } catch {
       return null; // a broken script is caught by the test suite, not the player
@@ -100,23 +102,27 @@ export default function LessonScreen() {
     [table],
   );
 
-  const focusTiles = useMemo(() => {
-    if (!table) return [];
-    const pond = step.focusPond ? tilesInRivers(table.view, step.focusPond) : [];
-    if (step.focus) return [...tilesInHand(table.view, step.focus), ...pond];
-    if (pond.length) return pond;
-    // A drill with tile answers spotlights the tiles it is asking about.
-    if (step.kind === 'drill' && picked === null) {
-      const opts = (step.options ?? []).filter((o) => o.tile).map((o) => o.tile!);
-      return opts.flatMap((t) => tilesInHand(table.view, t));
-    }
-    return [];
-  }, [table, step, picked]);
-
   const answered = picked !== null;
   const chosen = answered ? step.options![picked!] : null;
   const isTileDrill = step.kind === 'drill' && (step.options ?? []).some((o) => o.tile);
+  const tapping = isTileDrill && !answered;
   const blocked = step.kind === 'drill' && !answered;
+
+  const focusTiles = useMemo(() => {
+    if (!table) return [];
+    const pond = step.focusPond ? tilesInRivers(table.view, step.focusPond) : [];
+    if (isTileDrill) {
+      // A tile drill spotlights the tiles it is asking about — and, once
+      // answered, just the right one — alongside whatever pond evidence the
+      // question rests on.
+      const asked = answered
+        ? [(step.options ?? []).find((o) => o.correct)?.tile].filter((t): t is string => Boolean(t))
+        : (step.options ?? []).filter((o) => o.tile).map((o) => o.tile!);
+      return [...asked.flatMap((t) => tilesInHand(table.view, t)), ...pond];
+    }
+    if (step.focus) return [...tilesInHand(table.view, step.focus), ...pond];
+    return pond;
+  }, [table, step, isTileDrill, answered]);
 
   /** Tapping a tile on the felt answers a discard drill. */
   const tapTile = (tile: TileId | null) => {
@@ -137,12 +143,27 @@ export default function LessonScreen() {
     setPicked(null);
   };
 
-  // Keep the card off the thing being pointed at.
-  const cardAt = step.cardAt
-    ?? (step.focusCentre ? 'bottom' : focusTiles.length || isTileDrill ? 'top' : 'bottom');
+  // --- where the coach sits ------------------------------------------------
+  // Beside the subject, never over it: the card takes real space and the
+  // board rescales to what is left. Portrait stacks it above or below the
+  // felt; a wide enough landscape docks it in a column left or right.
+  // (A tile drill counts as "about the hand" before and after it is answered,
+  // so the card does not jump sides the moment you tap.)
+  const subject = subjectOf(table?.view ?? null, focusTiles, { centre: step.focusCentre, tapping: isTileDrill });
+  const docked = orient === 'landscape' && width >= 640;
+  const place = docked ? landscapeSide(subject) : portraitEnd(subject, step.cardAt);
+  const words = wordCount([
+    step.table, ...(step.text ?? []), step.note?.text, step.prompt,
+    ...(step.figures ?? []).map((f) => f.caption),
+  ]);
+  const size = cardSize(words, {
+    answered,
+    figures: step.figures?.length,
+    choices: step.kind === 'drill' && !isTileDrill ? (step.options ?? []).length : 0,
+  });
 
   return (
-    <div className="lesson-live" data-orient={orient}>
+    <div className="lesson-live" data-orient={orient} data-coach={place}>
       <header className="lesson-bar">
         <button className="btn btn-ghost btn-sm" onClick={() => go('dojo')}>←</button>
         <div className="lesson-bar-title">
@@ -159,29 +180,35 @@ export default function LessonScreen() {
         </div>
       </header>
 
-      <div className="lesson-felt">
-        {table ? (
-          <TableBoard
-            view={table.view}
-            seatName={NO_NAME}
-            aiThinking={false}
-            orient={orient}
-            compact={compact}
-            discardActions={isTileDrill && !answered ? legal : []}
-            onDiscard={() => undefined}
-            selected={null}
-            onSelect={tapTile}
-            riichiMode={false}
-            locked={!isTileDrill || answered}
-            highlight={focusTiles}
-            focusCentre={step.focusCentre}
-            tapToAnswer
-          />
-        ) : (
-          <div className="lesson-nofelt" />
-        )}
+      <div className={`lesson-stage stage-${place}`}>
+        <div className="lesson-felt">
+          {table ? (
+            <TableBoard
+              view={table.view}
+              seatName={NO_NAME}
+              aiThinking={false}
+              orient={orient}
+              compact={compact}
+              discardActions={tapping ? legal : []}
+              onDiscard={() => undefined}
+              selected={null}
+              onSelect={tapTile}
+              riichiMode={false}
+              locked={!tapping}
+              highlight={focusTiles}
+              focusCentre={step.focusCentre}
+              tapToAnswer
+            />
+          ) : (
+            <div className="lesson-nofelt" />
+          )}
+        </div>
 
-        <section className={`coach coach-${cardAt}`}>
+        <section
+          key={`${lesson.id}-${at}`}
+          className={`coach coach-${place} coach-${size}`}
+          aria-live="polite"
+        >
           {step.turn && <span className="turn-chip">{step.turn}</span>}
           {step.table && <p className="table-note">{step.table}</p>}
           {(step.text ?? []).map((t, i) => <p className="lesson-p" key={i}>{t}</p>)}
@@ -201,7 +228,7 @@ export default function LessonScreen() {
           {step.kind === 'drill' && (
             <>
               <p className="lesson-p prompt">{step.prompt}</p>
-              {isTileDrill && !answered && (
+              {tapping && (
                 <p className="tap-hint">Tap a tile on the table.</p>
               )}
               {(!isTileDrill || answered) && (

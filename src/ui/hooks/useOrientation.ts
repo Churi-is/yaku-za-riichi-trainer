@@ -13,10 +13,12 @@ export interface ViewportMode {
   orient: Orientation;
   /** Landscape on a short viewport (phone sideways): tighter board. */
   compact: boolean;
+  /** Viewport width in CSS pixels, for layouts that need more than a mode. */
+  width: number;
 }
 
 function current(): ViewportMode {
-  if (typeof window === 'undefined') return { orient: 'portrait', compact: false };
+  if (typeof window === 'undefined') return { orient: 'portrait', compact: false, width: 0 };
   let portrait = window.innerHeight >= window.innerWidth;
   try {
     if (typeof window.matchMedia === 'function') {
@@ -24,7 +26,7 @@ function current(): ViewportMode {
     }
   } catch { /* keep aspect fallback */ }
   const compact = !portrait && window.innerHeight < 520;
-  return { orient: portrait ? 'portrait' : 'landscape', compact };
+  return { orient: portrait ? 'portrait' : 'landscape', compact, width: window.innerWidth };
 }
 
 export function useOrientation(): ViewportMode {

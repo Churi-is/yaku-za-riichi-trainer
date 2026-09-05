@@ -54,6 +54,7 @@ export default function DojoScreen() {
                   key={l.id}
                   type="button"
                   className={`lesson-row${isDone ? ' done' : ''}`}
+                  data-lesson={l.id}
                   onClick={() => openLesson(l.id)}
                 >
                   <span className="tick" aria-hidden="true">{isDone ? '✓' : ''}</span>

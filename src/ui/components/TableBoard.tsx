@@ -51,7 +51,8 @@ export default function TableBoard({
 }: TableBoardProps) {
   const focus = new Set<TileId>(highlight ?? []);
   const spotlit = focus.size > 0 || focusCentre;
-  const mark = (id: TileId) => (focus.has(id) ? ' tile-focus' : '');
+  // Concealed backs all carry a placeholder id, so only a face-up tile can be lit.
+  const mark = (t: { id: TileId; faceDown?: boolean }) => (!t.faceDown && focus.has(t.id) ? ' tile-focus' : '');
   const hostRef = useRef<HTMLDivElement>(null);
   const variant: BoardVariant = orient === 'portrait' ? 'portrait' : compact ? 'compact' : 'landscape';
   const box = useBoxSize(hostRef);
@@ -91,7 +92,7 @@ export default function TableBoard({
       key={t.key}
       id={t.id}
       size="rv"
-      className={`abs${t.latest ? ' tile-latest' : ''}${t.tsumogiri ? ' tile-tsumogiri' : ''}${mark(t.id)}`}
+      className={`abs${t.latest ? ' tile-latest' : ''}${t.tsumogiri ? ' tile-tsumogiri' : ''}${mark(t)}`}
       style={pos(t)}
       faceDown={t.faceDown}
       rotation={t.rot as TileRotation}
@@ -140,7 +141,7 @@ export default function TableBoard({
               key={t.key}
               id={t.id}
               size="rv"
-              className={`abs hand-tile${t.key === 'h-drawn' ? ' drawn' : ''}${mark(t.id)}`}
+              className={`abs hand-tile${t.key === 'h-drawn' ? ' drawn' : ''}${mark(t)}`}
               style={pos(t, L.m.hand)}
               onClick={() => tapTile(t.id)}
               disabled={!playable}
