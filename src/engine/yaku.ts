@@ -22,7 +22,7 @@ import { allKinds, allSets, concealedTriplets, effectiveSets, type WinShape } fr
 import { isPinfuShape } from './fu';
 import type { TableSettings, Wind, YakuId, YakuHit } from './types';
 
-const YAKU_NAMES: Record<YakuId, string> = {
+export const YAKU_NAMES: Record<YakuId, string> = {
   menzenTsumo: 'Menzen Tsumo',
   riichi: 'Riichi',
   ippatsu: 'Ippatsu',

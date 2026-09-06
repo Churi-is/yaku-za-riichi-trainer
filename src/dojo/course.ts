@@ -81,14 +81,14 @@ export interface Step {
   check?: 'efficiency';
 }
 
-interface Lesson {
+export interface Lesson {
   id: string;
   title: string;
   summary: string;
   steps: Step[];
 }
 
-interface Chapter {
+export interface Chapter {
   id: string;
   book: number;
   title: string;
