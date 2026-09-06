@@ -11,8 +11,9 @@
  * else's pond, a side rail when the screen is wide enough for the board and
  * the card to sit apart. In portrait it overlays the regular game board; the
  * board never resizes to make room for an explanation. A fixed, small gutter
- * above the board keeps the collapsed coach visible. Drills start collapsed
- * there, and answering reopens the feedback over the same full-size table.
+ * above the board keeps the collapsed coach visible. Portrait drills start
+ * expanded over a lightly shaded table. The first table tap only closes the
+ * card; the next can answer, reopening feedback over the same full-size table.
  *
  * Pointing is done by dimming: the spotlight in TableBoard fades everything
  * that is not the subject. While a discard drill is open it narrows the hand
@@ -83,12 +84,12 @@ export default function LessonScreen() {
 
   const [at, setAt] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
-  // Only portrait drills default to a peek; landscape coaching stays open.
-  const [collapseOverride, setCollapseOverride] = useState<boolean | null>(null);
+  // Every step opens with its instructions visible; the player can put them away.
+  const [cardCollapsed, setCardCollapsed] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const contentId = useId();
 
-  useEffect(() => { setAt(0); setPicked(null); setCollapseOverride(null); }, [lessonId]);
+  useEffect(() => { setAt(0); setPicked(null); setCardCollapsed(false); }, [lessonId]);
 
   const found = lessonId ? lessonById(lessonId) : null;
   if (!found) {
@@ -134,20 +135,23 @@ export default function LessonScreen() {
   const chosen = answered ? step.options?.[picked!] : null;
   const isTileDrill = step.kind === 'drill' && (step.options ?? []).some((o) => o.tile);
   const blocked = step.kind === 'drill' && !answered;
-  const collapsed = !wide && (collapseOverride ?? (portrait && blocked));
+  const collapsed = !wide && cardCollapsed;
+  // The shade catches the first tap instead of letting it answer through the
+  // instructions. It also supports reopening the card and inspecting feedback.
+  const shadeTable = portrait && step.kind === 'drill' && !collapsed && table !== null;
   // Judgement drills need buttons rather than a tile tap. The footer opens
   // their choices while the coach is collapsed; it never skips the question.
   const showChoices = blocked && !isTileDrill && collapsed;
 
   const answer = (option: number) => {
     setPicked(option);
-    setCollapseOverride(false);
+    setCardCollapsed(false);
   };
 
   const changeStep = (index: number) => {
     setAt(index);
     setPicked(null);
-    setCollapseOverride(null);
+    setCardCollapsed(false);
   };
 
   const focusTiles = useMemo(() => {
@@ -227,7 +231,7 @@ export default function LessonScreen() {
     <button
       type="button"
       className="coach-grip"
-      onClick={() => setCollapseOverride(!collapsed)}
+      onClick={() => setCardCollapsed(!collapsed)}
       aria-expanded={!collapsed}
       aria-controls={contentId}
       aria-label={collapsed ? 'Expand the coach card' : 'Collapse the coach card'}
@@ -268,7 +272,7 @@ export default function LessonScreen() {
               selected={null}
               onSelect={tapTile}
               riichiMode={false}
-              locked={!isTileDrill || answered}
+              locked={!isTileDrill || answered || shadeTable}
               highlight={focusTiles}
               focusCentre={step.focusCentre}
               tapToAnswer
@@ -277,6 +281,16 @@ export default function LessonScreen() {
             <div className="lesson-nofelt" />
           )}
         </div>
+
+        {shadeTable && (
+          <button
+            type="button"
+            className="lesson-table-shade"
+            aria-label="Close coach card to use the table"
+            aria-controls={contentId}
+            onClick={() => setCardCollapsed(true)}
+          />
+        )}
 
         <section
           className={`coach coach-${slot} coach-${place.size}${answered ? ' coach-open' : ''}${collapsed ? ' coach-collapsed' : ''}`}
@@ -310,7 +324,11 @@ export default function LessonScreen() {
                   )}
                   <p className="lesson-p prompt">{step.prompt}</p>
                   {isTileDrill && !answered && (
-                    <p className="tap-hint">Tap a lit tile on the table.</p>
+                    <p className="tap-hint">
+                      {shadeTable
+                        ? 'Tap the table to close this card, then choose a lit tile.'
+                        : 'Tap a lit tile on the table.'}
+                    </p>
                   )}
                   {(!isTileDrill || answered) && (
                     <div className="drill-options">
@@ -354,7 +372,7 @@ export default function LessonScreen() {
         <button
           className="btn btn-primary"
           disabled={blocked && !showChoices}
-          onClick={showChoices ? () => setCollapseOverride(false) : advance}
+          onClick={showChoices ? () => setCardCollapsed(false) : advance}
         >
           {blocked
             ? (isTileDrill ? 'Tap a tile' : 'Choose an answer')
