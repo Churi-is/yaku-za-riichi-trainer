@@ -1,57 +1,73 @@
-/**
- * SHARED CONTRACT — AI player model types. Owned by Worker B.
- */
-import type { Action, LegalAction, PublicView } from '@engine/types';
+/** Shared AI contract. All decisions consume public information only. */
+import type { Action, Difficulty, LegalAction, PublicView } from '@engine/types';
 
 export type Archetype = 'aggressive' | 'balanced' | 'defensive';
 
-/** Tunable knobs; archetype × difficulty resolves to one of these. */
+/** Opt-in novelty rules, not an extra execution/difficulty tier. */
+export type SpecialStyle = 'selfSabotage' | 'manganMinimum' | 'ronOnly' | 'gearShift';
+export interface SpecialPersonality {
+  style: SpecialStyle;
+  rule: string;
+  /** Approximate native strength, deliberately separate from the Special badge. */
+  estimatedDifficulty: string;
+}
+export type RosterDifficulty = Difficulty | 'special';
+
+/** Personality tendencies × execution level. All numeric knobs are 0–1. */
 export interface AIParams {
-  /**
-   * The archetype these knobs came from. Carried explicitly because the
-   * decision layers need to know WHO they are; inferring it from a derived
-   * number (defenseThreshold > 0.7) silently mislabelled aggressive-on-hard
-   * and balanced-on-easy.
-   */
   archetype: Archetype;
-  /** 0-1 chance of picking a sub-optimal efficiency choice. */
+  /** Chance of an efficiency mistake, not a random illegal action. */
   efficiencyNoise: number;
-  /** 0-1 eagerness to call pon/chi. */
   callGreed: number;
-  /** 0-1 opponent-threat level at which it starts folding. */
+  /** Higher = willing to push into more danger. */
   defenseThreshold: number;
-  /** 0-1; higher = waits longer / prefers dama. */
+  /** Higher = more willing to keep a valuable hand in dama. */
   riichiPatience: number;
-  /** 0-1; higher = more obvious tells (low = subtle). */
+  /** Higher = less exaggerated play at higher execution levels. */
   tellSubtlety: number;
-  /** 0-1 chance of deviating from archetype (Hard only). */
+  /** Chance of varying between near-equivalent, same-shanten discards. */
   deviation: number;
+  /** Retain dora and value honors rather than always choosing maximum speed. */
+  valueGreed: number;
+  /** Favor a flush when the dealt hand already has a dominant suit. */
+  flushBias: number;
+  /** Preserve pairs for chiitoitsu / toitoi when the shape supports it. */
+  pairBias: number;
+  kanGreed: number;
+  /** Execution strength of risk-aware discard tie-breaking. */
+  safetyAwareness: number;
+  /** Adjust risk to dealer status and final-round point standings. */
+  placementAwareness: number;
 }
 
 export interface Personality {
   id: string;
   name: string;
+  /** Compact name for the seating diagram. */
+  shortName: string;
+  title: string;
   archetype: Archetype;
-  /** One-line style description shown at match start. */
+  /** Native execution level; Specials display their separate category instead. */
+  difficulty: Difficulty;
+  special?: SpecialPersonality;
   tagline: string;
-  /**
-   * Per-player deviation from the archetype baseline. Archetype decides the
-   * shape of a player; this is what makes three aggressives three people
-   * rather than one person three times.
-   */
+  /** Learnable tendency, not a claim to know the concealed hand. */
+  tell: string;
+  /** Normal-level tendencies, scaled by difficulty AFTER tuning. */
   tune?: Partial<Pick<AIParams,
-    'callGreed' | 'defenseThreshold' | 'riichiPatience' | 'efficiencyNoise'>>;
+    'callGreed' | 'defenseThreshold' | 'riichiPatience' | 'efficiencyNoise'
+    | 'valueGreed' | 'flushBias' | 'pairBias' | 'kanGreed'
+    | 'placementAwareness' | 'deviation'>>;
 }
 
 export interface AIDecision {
   action: Action;
-  /** Debug only; never surfaced to the player during live play. */
+  /** Debug only; never reveals live hand analysis to the human player. */
   rationale?: string;
 }
 
 export interface AIPlayer {
   personality: Personality;
   params: AIParams;
-  /** Choose among the legal actions using ONLY the public view. */
   decide(view: PublicView, legal: LegalAction[]): AIDecision;
 }

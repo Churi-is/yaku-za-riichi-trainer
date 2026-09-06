@@ -9,6 +9,7 @@
 import type { PublicView, TileId, TileKind, Wind } from '@engine/types';
 import type { AIParams } from './types';
 import { Rng } from './rng';
+import { directionReluctance } from './strategy';
 import {
   evaluateDiscards,
   ownTiles,
@@ -22,9 +23,6 @@ import {
   type DiscardEval,
 } from './handEval';
 import { buildSafetyContext, dangerOf, type SafetyContext } from './defense';
-
-/** 5m / 5p / 5s — the kinds that can carry a red copy. */
-const RED_FIVE_KINDS = new Set<TileKind>([4, 13, 22]);
 
 /**
  * Draws the viewer still gets. Below a handful, a hand that is not nearly
@@ -61,6 +59,7 @@ function discardReluctance(
   view: PublicView,
   pool: TileId[],
   doraKinds: Set<TileKind>,
+  tile: TileId,
 ): number {
   const seat = ownSeat(view);
   const counts = countsOf(pool);
@@ -71,7 +70,7 @@ function discardReluctance(
   let rel = 0;
   if (doraKinds.has(kind)) rel += 1.4; // never want to shed dora
   // A red five is a han in its own right, on top of any dora it may also be.
-  if (RED_FIVE_KINDS.has(kind) && pool.some((t) => isRed(t) && kindOf(t) === kind)) rel += 1.2;
+  if (view.settings.redDora && isRed(tile)) rel += 1.2;
   if (valueKinds.has(kind)) {
     if (counts[kind] >= 3) rel += 2.0; // live yakuhai triplet
     else if (counts[kind] === 2) rel += 1.1; // yakuhai pair (atozuke/pon)
@@ -95,14 +94,21 @@ export function chooseDiscard(
   params: AIParams,
   rng: Rng,
   folding: boolean,
+  allowedTiles?: readonly TileId[],
 ): DiscardChoice {
   const seat = ownSeat(view);
   const melds = seat.melds;
   const tilePool = ownTiles(view); // 14 post-draw (13 + drawnTile), or 13 in a window
-  const evals = evaluateDiscards(tilePool, melds, view.visibleCounts);
+  const allowed = allowedTiles ? new Set(allowedTiles.map(kindOf)) : null;
+  const evals = evaluateDiscards(tilePool, melds, view.visibleCounts)
+    .filter((e) => !allowed || allowed.has(e.kind))
+    .map((e) => {
+      if (!allowedTiles || allowedTiles.includes(e.tile)) return e;
+      const copies = allowedTiles.filter((t) => kindOf(t) === e.kind);
+      return { ...e, tile: copies.find((t) => !isRed(t)) ?? copies[0] };
+    });
   if (evals.length === 0) {
-    // Fallback (should never happen with a legal discard set).
-    return { tile: tilePool[0], kind: kindOf(tilePool[0]), rationale: 'fallback' };
+    throw new Error('AI: no legal discard candidates');
   }
 
   const safety: SafetyContext = buildSafetyContext(view);
@@ -112,7 +118,9 @@ export function chooseDiscard(
   const reluctance = new Map<TileKind, number>();
   for (const e of evals) {
     danger.set(e.kind, dangerOf(e.kind, safety));
-    reluctance.set(e.kind, discardReluctance(e.kind, view, tilePool, doraKinds));
+    reluctance.set(e.kind,
+      discardReluctance(e.kind, view, tilePool, doraKinds, e.tile) * (0.35 + params.valueGreed * 1.3)
+      + directionReluctance(e.kind, tilePool, melds, params));
   }
 
   // -- Folding: safe tile first, then least shape damage. -------------------
@@ -138,7 +146,7 @@ export function chooseDiscard(
   // Inside the tier, acceptance is the efficiency number that matters, value
   // pulls back on tiles worth keeping, and danger breaks near-ties towards the
   // safer discard even while pushing.
-  const bestShanten = evals[0].shanten;
+  const bestShanten = Math.min(...evals.map((e) => e.shanten));
   const optimal = evals.filter((e) => e.shanten === bestShanten);
   const suboptimal = evals.filter((e) => e.shanten > bestShanten);
 
@@ -147,7 +155,7 @@ export function chooseDiscard(
     const rel = reluctance.get(e.kind) ?? 0;
     let v = e.acceptance + e.acceptKinds * 0.6;
     v -= rel * 5;                       // keep dora, red fives and yakuhai
-    v -= (danger.get(e.kind) ?? 0) * 3; // free safety when the shape allows it
+    v -= (danger.get(e.kind) ?? 0) * (1 + params.safetyAwareness * 4); // free safety when the shape allows it
     // With the wall nearly gone, width stops paying and tenpai starts paying:
     // the noten penalty is real money and a wide 2-shanten hand is not.
     if (late) v = v * 0.4 - rel * 3;
@@ -157,8 +165,8 @@ export function chooseDiscard(
   const byScore = (list: DiscardEval[]) =>
     list.slice().sort((a, b) => score(b) - score(a) || a.kind - b.kind);
 
-  // A deliberate mistake: give up a shanten tier. This is the ONLY randomness
-  // in the pushing path, and its rate is exactly what difficulty tunes.
+  // A deliberate execution mistake: give up one shanten tier. Personality
+  // variation below is separate and never gives up a tier.
   if (suboptimal.length > 0 && rng.chance(params.efficiencyNoise)) {
     const near = suboptimal.filter((e) => e.shanten <= bestShanten + 1);
     const pick = byScore(near.length > 0 ? near : suboptimal)[0];
@@ -171,9 +179,16 @@ export function chooseDiscard(
 
   const ranked = byScore(optimal);
   // A smaller slip: right tier, second-best tile.
-  const pick = ranked.length > 1 && rng.chance(params.efficiencyNoise * 0.5)
+  let pick = ranked.length > 1 && rng.chance(params.efficiencyNoise * 0.5)
     ? ranked[1]
     : ranked[0];
+  // Personality, not sabotage: Majima varies only between similarly useful
+  // discards, never a worse shanten or a markedly more dangerous tile.
+  if (pick === ranked[0] && ranked.length > 1 && rng.chance(params.deviation)) {
+    const near = ranked.filter((e) => score(e) >= score(ranked[0]) - 2
+      && danger.get(e.kind)! <= danger.get(ranked[0].kind)! + 0.05);
+    if (near.length > 1) pick = rng.pick(near);
+  }
 
   return {
     tile: pick.tile,

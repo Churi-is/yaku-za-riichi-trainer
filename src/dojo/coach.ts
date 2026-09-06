@@ -72,7 +72,15 @@ export function sizeOf(step: Step): CoachSize {
     + (step.table ?? '').split(/\s+/).filter(Boolean).length
     + (step.prompt ?? '').split(/\s+/).filter(Boolean).length;
   const extras = (step.figures?.length ?? 0) * 12 + (step.note ? 26 : 0);
-  const options = (step.options ?? []).length * 6;
+  // Tile options are compact (one tile + a label); word options in judgement
+  // drills can wrap to several lines each and the post-answer explanations
+  // add several lines more, so they weigh by their actual text.
+  const options = (step.options ?? []).reduce((w, o) => {
+    if (o.tile) return w + 6;
+    const optWords = (o.label ?? '').split(/\s+/).filter(Boolean).length
+      + o.why.split(/\s+/).filter(Boolean).length;
+    return w + Math.max(10, optWords * 1.6);
+  }, 0);
   const weight = words + extras + options;
   if (weight < 45) return 'sm';
   if (weight < 80) return 'md';

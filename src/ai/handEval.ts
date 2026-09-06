@@ -144,7 +144,7 @@ export function meldKinds(melds: Meld[]): TileKind[] {
 
 /** Total per-kind counts contributed by declared melds. */
 export function meldCounts(melds: Meld[]): number[] {
-  return countsFromIds(meldKinds(melds));
+  return countsFromIds(melds.flatMap((m) => m.tiles));
 }
 
 /** Number of fixed triplet/kan blocks (pon/kan) — chi melds are sequences. */
@@ -365,7 +365,7 @@ export function hasOpenYakuPath(
       if (c[k] >= 3) blocks++;
       else if (c[k] === 2) pairs++;
     }
-    if (blocks + pairs >= 4) return true;
+    if (!melds.some((m) => m.type === 'chi') && prospective.length === 0 && blocks + pairs >= 4) return true;
   }
   // Honroutou path: only terminals & honors.
   {
@@ -449,7 +449,7 @@ export function doraCount(
   doraIndicators: TileId[],
   redDora: boolean,
 ): number {
-  const total = countsFromIds(hand.concat(meldKinds(melds)));
+  const total = countsFromIds(hand.concat(melds.flatMap((m) => m.tiles)));
   let n = 0;
   for (const ind of doraIndicators) n += total[doraKindForIndicator(kindOf(ind))] ?? 0;
   if (redDora) {

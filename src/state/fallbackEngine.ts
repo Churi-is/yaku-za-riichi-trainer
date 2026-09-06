@@ -202,6 +202,7 @@ export function toPublicView(state: GameState, seat: SeatIndex): PublicView {
     phase: state.phase,
     hand: clone(me.hand),
     drawnTile: me.drawnTile,
+    furiten: !!(me.furiten || me.temporaryFuriten || me.riichiFuriten),
     seats: seats as PublicView['seats'],
     doraIndicators: clone(state.doraIndicators),
     tilesRemaining: state.wall.length,

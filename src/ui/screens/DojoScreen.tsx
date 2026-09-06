@@ -9,23 +9,26 @@
  */
 import { CHAPTERS, ALL_LESSONS, lessonShape } from '@dojo/course';
 import { useSession } from '@state/session';
+import { useMatch } from '@state/gameLoop';
 
 export default function DojoScreen() {
   const go = useSession((s) => s.go);
   const openLesson = useSession((s) => s.openLesson);
   const completed = useSession((s) => s.completed);
+  const resetMatch = useMatch((s) => s.reset);
 
   const done = ALL_LESSONS.filter((x) => completed.includes(x.lesson.id)).length;
   const total = ALL_LESSONS.length;
   const next = ALL_LESSONS.find((x) => !completed.includes(x.lesson.id));
 
   return (
-    <div className="screen screen-narrow stack">
+    <div className="screen screen-narrow">
       <div className="screen-head">
         <h1>The Dojo<span className="kan jp">道場</span></h1>
         <button className="btn btn-ghost btn-sm" onClick={() => go('menu')}>← Menu</button>
       </div>
 
+      <div className="screen-body stack">
       <div className="card stack" style={{ gap: 10 }}>
         <div className="row spread" style={{ margin: 0, alignItems: 'baseline' }}>
           <strong style={{ fontSize: 15 }}>{done} of {total} lessons</strong>
@@ -38,9 +41,17 @@ export default function DojoScreen() {
             <span className="cta-title">{next.lesson.title}</span>
           </button>
         ) : (
-          <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-            Every lesson done. Play a match and see how much of it survives contact.
-          </p>
+          <div className="stack" style={{ gap: 10 }}>
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+              Every lesson done. Take it to the table and see how much of it survives contact.
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => { resetMatch(); go('opponents'); }}
+            >
+              Play a Match<span className="kan jp" style={{ marginLeft: 8, opacity: 0.85 }}>対局</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -91,6 +102,7 @@ export default function DojoScreen() {
           </section>
         );
       })}
+      </div>
     </div>
   );
 }

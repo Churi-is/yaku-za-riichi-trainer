@@ -14,8 +14,9 @@ describe('match screen smoke', () => {
     fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Start Match/i })); });
     act(() => { vi.advanceTimersByTime(2000); });
-    const deal = screen.queryByRole('button', { name: /^Deal$/i });
-    if (deal) act(() => { fireEvent.click(deal); });
+    // "Deal" dismisses the intro and starts play (the pump holds until then).
+    const deal = screen.getByRole('button', { name: /Deal/i });
+    act(() => { fireEvent.click(deal); });
     act(() => { vi.advanceTimersByTime(2000); });
 
     const st = useMatch.getState();
@@ -29,8 +30,9 @@ describe('match screen smoke', () => {
     fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Start Match/i })); });
     act(() => { vi.advanceTimersByTime(2000); });
-    const deal = screen.queryByRole('button', { name: /^Deal$/i });
-    if (deal) act(() => { fireEvent.click(deal); });
+    // "Deal" dismisses the intro and starts play (the pump holds until then).
+    const deal = screen.getByRole('button', { name: /Deal/i });
+    act(() => { fireEvent.click(deal); });
     act(() => { vi.advanceTimersByTime(3000); });
 
     // wait for the human's turn
@@ -62,8 +64,9 @@ describe('match screen smoke', () => {
     fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Start Match/i })); });
     act(() => { vi.advanceTimersByTime(2000); });
-    const deal = screen.queryByRole('button', { name: /^Deal$/i });
-    if (deal) act(() => { fireEvent.click(deal); });
+    // "Deal" dismisses the intro and starts play (the pump holds until then).
+    const deal = screen.getByRole('button', { name: /Deal/i });
+    act(() => { fireEvent.click(deal); });
     act(() => { vi.advanceTimersByTime(3000); });
     for (let i = 0; i < 40 && useMatch.getState().humanLegal.length === 0; i++) {
       act(() => { vi.advanceTimersByTime(1000); });

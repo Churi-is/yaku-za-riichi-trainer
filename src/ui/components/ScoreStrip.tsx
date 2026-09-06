@@ -1,8 +1,16 @@
-/** ScoreStrip — every seat's points across the top, in turn (wind) order. */
-import type { PublicView, SeatIndex, Wind } from '@engine/types';
+/**
+ * ScoreStrip — every seat's points across the top.
+ *
+ * Seats are ALWAYS in fixed table order (you, right, across, left). The strip
+ * used to re-sort by wind each hand, which cycled your plate across positions
+ * as the winds rotated — position is learned by location, so that was pure
+ * cost. The dealer 親 mark, the riichi リ mark, the turn glow and each plate's
+ * wind letter already carry everything the sort was communicating.
+ */
+import type { PublicView, SeatIndex } from '@engine/types';
+import { PERSONALITIES } from '@ai/personalities';
+import { specialStatus } from '@ai/specialStyles';
 import { WIND_LETTER } from './SeatPlate';
-
-const WIND_ORDER: Wind[] = ['east', 'south', 'west', 'north'];
 
 /** where each seat sits relative to the viewer, so the strip maps to the felt */
 const POSITION: Record<SeatIndex, { glyph: string; title: string }> = {
@@ -18,22 +26,22 @@ export interface ScoreStripProps {
   tools?: React.ReactNode;
 }
 
-/** "Kenta the Rush" reads as "Kenta" in a 90px plate. */
+/** Fallback for unnamed/custom seats; roster characters have explicit short names. */
 function shortName(name: string): string {
   const first = name.split(/\s+/)[0];
   return first.length >= 3 ? first : name;
 }
 
 export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
-  const seats = ([0, 1, 2, 3] as SeatIndex[])
-    .slice()
-    .sort((a, b) => WIND_ORDER.indexOf(view.seats[a].seatWind) - WIND_ORDER.indexOf(view.seats[b].seatWind));
+  const seats = [0, 1, 2, 3] as SeatIndex[];
 
   return (
     <header className="score-strip">
       <div className="score-plates">
         {seats.map((s) => {
           const seat = view.seats[s];
+          const personality = s === 0 ? null : PERSONALITIES.find((p) => p.id === seat.aiPersonalityId);
+          const status = personality?.special ? specialStatus(personality.special.style, seat) : null;
           const cls = [
             'score-plate',
             s === 0 ? 'you' : '',
@@ -45,9 +53,9 @@ export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
               <div className="l1">
                 <span className="wind" title={`${seat.seatWind} seat`}>{WIND_LETTER[seat.seatWind]}</span>
                 <span className="name" title={s === 0 ? 'You' : seatName(s)}>
-                  {s === 0 ? 'You' : shortName(seatName(s))}
+                  {s === 0 ? 'You' : personality?.shortName ?? shortName(seatName(s))}
                 </span>
-                <span className="pos" aria-hidden="true" title={POSITION[s].title}>{POSITION[s].glyph}</span>
+                <span className="pos" aria-label={`position: ${POSITION[s].title}`}>{POSITION[s].glyph}</span>
               </div>
               <div className="l2">
                 <span className="pts">{seat.points.toLocaleString()}</span>
@@ -56,6 +64,10 @@ export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
                   {seat.riichi && <span className="mark riichi" title="riichi declared">リ</span>}
                 </span>
               </div>
+              {status && <div className="special-bot-status" aria-label={`${personality!.name}: ${status}`}
+                title={`${personality!.special!.rule}. Estimated difficulty: ${personality!.special!.estimatedDifficulty}`}>
+                {status}
+              </div>}
             </div>
           );
         })}

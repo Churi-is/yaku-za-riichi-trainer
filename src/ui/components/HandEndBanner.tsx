@@ -2,6 +2,7 @@
 import type { HandResult, Meld, SeatIndex } from '@engine/types';
 import Tile from './Tile';
 import { sortTiles } from '@ui/tiles';
+import { useFocusTrap } from '@ui/hooks/useFocusTrap';
 
 export interface HandEndBannerProps {
   result: HandResult;
@@ -15,10 +16,18 @@ export interface HandEndBannerProps {
 
 export default function HandEndBanner({ result, roundLabel, seatName, onContinue, continueLabel, meldsOf }: HandEndBannerProps) {
   const { reason, winner, loser, score } = result;
+  const cardRef = useFocusTrap<HTMLDivElement>(true);
 
   return (
     <div className="scrim">
-      <div className="card handend-card stack">
+      <div
+        className="card handend-card stack"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Hand result"
+        ref={cardRef}
+        tabIndex={-1}
+      >
         <div className="row spread">
           <h2 style={{ margin: 0 }}>
             {reason === 'tsumo' && `${seatName(winner!)} — Tsumo`}
@@ -77,7 +86,7 @@ export default function HandEndBanner({ result, roundLabel, seatName, onContinue
           </div>
         </div>
 
-        <button className="btn btn-primary" onClick={onContinue}>{continueLabel}</button>
+        <button className="btn btn-primary handend-continue" onClick={onContinue}>{continueLabel}</button>
       </div>
     </div>
   );

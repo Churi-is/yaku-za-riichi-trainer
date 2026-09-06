@@ -166,6 +166,7 @@ function buildView(
     phase: 'awaitingDiscard',
     hand,
     drawnTile,
+    furiten: false,
     seats: seatsView,
     doraIndicators: doraIndicators.slice(),
     tilesRemaining: wall.length,

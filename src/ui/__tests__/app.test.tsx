@@ -60,19 +60,16 @@ describe('modes', () => {
     // Three are preselected by default, so the table is always playable.
     expect(useSession.getState().opponents).toHaveLength(3);
 
-    // Choosing a fourth replaces the oldest rather than doing nothing.
-    const before = useSession.getState().opponents;
-    fireEvent.click(screen.getByRole('button', { name: /Goro the Bulldozer/i }));
-    const after = useSession.getState().opponents;
-    expect(after).toHaveLength(3);
-    expect(after).toContain('goro');
-    expect(after[2]).toBe('goro');
-    expect(after[0]).toBe(before[1]);
+    // A new character replaces only the explicitly selected physical seat.
+    const before = [...useSession.getState().opponents];
+    fireEvent.click(screen.getByRole('button', { name: /Edit Across seat/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Goro Majima — Place at Across/i }));
+    expect(useSession.getState().opponents).toEqual([before[0], 'majima', before[2]]);
   });
 
   it('seats exactly the three opponents the player chose', () => {
     vi.useFakeTimers();
-    useSession.setState({ opponents: ['ryu', 'nao', 'hoshi'] });
+    useSession.setState({ opponents: ['ryuji', 'saeko', 'shinada'] });
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /Play a Match/i }));
     fireEvent.click(screen.getByRole('button', { name: /Table settings/i }));
@@ -80,7 +77,7 @@ describe('modes', () => {
     act(() => { vi.advanceTimersByTime(1500); });
 
     const seated = useMatch.getState().seatPersonalities;
-    expect(seated.map((s) => s.id)).toEqual(['ryu', 'nao', 'hoshi']);
+    expect(seated.map((s) => s.id)).toEqual(['ryuji', 'saeko', 'shinada']);
     expect(seated.map((s) => s.seat)).toEqual([1, 2, 3]);
     vi.useRealTimers();
   });

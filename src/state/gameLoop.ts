@@ -7,18 +7,22 @@
  *  - AI turns are paced with a short delay; the UI thread never blocks.
  *  - The loop is guarded against a throwing engine (the adapter handles that).
  *  - Human seat (0) surfaces legal actions as UI options and waits.
+ *  - Nothing advances while the pause menu is open or the pre-match intro is
+ *    still on screen: the pump gates on both flags so "Paused" really is, and
+ *    "Deal" really starts the deal flow.
  *
  * Exposed as a zustand store so the MatchScreen can render reactively; the
  * async pump lives here, off React's render path.
  */
 import { create } from 'zustand';
 import {
-  createAI, DEFAULT_OPPONENTS, personalityById, PERSONALITIES, type AIPlayer,
+  createAI, DEFAULT_OPPONENTS, personalityById, opponentDifficulty, type AIPlayer, type SpecialPersonality,
 } from '@ai/index';
 import type {
   Action, GameState, HandResult, LegalAction, MatchResult, PublicView,
-  SeatIndex, TableSettings, TileId, TileKind,
+  SeatIndex, TableSettings, TileId, TileKind, Difficulty,
 } from '@engine/types';
+import { completeOpponents } from './opponents';
 import {
   applyAction, createMatch, getLegalActions, nextHand, pendingSeats, toPublicView,
 } from './engineAdapter';
@@ -28,6 +32,10 @@ export interface SeatPersonality {
   id: string;
   name: string;
   tagline: string;
+  title: string;
+  tell: string;
+  difficulty: Difficulty;
+  special?: SpecialPersonality;
 }
 
 export interface HandEndBanner {
@@ -47,15 +55,19 @@ interface MatchStore {
   seatPersonalities: SeatPersonality[];
   handEnd: HandEndBanner | null;
   matchResult: MatchResult | null;
-  /** Practice-mode: pending wait-guess prompts by seat. */
-  /** Recorded wait guesses this match (live, before resolution). */
+  /** Pause menu open: the pump is stopped until it closes. */
+  paused: boolean;
+  /** Pre-match intro on screen: the pump waits for "Deal". */
+  introDismissed: boolean;
+  /** Engine error message, when the guard caught a throw mid-hand. */
   message: string | null;
 
   // actions
-  start: (settings: TableSettings, seed?: number, opponents?: string[]) => void;
+  start: (settings: TableSettings, seed?: number, opponents?: readonly (string | null)[]) => void;
   humanAct: (action: Action) => void;
   advanceHand: () => void;
-  finish: () => void; // finalize -> returns log via getter
+  setPaused: (paused: boolean) => void;
+  dismissIntro: () => void;
   reset: () => void;
 }
 
@@ -88,6 +100,8 @@ export const useMatch = create<MatchStore>((set, get) => ({
   seatPersonalities: [],
   handEnd: null,
   matchResult: null,
+  paused: false,
+  introDismissed: false,
   message: null,
 
   start(settings, seed, opponents) {
@@ -98,21 +112,19 @@ export const useMatch = create<MatchStore>((set, get) => ({
     let state = createMatch(settings, seed);
 
     // Seat the three opponents the player picked (seat 0 is always human).
-    const chosen = (opponents && opponents.length === 3 ? opponents : DEFAULT_OPPONENTS)
-      .map((id) => {
-        try { return personalityById(id); } catch { return null; }
-      })
-      .filter((p): p is NonNullable<typeof p> => p !== null);
+    const chosen = completeOpponents(opponents ?? DEFAULT_OPPONENTS).map(personalityById);
     const seatPersonalities: SeatPersonality[] = [];
     ais = {};
     for (let seat = 1 as SeatIndex; seat < 4; seat = (seat + 1) as SeatIndex) {
-      const personality = chosen[seat - 1] ?? PERSONALITIES[(seat - 1) % PERSONALITIES.length];
+      const personality = chosen[seat - 1];
+      const difficulty = opponentDifficulty(personality, settings);
       state.players[seat].aiPersonalityId = personality.id;
-      ais[seat] = createAI(personality, settings.difficulty, (seed ?? 1) + seat);
-      seatPersonalities.push({ seat, id: personality.id, name: personality.name, tagline: personality.tagline });
+      ais[seat] = createAI(personality, difficulty, (seed ?? 1) + seat);
+      seatPersonalities.push({
+        seat, id: personality.id, name: personality.name, tagline: personality.tagline,
+        title: personality.title, tell: personality.tell, difficulty, special: personality.special,
+      });
     }
-
-    beginHandLog(state);
 
     set({
       state,
@@ -122,19 +134,19 @@ export const useMatch = create<MatchStore>((set, get) => ({
       seatPersonalities,
       handEnd: null,
       matchResult: null,
+      paused: false,
+      introDismissed: false,
       message: null,
     });
 
-    // Kick the pump.
+    // Kick the pump; it holds while the intro card is on screen.
     void pump(token, get, set);
   },
 
   humanAct(action) {
-    const { state } = get();
-    if (!state) return;
-    const view = toPublicView(state, 0);
+    const { state, paused, introDismissed } = get();
+    if (!state || paused || !introDismissed) return;
     let next = applyAction(state, action);
-    afterApply(next, action);
     commit(next, set, get);
     // resume the pump after a human action
     const token = pumpToken;
@@ -145,23 +157,35 @@ export const useMatch = create<MatchStore>((set, get) => ({
     const { state } = get();
     if (!state) return;
     if (state.phase !== 'handOver') return;
-    let next = nextHand(state);
+    const next = nextHand(state);
     if (next.matchOver) {
       finalizeMatch(next, set);
       return;
     }
-    beginHandLog(next);
     set({ handEnd: null });
     commit(next, set, get);
     const token = pumpToken;
     void pump(token, get, set);
   },
 
-  finish() {
-    const { state } = get();
-    if (state && !state.matchOver) {
-      // finalize whatever we have
+  setPaused(paused) {
+    if (get().paused === paused) return;
+    set({ paused, aiThinking: false });
+    if (paused) {
+      // Invalidate every in-flight AI step: opening the menu stops the table.
+      pumpToken++;
+    } else {
+      // Resume on a fresh token; the human is never mid-decision across a pause.
+      const token = ++pumpToken;
+      void pump(token, get, set);
     }
+  },
+
+  dismissIntro() {
+    if (get().introDismissed) return;
+    set({ introDismissed: true });
+    const token = pumpToken;
+    void pump(token, get, set);
   },
 
   reset() {
@@ -169,23 +193,22 @@ export const useMatch = create<MatchStore>((set, get) => ({
     ais = {};
     set({
       state: null, view: null, humanLegal: [], aiThinking: false,
-      seatPersonalities: [], handEnd: null, matchResult: null, message: null,
+      seatPersonalities: [], handEnd: null, matchResult: null,
+      paused: false, introDismissed: false, message: null,
     });
   },
 }));
 
 // --- internals -------------------------------------------------------------
 
-function beginHandLog(state: GameState) {
-  handCounter += 1;
-}
-
 function commit(next: GameState, set: (p: Partial<MatchStore>) => void, get: () => MatchStore) {
+  // A clean state after a handled step clears any earlier engine-error notice.
   const humanLegal = safeLegal(next, 0);
   set({
     state: next,
     view: toPublicView(next, 0),
     humanLegal,
+    message: null,
   });
 }
 
@@ -210,11 +233,6 @@ function safeLegal(state: GameState, seat: SeatIndex): LegalAction[] {
   }
 }
 
-function afterApply(state: GameState, _action: Action) {
-  if (state.phase === 'handOver' && state.handOver) {
-  }
-}
-
 /** The async pump: advances AI seats until it's the human's turn or hand ends. */
 async function pump(token: number, get: () => MatchStore, set: (p: Partial<MatchStore>) => void) {
   // Loop until we hand control to the human or the hand/match ends.
@@ -223,6 +241,8 @@ async function pump(token: number, get: () => MatchStore, set: (p: Partial<Match
   // eslint-disable-next-line no-constant-condition
   while (true) {
     if (token !== pumpToken) return; // superseded
+    if (get().paused) return; // pause menu open: the table stays exactly as-is
+    if (!get().introDismissed) return; // intro on screen: "Deal" starts play
     const state = get().state;
     if (!state) return;
 
@@ -248,7 +268,7 @@ async function pump(token: number, get: () => MatchStore, set: (p: Partial<Match
       await delay(randDelay());
       if (token !== pumpToken) return;
       const decided = decideAI(state, seat);
-      await stepApply(token, get, set, seat, decided, null);
+      await stepApply(token, get, set, seat, decided);
       continue;
     }
 
@@ -264,7 +284,7 @@ async function pump(token: number, get: () => MatchStore, set: (p: Partial<Match
         await delay(randDelay());
         if (token !== pumpToken) return;
       }
-      await stepApply(token, get, set, seat, draw.action, null);
+      await stepApply(token, get, set, seat, draw.action);
       continue;
     }
 
@@ -277,7 +297,7 @@ async function pump(token: number, get: () => MatchStore, set: (p: Partial<Match
     await delay(randDelay());
     if (token !== pumpToken) return;
     const decided = decideAI(state, seat);
-    await stepApply(token, get, set, seat, decided, null);
+    await stepApply(token, get, set, seat, decided);
   }
 }
 
@@ -317,21 +337,23 @@ async function stepApply(
   set: (p: Partial<MatchStore>) => void,
   seat: SeatIndex,
   action: Action,
-  _viewOverride: PublicView | null,
 ) {
+  void seat;
   const state = get().state;
   if (!state) return;
-  // Snapshot human view before the action for the log (grading needs it).
-  const humanViewBefore = toPublicView(state, 0);
   let next: GameState;
   try {
     next = applyAction(state, action);
   } catch {
-    // engine threw unexpectedly: end the pump gracefully
-    set({ aiThinking: false, message: 'The engine hit an error; pausing the hand.' });
+    // Engine threw unexpectedly: stop the pump and surface it instead of
+    // silently swallowing it. The pause menu is the way back to the menu.
+    pumpToken++;
+    set({
+      aiThinking: false, humanLegal: [],
+      message: 'Something went wrong in the rules engine — the hand is paused. Quit to the menu and start another match.',
+    });
     return;
   }
-  afterApply(next, action);
   if (token !== pumpToken) return;
   commit(next, set, get);
   // brief settle so consecutive AI discards are legible

@@ -129,3 +129,38 @@ from them, don't invent parallel shapes.
 +  replay grading against the engine's public surface
 +  (`shanten`/`waits`/`ukeire`/`toPublicView`) as frozen; Worker D's adapters
 +  probe the real modules and yield to them automatically.
+
+- 2026-09-06 — **Expanded character roster and fixed-seat setup.**
+  - `Personality` adds `shortName`, `title`, `difficulty`, and `tell`. The 18
+    character ids and imagined styles are listed in `docs/BOTS.md`; old generic
+    ids are replaced (sessions are not persisted).
+  - `AIParams` adds value, flush, pair, kan, safety, and placement preferences.
+    Personality tuning is applied before execution scaling. `paramsFor` accepts
+    optional tuning; `createAI` defaults its difficulty to the character level.
+    Explicit difficulty arguments remain supported.
+  - `TableSettings.opponentDifficulty` is an optional `'character' | 'uniform'`
+    field. Omitted/default means native character levels; `'uniform'` uses the
+    existing `difficulty` field. `Difficulty` still uses `normal` internally,
+    displayed as Medium. Rules and scoring ignore opponent execution settings.
+  - Session opponents are a fixed `[string | null, string | null, string | null]`
+    tuple in right/across/left order. Assignment swaps an existing occupant;
+    clearing leaves a hole. `start` accepts nullable slots and repairs only
+    invalid/empty slots, without compacting valid manual placements.
+  - `SeatPersonality` carries the resolved difficulty, title, and tell for the
+    match introduction. `AIPlayer.decide(PublicView, LegalAction[])` is unchanged;
+    the public-information firewall remains in force.
+
+- 2026-09-06 — **Four opt-in Special personalities.**
+  - `Personality.special` optionally carries a `SpecialStyle`, rule name, and
+    estimated native difficulty. `RosterDifficulty` adds the display/filter
+    category `special`; `rosterDifficulty()` keeps it distinct from execution.
+    The engine's three-value `Difficulty` enum and table rules are unchanged.
+  - `createAI` dispatches these characters through `decideSpecial`; the regular
+    player is unchanged. Specials may deliberately decline offered wins by
+    choosing another legal action. The old always-take-wins guarantee applies
+    to regular opponents (and Fighter), not Nugget, Shakedown, or Komaki.
+    Forced legal actions, legality, and the public-information firewall still
+    apply to all opponents. The engine continues to own all furiten effects.
+  - `SeatPersonality.special` preserves the category/estimate in the match
+    introduction. Racing phases depend only on public river length and reset
+    naturally each hand. No private hand inference is exposed as a status.

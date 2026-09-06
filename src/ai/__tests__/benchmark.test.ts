@@ -37,7 +37,7 @@ export interface BotStats {
 
 /**
  * One seat per archetype plus a second balanced seat. Fixed on purpose: the
- * roster has nine names now, and a benchmark whose table changes when someone
+ * roster can grow, and a benchmark whose table changes when someone
  * adds a personality is measuring the roster, not the code.
  */
 function table(seed: number, difficulty: Difficulty): AIPlayer[] {

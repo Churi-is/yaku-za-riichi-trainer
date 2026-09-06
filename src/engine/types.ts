@@ -72,7 +72,10 @@ export interface TableSettings {
   /** Two-han minimum to win. */
   twoHanMinimum: boolean;
   gameLength: GameLength;
+  /** Used when opponentDifficulty is 'uniform'. */
   difficulty: Difficulty;
+  /** Native character levels by default; uniform overrides all three for practice. */
+  opponentDifficulty?: 'character' | 'uniform';
 }
 
 export const DEFAULT_SETTINGS: TableSettings = {
@@ -81,6 +84,7 @@ export const DEFAULT_SETTINGS: TableSettings = {
   twoHanMinimum: false,
   gameLength: 'hanchan',
   difficulty: 'normal',
+  opponentDifficulty: 'character',
 };
 
 // ---------------------------------------------------------------------------
@@ -334,6 +338,12 @@ export interface PublicView {
   /** Viewer's own concealed hand + drawn tile. */
   hand: TileId[];
   drawnTile: TileId | null;
+  /**
+   * The viewer's own furiten state (permanent, temporary, or riichi). A player
+   * always knows their own furiten at a real table — it is private to them but
+   * they hold the information — so the UI may show it. Opponents' never appears.
+   */
+  furiten: boolean;
   /** Per-seat public info. */
   seats: Record<SeatIndex, PublicSeatView>;
   doraIndicators: TileId[];

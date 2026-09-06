@@ -42,7 +42,7 @@ function aisFor(seed: number): AIPlayer[] {
   ];
 }
 
-import { PERSONALITIES, type Personality } from '../index';
+import { PERSONALITIES, SPECIAL_PERSONALITIES, type Personality } from '../index';
 function makePersonality(arch: Personality['archetype']): Personality {
   return PERSONALITIES.find((p) => p.archetype === arch)!;
 }
@@ -169,6 +169,35 @@ describe('AI vs real engine (integration)', () => {
     expect(r.illegal, 'AI chose an action not in the legal set').toBe(0);
     expect(r.hands).toBeGreaterThan(0);
   });
+
+  it('plays every named character at native strength through real matches and rule variants', () => {
+    for (let offset = 0; offset < PERSONALITIES.length; offset += 4) {
+      const bots = Array.from({ length: 4 }, (_, seat) => {
+        const p = PERSONALITIES[(offset + seat) % PERSONALITIES.length];
+        return createAI(p, p.difficulty, 600 + offset + seat);
+      });
+      const result = playMatchWith(bots, 600 + offset, {
+        ...SETTINGS, redDora: offset % 8 === 0, kuitan: offset % 8 !== 0,
+        twoHanMinimum: offset === 8,
+      });
+      expect(result.illegal, `roster group ${offset}: illegal action`).toBe(0);
+      expect(result.throws, `roster group ${offset}: engine error`).toBe(0);
+      expect(result.hands).toBeGreaterThan(0);
+    }
+  }, 120_000);
+
+  it('completes all-Special tables, including legal declined wins, under both rule variants', () => {
+    for (const strict of [false, true]) {
+      const bots = SPECIAL_PERSONALITIES.map((p, i) => createAI(p, p.difficulty, 871 + i));
+      const result = playMatchWith(bots, strict ? 882 : 881, {
+        ...SETTINGS, kuitan: !strict, redDora: !strict, twoHanMinimum: strict,
+      });
+      expect(result.illegal).toBe(0);
+      expect(result.throws).toBe(0);
+      expect(result.hands).toBeGreaterThan(0);
+      expect(result.wins[0]).toBe(0); // Nugget never voluntarily accepts a win.
+    }
+  }, 120_000);
 
   it('is deterministic: same seed replays to the same hand count', () => {
     const a = playMatch(777);
