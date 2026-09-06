@@ -86,7 +86,7 @@ describe('modes', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /The Dojo/i }));
     // The dojo is the basics, strategy and yaku-codex tracks.
-    expect(screen.getByText(/of 56 lessons/i)).toBeTruthy();
+    expect(screen.getByText(/of 59 lessons/i)).toBeTruthy();
     expect(screen.getByText('Basics')).toBeTruthy();
     expect(screen.getByText('Strategy')).toBeTruthy();
     // The course opens on the first basics lesson; jump into the first
