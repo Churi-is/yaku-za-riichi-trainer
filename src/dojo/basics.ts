@@ -71,6 +71,13 @@ export const BASICS_CHAPTERS: Chapter[] = [
           {
             kind: 'teach',
             text: [
+              'Hands group into deals. The deal usually passes clockwise every hand, but a dealer who wins the hand — or a hand that runs completely out of tiles — keeps it, and that repeat is honba. The wind names the deal: the first deal is the East round, then the South round; this app’s default half game ends at the end of the South round, while a full game plays all four winds.',
+              'Two things follow. A win from the dealer seat pays double what the same hand pays from anywhere else, which is part of why keeping the deal matters. And the last hand of the game is its own event: when you are ahead and it arrives, ending it quietly becomes a real option — a word the strategy track will use.',
+            ],
+          },
+          {
+            kind: 'teach',
+            text: [
               'Most of the time you build your thirteen tiles entirely from your own draws and keep them hidden from the other players. A hand you have built yourself and kept private is called a closed (or concealed) hand.',
               'There is also a way to take a tile an opponent has just discarded, out of turn, to finish one of your sets. Taking a tile like that is called making a call, and it lays that set face-up for everyone to see. A hand that contains a call is called open. Closed hands keep all their options; open hands trade some scoring patterns for speed. Calls are taught properly later in this track.',
             ],
@@ -477,8 +484,8 @@ export const BASICS_CHAPTERS: Chapter[] = [
               'Chi takes a tile from the player immediately to your left and only to complete a run. Pon takes a tile from anyone at the table to complete a triplet with your pair. Kan takes the fourth copy of a tile you already have three of. After any call your hand is open and displayed melds stay exposed.',
             ],
             note: {
-              title: 'Chi is one-directional',
-              text: 'You can only chi the player to your left, because turn order means the tile otherwise never comes to you. Pon beats chi in priority — if two players can claim a discard, the triplet call wins.',
+              title: 'Chi is one-directional, and claims have an order',
+              text: 'You can only chi the player to your left, because turn order means the tile otherwise never comes to you. Claims on one discard have a strict order: a win beats every call, a kan beats a pon, and a pon beats a chi.',
             },
           },
           {
@@ -490,6 +497,17 @@ export const BASICS_CHAPTERS: Chapter[] = [
             note: {
               title: 'Speed costs value',
               text: 'The strategy track has a whole chapter on when a call is worth it. The short version the beginner needs: a yakuhai triplet or a call that brings you straight to tenpai with tanyao already in the hand is almost always right; a call on a hand with no yaku is always wrong.',
+            },
+          },
+          {
+            kind: 'teach',
+            text: [
+              'A kan is different from the other calls: it uses all four copies of a tile, and the table compensates you — you draw a replacement tile from the dead wall at the table’s centre, so your hand keeps going even though your turn came from a call.',
+              'Every kan also turns a new dora indicator face-up in the centre. That revealed dora helps whoever is collecting the tile — your opponents included — so a kan is power spent in the open, and it tells the table more about your hand than a chi or a pon does.',
+            ],
+            note: {
+              title: 'Kans are shared news',
+              text: 'Every kan also stages a hidden indicator in the dead wall that only a riichi winner ever sees — one of the bonuses the riichi lessons explain. Beginners are right to be sparing with kans: they are rare, they shrink the live wall, and the revealed dora are news the whole table can use.',
             },
           },
           ...drills([
@@ -533,18 +551,18 @@ export const BASICS_CHAPTERS: Chapter[] = [
             focusCentre: true,
             text: [
               'In the dead wall at the table’s centre sits one face-up tile: the dora indicator. The tile immediately after it — the next number up, wrapping 9 back to 1, and the next wind or dragon in order — is a dora, worth an extra han each if held in the winning hand.',
-              'Indicator 4m means 5m is dora; indicator 1p means 2p; indicator 9s means 1s. A red five in your hand counts as a dora too. Dora are pure bonus: they only count alongside a yaku, never as one.',
+              'Indicator 4m means 5m is dora; indicator 1p means 2p; indicator 9s means 1s. A red five in your hand earns a bonus the same way — the score lists red fives and dora on separate lines, but each adds a han. Dora are pure bonus: they only count alongside a yaku, never as one.',
             ],
           },
           {
             kind: 'teach',
             text: [
-              'Every winning hand’s pay is driven by its han count — the total of its yaku plus dora — and it rises steeply: more han means much more than proportionally more points. Most everyday wins land between one and five han; big hands hit named plateaus such as mangan.',
-              'On a self-draw (tsumo) all three opponents pay; on a discard win (ron) the one who threw the finishing tile pays the whole amount. Noten — failing to be at least tenpai when the hand runs out — means sharing a small penalty, which is why even a cheap tenpai at the end is worth holding.',
+              'Every winning hand’s pay is driven by its han count — yaku plus dora. Up to four han, each extra han roughly doubles the pay; at five the pay hits a fixed ceiling called mangan, with plateaus above it — haneman, baiman, sanbaiman, then yakuman. Most everyday wins land at one to four han.',
+              'On a self-draw (tsumo) all three opponents pay; on a discard win (ron) the one who threw the finishing tile pays the whole amount. A closed hand that self-draws also earns menzen tsumo, one han — the cheapest yaku in the game. Noten — not being at least tenpai when the wall runs out — means sharing a small penalty, which is why even a cheap late tenpai is worth holding.',
             ],
             note: {
-              title: 'Scoring detail lives in the book',
-              text: 'Exact point arithmetic — fu and the payment table — is the one chapter this course does not drill; the linked Riichi Book I covers it. You can play perfectly well knowing that more yaku and dora means far more points and that a yaku is mandatory.',
+              title: 'The ladder, exactly',
+              text: 'One to four han: each step roughly doubles the pay. Five han is mangan, and above mangan the pay is fixed per tier — six to seven is haneman, eight to ten baiman, eleven to twelve sanbaiman, thirteen and above a yakuman. A han only changes what you are paid when it crosses a tier line (5 to 6, 7 to 8, 10 to 11, 12 to 13): a six- or seven-han hand stays haneman with one more han on top. That fact is the arithmetic behind the strategy track’s first no-riichi exception, “the hand is already big”. Exact point arithmetic — fu — stays in the linked book for now.',
             },
           },
           ...drills([
@@ -587,7 +605,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
             kind: 'teach',
             text: [
               'Riichi is the move the game is named after. If your hand is tenpai and completely closed — you have called no tiles — you may declare it by placing a thousand-point stick on the table and discarding your tile sideways.',
-              'It buys a lot: an automatic han, an extra bonus draw chance on the very next turn, and hidden bonus dora that only a riichi winner gets to reveal. It also tells the table you are one tile from winning, which itself makes opponents stop discarding freely.',
+              'It buys a lot: an automatic han, a one-go-around window in which a win on a discard earns an extra han, and hidden bonus dora that only a riichi winner gets to reveal. It also tells the table you are one tile from winning, which itself makes opponents stop discarding freely.',
             ],
           },
           {
@@ -714,7 +732,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
             kind: 'teach',
             text: [
               'The first strategy lessons are the method behind the early discards: counting the five blocks your hand is built from, keeping the shapes that accept eight tiles, and letting go of the ones that accept four.',
-              'From there it moves to pursuing yaku on purpose, the judgement of when to declare riichi, when to push a hand through danger and when to fold, and when a call is worth the price. Every lesson is three guided screens and three drills on positions you could have dealt yourself.',
+              'From there it moves to pursuing yaku on purpose, the judgement of when to declare riichi, when to push a hand through danger and when to fold, and when a call is worth the price. Every lesson is two to four guided screens and three drills on positions you could have dealt yourself.',
             ],
             note: {
               title: 'Or go straight to a match',

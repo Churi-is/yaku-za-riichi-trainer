@@ -2,13 +2,16 @@
  * engine/yaku — yaku detection.
  *
  * Full set from the brief. Exclusions handled here:
- *   - any yakuman suppresses every non-yakuman yaku (single yakuman, no stack)
+ *   - any yakuman suppresses every non-yakuman yaku; multiple yakuman stack
+ *     (cumulative single yakuman — each pattern counts once, the count
+ *     multiplies the payment)
  *   - chinitsu suppresses honitsu
  *   - junchan suppresses chanta
  *   - honroutou suppresses chanta and junchan
  *   - ryanpeikou and chiitoitsu are mutually exclusive (different shapes)
- *   - iipeiko is deliberately NOT in the contract's yaku set, so a lone
- *     identical-run pair scores nothing; two of them score ryanpeikou
+ *   - duplicated runs: one duplicated pair of identical runs is iipeiko
+ *     (1 han, open or closed); two duplicated pairs is ryanpeikou
+ *     (2 han closed / 1 han open) and supersedes iipeiko
  *
  * DOCUMENTED DECISION: renhou is worth 5 han, which is exactly mangan. It
  * therefore guarantees the "renhou = mangan" floor and still stacks naturally
@@ -19,7 +22,7 @@ import {
   isTerminalOrHonor, isWind, kindOfWind, KIND_COUNT,
 } from './tiles';
 import { allKinds, allSets, concealedTriplets, effectiveSets, type WinShape } from './decompose';
-import { isPinfuShape } from './fu';
+import { isPinfuShapeBody } from './fu';
 import type { TableSettings, Wind, YakuId, YakuHit } from './types';
 
 export const YAKU_NAMES: Record<YakuId, string> = {
@@ -50,6 +53,7 @@ export const YAKU_NAMES: Record<YakuId, string> = {
   sanshokuDoukou: 'Sanshoku Doukou',
   honitsu: 'Honitsu',
   junchan: 'Junchan',
+  iipeiko: 'Iipeiko',
   ryanpeikou: 'Ryanpeikou',
   chinitsu: 'Chinitsu',
   renhou: 'Renhou',
@@ -97,7 +101,8 @@ const YAKU_HAN: Record<string, [number, number]> = {
   sanshokuDoukou: [2, 2],
   honitsu: [3, 2],
   junchan: [3, 2],
-  ryanpeikou: [3, 0],
+  iipeiko: [1, 1],
+  ryanpeikou: [2, 1],
   chinitsu: [6, 5],
 };
 
@@ -155,19 +160,22 @@ function isChuuren(counts: readonly number[]): boolean {
   return false;
 }
 
-function isRyanpeikou(shape: WinShape): boolean {
+/**
+ * Duplicated pairs of identical runs among the four runs (0, 1, or 2).
+ * One pair is iipeiko; two pairs is ryanpeikou, which supersedes iipeiko.
+ * Three identical runs make one pair (the third has no partner); four
+ * identical runs make two. Melded runs count, so both yaku survive calls.
+ */
+function duplicatedRunPairs(shape: WinShape): number {
   const runs = allSets(shape.d)
     .filter((s) => s.type === 'shuntsu')
     .map((s) => s.kind);
-  if (runs.length !== 4) return false;
+  if (runs.length !== 4) return 0;
   const byKind = new Map<number, number>();
   for (const k of runs) byKind.set(k, (byKind.get(k) ?? 0) + 1);
   let pairs = 0;
-  for (const n of byKind.values()) {
-    if (n % 2 !== 0) return false;
-    pairs += n / 2;
-  }
-  return pairs === 2;
+  for (const n of byKind.values()) pairs += Math.floor(n / 2);
+  return pairs;
 }
 
 export function detectYaku(shape: WinShape, ctx: YakuContext): YakuHit[] {
@@ -202,8 +210,10 @@ export function detectYaku(shape: WinShape, ctx: YakuContext): YakuHit[] {
   if (ctx.flags.tenhou) yakuman.push(yakumanHit('tenhou'));
   if (ctx.flags.chiihou) yakuman.push(yakumanHit('chiihou'));
 
-  // A single yakuman, no stacking: everything else is dropped.
-  if (yakuman.length > 0) return [yakuman[0]];
+  // Standard (cumulative) multiple yakuman: every pattern counts — a hand
+  // with two yakuman is a double yakuman and pays double, and so on.
+  // Non-yakuman yaku are still dropped.
+  if (yakuman.length > 0) return yakuman;
 
   // ------------------------------------------------------------- context yaku
   if (ctx.isClosed && ctx.isTsumo) add('menzenTsumo');
@@ -224,11 +234,14 @@ export function detectYaku(shape: WinShape, ctx: YakuContext): YakuHit[] {
   if (d.chiitoi) {
     add('chiitoitsu');
   } else {
-    if (isPinfuShape(d, wait, ctx.isClosed, { seatWind: ctx.seatWind, roundWind: ctx.roundWind })) {
+    // Pinfu may be scored by an open hand (20-fu rule).
+    if (isPinfuShapeBody(d, wait, { seatWind: ctx.seatWind, roundWind: ctx.roundWind })) {
       add('pinfu');
     }
     if (sets.every((s) => s.type === 'koutsu')) add('toitoi');
-    if (ctx.isClosed && isRyanpeikou(shape)) add('ryanpeikou');
+    const runPairs = duplicatedRunPairs(shape);
+    if (runPairs === 2) add('ryanpeikou');
+    else if (runPairs === 1) add('iipeiko');
 
     // Sanshoku doujun: the same run in all three suits.
     const runStarts = new Set(sets.filter((s) => s.type === 'shuntsu').map((s) => s.kind));

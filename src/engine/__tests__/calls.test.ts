@@ -533,11 +533,11 @@ describe('winning', () => {
     expect(r.winner).toBe(1);
     expect(r.loser).toBeNull();
     expect(r.score!.han).toBe(2);
-    expect(r.score!.fu).toBe(30); // 20 + 2 tsumo + 2 kanchan
-    expect(r.score!.points).toBe(2000);
-    expect(r.score!.payments[0]).toBe(-1000); // the dealer pays double
-    expect(r.score!.payments[2]).toBe(-500);
-    expect(r.deltas[1]).toBe(2000);
+    expect(r.score!.fu).toBe(40); // 20 + 2 tsumo + 10 kanchan
+    expect(r.score!.points).toBe(2700);
+    expect(r.score!.payments[0]).toBe(-1300); // the dealer pays double
+    expect(r.score!.payments[2]).toBe(-700);
+    expect(r.deltas[1]).toBe(2700);
     zeroSum(won);
   });
 
@@ -690,7 +690,7 @@ describe('hand end', () => {
       turnNumber: 4, // seat 2 pairs the 9s, but that hand is yakuless
       turn: 0,
       phase: 'awaitingDiscard',
-      drawn: '9s',
+      drawn: '3s', // a simple discard: 9s would trip nagashi mangan
     });
     s.wall = [];
     const after = applyAction(s, { type: 'discard', seat: 0, tile: s.players[0].drawnTile! });
@@ -707,6 +707,35 @@ describe('hand end', () => {
     expect(r.renchan).toBe(true);
   });
 
+  it('pays nagashi mangan when the draw is exhaustive and rivers are all terminals or honors', () => {
+    const s = setupGame({
+      hands: [
+        '135m789m123s99s55p',
+        '246m578p11s33s55m4p',
+        '123m789m123p99p67p', // tenpai: the 3000 pool must be skipped
+        '123m678m88s11p44s2p',
+      ],
+      // 0 and 1 discarded only terminals/honors and called nothing: nagashi.
+      rivers: ['1m', '9s', '4p', '3p'],
+      dealer: 0,
+      turn: 0,
+      phase: 'awaitingDiscard',
+      drawn: '9s',
+    });
+    s.wall = [];
+    const after = applyAction(s, { type: 'discard', seat: 0, tile: s.players[0].drawnTile! });
+    expect(after.phase).toBe('handOver');
+    const r = after.handOver!;
+    expect(r.reason).toBe('exhaustiveDraw');
+    expect(r.tenpaiSeats).toEqual([2]);
+    // Dealer-nagashi (0) is paid 4000 by each non-nagashi seat, child-nagashi
+    // (1) 2000; nagashi-vs-nagashi cancels and the tenpai pool is skipped.
+    expect(r.deltas[0]).toBe(8000);
+    expect(r.deltas[1]).toBe(4000);
+    expect(r.deltas[2]).toBe(-6000);
+    expect(r.deltas[3]).toBe(-6000);
+  });
+
   it('pays nothing when nobody is tenpai', () => {
     const s = setupGame({
       hands: [
@@ -718,7 +747,7 @@ describe('hand end', () => {
       dealer: 0,
       turn: 0,
       phase: 'awaitingDiscard',
-      drawn: '9s',
+      drawn: '4p', // a simple discard: 9s would trip nagashi mangan
     });
     s.wall = [];
     const after = applyAction(s, { type: 'discard', seat: 0, tile: s.players[0].drawnTile! });
@@ -746,12 +775,12 @@ describe('hand end', () => {
     const drawn = applyAction(s, { type: 'draw', seat: 1 });
     const won = applyAction(drawn, { type: 'tsumo', seat: 1 });
     const r = won.handOver!;
-    // 30 fu / 2 han non-dealer tsumo: dealer 1000, others 500.
+    // 40 fu / 2 han non-dealer tsumo: dealer 1300, others 700.
     // 2 honba x 300 = 600 total, split three ways: 200 extra per payer.
-    expect(r.deltas[0]).toBe(-1200);
-    expect(r.deltas[2]).toBe(-700);
-    expect(r.deltas[3]).toBe(-700);
-    expect(r.deltas[1]).toBe(2600);
+    expect(r.deltas[0]).toBe(-1500);
+    expect(r.deltas[2]).toBe(-900);
+    expect(r.deltas[3]).toBe(-900);
+    expect(r.deltas[1]).toBe(3300);
   });
 
   it('hands the riichi sticks to the winner', () => {
@@ -773,7 +802,8 @@ describe('hand end', () => {
     });
     const drawn = applyAction(s, { type: 'draw', seat: 1 });
     const won = applyAction(drawn, { type: 'tsumo', seat: 1 });
-    expect(won.handOver!.deltas[1]).toBe(2000 + 2000);
+    // 40 fu / 2 han tsumo = 2700, plus the two riichi sticks (2 x 1000).
+    expect(won.handOver!.deltas[1]).toBe(2700 + 2000);
     expect(won.riichiSticks).toBe(0);
     expect(won.players.reduce((a, p) => a + p.points, 0)).toBe(100000);
   });

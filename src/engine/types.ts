@@ -242,7 +242,7 @@ export type YakuId =
   | 'chiitoitsu' | 'toitoi' | 'sanshokuDoujun' | 'ittsu' | 'chanta'
   | 'honroutou' | 'shousangen' | 'sanankou' | 'sankantsu'
   | 'sanshokuDoukou'
-  | 'honitsu' | 'junchan' | 'ryanpeikou'
+  | 'honitsu' | 'junchan' | 'iipeiko' | 'ryanpeikou'
   | 'chinitsu'
   | 'renhou'
   | 'kokushi' | 'suuankou' | 'daisangen' | 'shousuushi' | 'daisuushii'
@@ -268,7 +268,7 @@ export interface ScoreResult {
   points: number;
   /** Per-seat point deltas, applied by the engine. */
   payments: Record<SeatIndex, number>;
-  limitName: '' | 'mangan' | 'haneman' | 'baiman' | 'sanbaiman' | 'yakuman';
+  limitName: '' | 'mangan' | 'haneman' | 'baiman' | 'sanbaiman' | 'yakuman' | 'doubleYakuman' | 'tripleYakuman';
 }
 
 type HandEndReason = 'ron' | 'tsumo' | 'exhaustiveDraw';

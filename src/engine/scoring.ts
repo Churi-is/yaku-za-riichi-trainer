@@ -1,9 +1,10 @@
 /**
  * engine/scoring — han/fu table, payments, and `scoreHand`.
  *
- * Mangan 5 han, haneman 6-7, baiman 8-10, sanbaiman 11-12, 13+ = counted
- * yakuman. Kazoe yakuman and true yakuman both pay a SINGLE yakuman: no
- * stacking, no double yakuman.
+ * Mangan 5 han (base 2000), haneman 6-7 (3000), baiman 8-10 (4000),
+ * sanbaiman 11-12 (6000), 13+ = counted yakuman (8000). Multiple yakuman
+ * stack the standard cumulative way: each pattern counts once and the count
+ * multiplies the payment (double = 64k/96k, triple = 96k/144k).
  *
  * `scoreHand` enumerates every legal reading of the hand (see decompose.ts)
  * and returns the one that pays most, which is what a player is entitled to.
@@ -18,24 +19,30 @@ import type {
 import type { ScoreInput } from './index';
 
 const YAKUMAN_HAN = 13;
+const YAKUMAN_BASE = 8000;
 
 export function ceil100(n: number): number {
   return Math.ceil(n / 100) * 100;
 }
 
 /** The "base points" figure every payment is derived from. */
-export function basePoints(fu: number, han: number): number {
+export function basePoints(fu: number, han: number, yakumanCount = 0): number {
+  if (yakumanCount > 0) return YAKUMAN_BASE * yakumanCount; // multi-yakuman
   if (han >= 13) return 8000; // counted yakuman
   if (han >= 11) return 6000; // sanbaiman
   if (han >= 8) return 4000; // baiman
   if (han >= 6) return 3000; // haneman
   if (han >= 5) return 2000; // mangan
+  // Counted hands are cut to mangan when the raw base reaches 2000
+  // (4 han 40+ fu, 3 han 70+ fu, ...) — otherwise they pay by fu.
   const raw = fu * Math.pow(2, han + 2);
-  return raw >= 2000 ? 2000 : raw; // mangan cutoff
+  return raw >= 2000 ? 2000 : raw;
 }
 
-export function limitNameFor(han: number): ScoreResult['limitName'] {
-  if (han >= 13) return 'yakuman';
+export function limitNameFor(han: number, yakumanCount = 0): ScoreResult['limitName'] {
+  if (yakumanCount >= 3) return 'tripleYakuman';
+  if (yakumanCount === 2) return 'doubleYakuman';
+  if (han >= 13 || yakumanCount === 1) return 'yakuman';
   if (han >= 11) return 'sanbaiman';
   if (han >= 8) return 'baiman';
   if (han >= 6) return 'haneman';
@@ -176,19 +183,20 @@ export function scoreHand(input: ScoreInput): ScoreResult {
       seatWind: input.seatWind,
       roundWind: input.roundWind,
     });
-    const isYakuman = yaku.some((y) => y.yakuman);
-    // A true yakuman scores as one yakuman and ignores dora; kazoe yakuman is
-    // just a han count that happens to reach 13.
-    const han = isYakuman ? YAKUMAN_HAN : totalHan(yaku) + dora + aka + ura;
-    const base = basePoints(fu, han);
+    const yakumanCount = yaku.filter((y) => y.yakuman).length;
+    // A true yakuman ignores fu and dora and pays per pattern (multiple
+    // yakuman stack the payment); kazoe yakuman is just a han count that
+    // happens to reach 13.
+    const han = yakumanCount > 0 ? YAKUMAN_HAN * yakumanCount : totalHan(yaku) + dora + aka + ura;
+    const base = basePoints(fu, han, yakumanCount);
     const { points } = computePayments({
       base, winner, winnerIsDealer: input.isDealer, dealerSeat,
       isTsumo: input.isTsumo, loser, pao,
     });
     // The player is entitled to the reading that pays most; ties break on han
     // then fu so the reported figures match the money.
-    const rank = isYakuman ? 1 : 0;
-    const bestRank = best ? (best.yaku.some((y) => y.yakuman) ? 1 : 0) : -1;
+    const rank = yakumanCount;
+    const bestRank = best ? best.yaku.filter((y) => y.yakuman).length : -1;
     const better =
       best === null ||
       rank > bestRank ||
@@ -201,9 +209,9 @@ export function scoreHand(input: ScoreInput): ScoreResult {
 
   if (!best) return emptyResult();
 
-  const isYakuman = best.yaku.some((y) => y.yakuman);
+  const yakumanCount = best.yaku.filter((y) => y.yakuman).length;
   const { payments } = computePayments({
-    base: basePoints(best.fu, best.han),
+    base: basePoints(best.fu, best.han, yakumanCount),
     winner,
     winnerIsDealer: input.isDealer,
     dealerSeat,
@@ -231,7 +239,7 @@ export function scoreHand(input: ScoreInput): ScoreResult {
     uraDora: ura,
     points: best.points,
     payments,
-    limitName: isYakuman ? 'yakuman' : limitNameFor(best.han),
+    limitName: limitNameFor(best.han, yakumanCount),
   };
 }
 
