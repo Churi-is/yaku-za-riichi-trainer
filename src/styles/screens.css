@@ -345,6 +345,50 @@
   background: linear-gradient(90deg, var(--gold-dim), var(--gold-hi));
   transition: width 0.4s ease;
 }
+/* the dojo is two tracks — a gentle basics on-ramp, then the strategy course */
+.track { display: grid; gap: 14px; }
+.track + .track {
+  margin-top: 8px; padding-top: 18px;
+  border-top: 1px solid var(--panel-border);
+}
+.track-head {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit;
+  padding: 12px 14px; border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--panel-border);
+}
+.track-head:hover { border-color: var(--gold-dim); }
+.track-strategy .track-head {
+  background: linear-gradient(120deg, rgba(216, 180, 90, 0.12), rgba(0, 0, 0, 0.3) 55%);
+  border-color: var(--gold-dim);
+}
+.track-chev {
+  flex: none; color: var(--gold-dim); font-size: 20px; line-height: 1;
+  transition: transform 0.2s ease;
+}
+.track-chev.open { transform: rotate(90deg); }
+.track-body { animation: track-open 0.18s ease; }
+@keyframes track-open {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.track-head .track-kan {
+  font-family: var(--font-jp); font-size: 30px; line-height: 1;
+  color: var(--gold-dim); flex: none; min-width: 1.4em; text-align: center;
+}
+.track-text { flex: 1; min-width: 0; }
+.track-text h2 {
+  margin: 0; font-size: 18px; display: flex; align-items: baseline; gap: 10px;
+}
+.track-text p { margin: 3px 0 0; font-size: 12px; line-height: 1.45; }
+.track-state {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); border: 1px solid var(--hairline);
+  border-radius: 999px; padding: 2px 8px; white-space: nowrap;
+}
+.track-state.done { color: var(--gold-hi); border-color: var(--gold-dim); }
+
 .chapter-head {
   display: flex; align-items: center; gap: 10px;
   padding-bottom: 6px; border-bottom: 1px solid var(--hairline);

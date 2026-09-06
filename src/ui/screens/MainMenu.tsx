@@ -16,8 +16,9 @@ export default function MainMenu() {
         <span className="accent">Mahjong Trainer</span>
       </h1>
       <p className="menu-sub">
-        Sit down against three opponents who each play their own way, or work
-        through the dojo — a course in tile efficiency and judgement.
+        Sit down against three opponents who each play their own way, or learn
+        the game in the dojo — a basics course for new players, then a strategy
+        course in tile efficiency and judgement.
       </p>
       <nav className="menu-list">
         <button className="menu-item primary" onClick={() => { reset(); go('opponents'); }}>

@@ -85,8 +85,15 @@ describe('modes', () => {
   it('walks a lesson turn by turn and will not skip a drill', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /The Dojo/i }));
-    expect(screen.getByText(/of 14 lessons/i)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Start the course/i }));
+    // The dojo is the basics, strategy and yaku-codex tracks.
+    expect(screen.getByText(/of 56 lessons/i)).toBeTruthy();
+    expect(screen.getByText('Basics')).toBeTruthy();
+    expect(screen.getByText('Strategy')).toBeTruthy();
+    // The course opens on the first basics lesson; jump into the first
+    // strategy lesson to exercise a table-led tile-efficiency lesson.
+    // Tracks start collapsed, so open the strategy track first.
+    fireEvent.click(document.querySelector('.track-strategy .track-head')!);
+    fireEvent.click(screen.getByRole('button', { name: /Blocks, partial sets and floaters/i }));
 
     // A lesson opens on a live board, not on a wall of prose.
     expect(screen.getByText(/Blocks, partial sets and floaters/i)).toBeTruthy();
@@ -123,8 +130,10 @@ describe('modes', () => {
     expect(screen.getByText('1 / 2')).toBeTruthy();
     expect(useSession.getState().completed).not.toContain('source');
     fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^Finish$/i }));
+    // It is followed by the yaku codex, so the button advances to the next
+    // lesson (the very last lesson in the course reads "Finish").
+    fireEvent.click(screen.getByRole('button', { name: /Next lesson/i }));
     expect(useSession.getState().completed).toContain('source');
-    expect(useSession.getState().screen).toBe('dojo');
+    expect(useSession.getState().lessonId).toBe('menzen-tsumo');
   });
 });
