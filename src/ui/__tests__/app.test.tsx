@@ -91,6 +91,8 @@ describe('modes', () => {
     expect(screen.getByText('Strategy')).toBeTruthy();
     // The course opens on the first basics lesson; jump into the first
     // strategy lesson to exercise a table-led tile-efficiency lesson.
+    // Tracks start collapsed, so open the strategy track first.
+    fireEvent.click(document.querySelector('.track-strategy .track-head')!);
     fireEvent.click(screen.getByRole('button', { name: /Blocks, partial sets and floaters/i }));
 
     // A lesson opens on a live board, not on a wall of prose.

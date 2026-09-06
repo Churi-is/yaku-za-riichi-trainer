@@ -10,6 +10,7 @@
  * screens, how many drills. The next lesson in reading order is marked and
  * offered up top. Progress is session-only, like everything else here.
  */
+import { useState } from 'react';
 import { TRACKS, ALL_LESSONS, lessonShape } from '@dojo/course';
 import { useSession } from '@state/session';
 import { useMatch } from '@state/gameLoop';
@@ -19,6 +20,16 @@ export default function DojoScreen() {
   const openLesson = useSession((s) => s.openLesson);
   const completed = useSession((s) => s.completed);
   const resetMatch = useMatch((s) => s.reset);
+
+  // Tracks start collapsed; clicking a track header opens (or closes) it.
+  const [openTracks, setOpenTracks] = useState<ReadonlySet<string>>(() => new Set());
+  const toggleTrack = (id: string) =>
+    setOpenTracks((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const done = ALL_LESSONS.filter((x) => completed.includes(x.lesson.id)).length;
   const total = ALL_LESSONS.length;
@@ -67,11 +78,18 @@ export default function DojoScreen() {
         const trackDone = trackLessons.filter((l) => completed.includes(l.id)).length;
         const trackTotal = trackLessons.length;
         const trackComplete = trackDone === trackTotal;
+        const isOpen = openTracks.has(track.id);
         return (
           <section key={track.id} className={`track track-${track.id}`}>
-            <div className="track-head">
+            <button
+              type="button"
+              className="track-head"
+              aria-expanded={isOpen}
+              aria-controls={`track-body-${track.id}`}
+              onClick={() => toggleTrack(track.id)}
+            >
               <span className="jp kan track-kan">{track.kanji}</span>
-              <div className="track-text">
+              <span className="track-text">
                 <h2>
                   {track.title}
                   <span className={`track-state${trackComplete ? ' done' : ''}`}>
@@ -79,56 +97,61 @@ export default function DojoScreen() {
                   </span>
                 </h2>
                 <p className="muted">{track.blurb}</p>
-              </div>
-            </div>
+              </span>
+              <span className={`track-chev${isOpen ? ' open' : ''}`} aria-hidden="true">›</span>
+            </button>
 
-            {track.chapters.map((c) => {
-              const chDone = c.lessons.filter((l) => completed.includes(l.id)).length;
-              return (
-                <section key={c.id} className="stack" style={{ gap: 8 }}>
-                  <div className="chapter-head">
-                    <span className="jp kan">{c.kanji}</span>
-                    <div className="chapter-text">
-                      <h3 style={{ margin: 0 }}>{c.title}</h3>
-                      <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{c.blurb}</p>
-                    </div>
-                    <span className="chapter-meta">
-                      {c.book > 0 && <span className="book-tag">Book ch.{c.book}</span>}
-                      <span className={`chapter-count${chDone === c.lessons.length ? ' all' : ''}`}>
-                        {chDone}/{c.lessons.length}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="lesson-list">
-                    {c.lessons.map((l) => {
-                      const isDone = completed.includes(l.id);
-                      const isNext = next?.lesson.id === l.id;
-                      const { steps, drills } = lessonShape(l);
-                      return (
-                        <button
-                          key={l.id}
-                          type="button"
-                          className={`lesson-row${isDone ? ' done' : ''}${isNext ? ' next' : ''}`}
-                          onClick={() => openLesson(l.id)}
-                        >
-                          <span className="tick" aria-hidden="true">{isDone ? '✓' : ''}</span>
-                          <span className="lesson-text">
-                            <span className="lesson-title">{l.title}</span>
-                            <span className="lesson-sum">{l.summary}</span>
-                            <span className="lesson-meta">
-                              <span>{steps} screens</span>
-                              {drills > 0 && <span>{drills} drills</span>}
-                              {isNext && <span className="up-next">Up next</span>}
-                            </span>
+            {isOpen && (
+              <div id={`track-body-${track.id}`} className="track-body stack">
+                {track.chapters.map((c) => {
+                  const chDone = c.lessons.filter((l) => completed.includes(l.id)).length;
+                  return (
+                    <section key={c.id} className="stack" style={{ gap: 8 }}>
+                      <div className="chapter-head">
+                        <span className="jp kan">{c.kanji}</span>
+                        <div className="chapter-text">
+                          <h3 style={{ margin: 0 }}>{c.title}</h3>
+                          <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{c.blurb}</p>
+                        </div>
+                        <span className="chapter-meta">
+                          {c.book > 0 && <span className="book-tag">Book ch.{c.book}</span>}
+                          <span className={`chapter-count${chDone === c.lessons.length ? ' all' : ''}`}>
+                            {chDone}/{c.lessons.length}
                           </span>
-                          <span className="chev" aria-hidden="true">›</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
+                        </span>
+                      </div>
+                      <div className="lesson-list">
+                        {c.lessons.map((l) => {
+                          const isDone = completed.includes(l.id);
+                          const isNext = next?.lesson.id === l.id;
+                          const { steps, drills } = lessonShape(l);
+                          return (
+                            <button
+                              key={l.id}
+                              type="button"
+                              className={`lesson-row${isDone ? ' done' : ''}${isNext ? ' next' : ''}`}
+                              onClick={() => openLesson(l.id)}
+                            >
+                              <span className="tick" aria-hidden="true">{isDone ? '✓' : ''}</span>
+                              <span className="lesson-text">
+                                <span className="lesson-title">{l.title}</span>
+                                <span className="lesson-sum">{l.summary}</span>
+                                <span className="lesson-meta">
+                                  <span>{steps} screens</span>
+                                  {drills > 0 && <span>{drills} drills</span>}
+                                  {isNext && <span className="up-next">Up next</span>}
+                                </span>
+                              </span>
+                              <span className="chev" aria-hidden="true">›</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
           </section>
         );
       })}
