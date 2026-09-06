@@ -55,16 +55,12 @@ export interface Step {
   hand?: string;
   /** The tile just drawn, shown apart from the hand. */
   draw?: string;
-  /** Tiles already called, shown as a meld row. */
-  meld?: string;
   /** Table context: what the ponds and the other seats are telling you. */
   table?: string;
   /** Body paragraphs. */
   text?: string[];
   /** A highlighted aside. */
   note?: { title: string; text: string };
-  /** Caption under the tiles, for a pure diagram step. */
-  caption?: string;
   /** Extra diagram rows, each with its own caption. */
   figures?: { tiles: string; caption: string }[];
 
@@ -79,14 +75,14 @@ export interface Step {
   check?: 'efficiency';
 }
 
-export interface Lesson {
+interface Lesson {
   id: string;
   title: string;
   summary: string;
   steps: Step[];
 }
 
-export interface Chapter {
+interface Chapter {
   id: string;
   book: number;
   title: string;

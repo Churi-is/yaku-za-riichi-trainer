@@ -1,5 +1,5 @@
 /**
- * engine/wall — shuffling and dealing. Owned by Worker A.
+ * engine/wall — shuffling and dealing.
  *
  * The full 136-tile set is shuffled once per hand and split into the live
  * wall and the dead wall, so no randomness is needed mid-hand: drawing is a
@@ -13,16 +13,15 @@
  * wall. That append is what shrinks the live wall by one per kan.
  */
 import { createRng, seedForHand, shuffle } from './rng';
-import { allTileIds, SEATS } from './tiles';
-import type { SeatIndex, TableSettings, TileId } from './types';
+import { allTileIds, SEATS, sortIds } from './tiles';
+import type { TileId } from './types';
 
 export const DORA_SLOTS = 5;
 export const URA_SLOTS = 5;
-export const KAN_REPLACEMENTS = 4;
-export const DEAD_WALL_SIZE = DORA_SLOTS + URA_SLOTS + KAN_REPLACEMENTS; // 14
-export const STARTING_HAND_SIZE = 13;
+const KAN_REPLACEMENTS = 4;
+const DEAD_WALL_SIZE = DORA_SLOTS + URA_SLOTS + KAN_REPLACEMENTS; // 14
 
-export interface Deal {
+interface Deal {
   /** Live wall, draw order = index 0 first. */
   wall: TileId[];
   deadWall: TileId[];
@@ -32,13 +31,8 @@ export interface Deal {
   uraIndicators: TileId[];
 }
 
-/** Index of the kan replacement tile for the (0-based) nth kan this hand. */
-export function replacementIndex(kanOrdinal: number): number {
-  return DORA_SLOTS + URA_SLOTS + kanOrdinal;
-}
-
 /** Deal a full hand's worth of tiles for `handNumber` of a seeded match. */
-export function dealHand(seed: number, handNumber: number, _settings: TableSettings): Deal {
+export function dealHand(seed: number, handNumber: number): Deal {
   const rng = createRng(seedForHand(seed, handNumber));
   const shuffled = shuffle(allTileIds(), rng);
 
@@ -65,27 +59,8 @@ export function dealHand(seed: number, handNumber: number, _settings: TableSetti
   return {
     wall,
     deadWall,
-    hands: [sortHand(hands[0]), sortHand(hands[1]), sortHand(hands[2]), sortHand(hands[3])],
+    hands: [sortIds(hands[0]), sortIds(hands[1]), sortIds(hands[2]), sortIds(hands[3])],
     doraIndicators: [deadWall[0]],
     uraIndicators: [deadWall[DORA_SLOTS]],
   };
-}
-
-function sortHand(ids: TileId[]): TileId[] {
-  return [...ids].sort((a, b) => a - b);
-}
-
-/** Sanity check used by tests: a deal must consume the whole 136-tile set. */
-export function isCompleteDeal(deal: Deal): boolean {
-  const seen = new Set<TileId>();
-  const add = (ids: TileId[]) => {
-    for (const id of ids) {
-      if (seen.has(id)) return false;
-      seen.add(id);
-    }
-    return true;
-  };
-  if (!add(deal.wall) || !add(deal.deadWall)) return false;
-  for (const h of deal.hands) if (!add(h)) return false;
-  return seen.size === 136;
 }

@@ -1,15 +1,17 @@
 /**
- * engine/rng — deterministic, dependency-free PRNG. Owned by Worker A.
+ * engine/rng — deterministic, dependency-free PRNG.
  *
  * Every random decision in the engine happens at deal time (`wall.ts`), so
  * `applyAction` never touches the RNG and stays pure. A whole match is
  * reproducible from `(settings, seed)`.
  */
 
-export type Rng = () => number;
+import { mulberry32 } from '../shared/random';
+
+type Rng = () => number;
 
 /** Normalize any integer-ish seed into a well-spread 32-bit state. */
-export function normalizeSeed(seed: number): number {
+function normalizeSeed(seed: number): number {
   if (!Number.isFinite(seed)) return 0x9e3779b9;
   let s = Math.trunc(seed) | 0;
   // Splitmix-style finalizer: avoids correlated streams for adjacent seeds.
@@ -21,20 +23,13 @@ export function normalizeSeed(seed: number): number {
   return s >>> 0;
 }
 
-/** mulberry32. Returns a function producing floats in [0, 1). */
+/** Seed-mixed stream for dealing; preserves the engine's existing seed mapping. */
 export function createRng(seed: number): Rng {
-  let a = normalizeSeed(seed);
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+  return mulberry32(normalizeSeed(seed));
 }
 
 /** Integer in [0, n). */
-export function nextInt(rng: Rng, n: number): number {
+function nextInt(rng: Rng, n: number): number {
   if (n <= 0) return 0;
   return Math.min(n - 1, Math.floor(rng() * n));
 }

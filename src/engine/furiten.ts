@@ -1,5 +1,5 @@
 /**
- * engine/furiten — all three kinds of furiten. Owned by Worker A.
+ * engine/furiten — all three kinds of furiten.
  *
  *   permanent  one of your own discards is among your waits
  *   temporary  you passed on a ron chance; clears on your next draw
@@ -12,12 +12,12 @@ import { shanten, waits } from './shanten';
 import type { GameState, PlayerState, SeatIndex, TileKind } from './types';
 
 /** Wait kinds for a seat's current 13-tile shape (empty if not tenpai). */
-export function waitsFor(player: PlayerState): TileKind[] {
+function waitsFor(player: PlayerState): TileKind[] {
   return waits(player.hand, player.melds);
 }
 
 /** True when the seat's own river contains one of its waits. */
-export function isPermanentFuriten(player: PlayerState): boolean {
+function isPermanentFuriten(player: PlayerState): boolean {
   if (shanten(player.hand, player.melds) !== 0) return false;
   const w = waitsFor(player);
   if (w.length === 0) return false;

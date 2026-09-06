@@ -17,11 +17,10 @@ import TableCenter from './TableCenter';
 import { useBoxSize, fitScale } from '@ui/hooks/useFitScale';
 import type { Orientation } from '@ui/hooks/useOrientation';
 import { fitMetrics, layoutBoard, type BoardVariant, type PlacedTile } from '@ui/table/layout';
-import { tileFace } from '@ui/tiles';
+import { tileLabel } from '@ui/tiles';
 
-export interface TableBoardProps {
+interface TableBoardProps {
   view: PublicView;
-  seatName: (seat: SeatIndex) => string;
   aiThinking: boolean;
   orient: Orientation;
   compact?: boolean;
@@ -45,7 +44,7 @@ export interface TableBoardProps {
 }
 
 export default function TableBoard({
-  view, seatName: _seatName, aiThinking, orient, compact = false,
+  view, aiThinking, orient, compact = false,
   discardActions, onDiscard, selected, onSelect, riichiMode, locked,
   highlight, focusCentre = false, tapToAnswer = false,
 }: TableBoardProps) {
@@ -134,7 +133,7 @@ export default function TableBoard({
         </div>
 
         {L.hand.map((t) => {
-          const face = tileFace(t.id);
+          const label = tileLabel(t.id);
           const playable = canDiscard(t.id);
           const isSelected = selected === t.id;
           return (
@@ -148,8 +147,8 @@ export default function TableBoard({
               disabled={!playable}
               selected={isSelected}
               dimmed={!locked && riichiMode && !riichiable.has(t.id)}
-              ariaLabel={`${face.label}${t.key === 'h-drawn' ? ' (just drawn)' : ''}`}
-              title={isSelected ? `Tap again to discard ${face.label}` : face.label}
+              ariaLabel={`${label}${t.key === 'h-drawn' ? ' (just drawn)' : ''}`}
+              title={isSelected ? `Tap again to discard ${label}` : label}
             />
           );
         })}

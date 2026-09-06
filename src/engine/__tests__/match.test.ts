@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_SETTINGS, type SeatIndex } from '@engine/types';
-import * as eng from '../engineAdapter';
+import * as eng from '../index';
 
-describe('fallback engine — playable loop', () => {
+describe('engine — match smoke tests', () => {
   it('creates a match with four 13-tile hands and a dora indicator', () => {
     const s = eng.createMatch({ ...DEFAULT_SETTINGS }, 12345);
     expect(s.players).toHaveLength(4);

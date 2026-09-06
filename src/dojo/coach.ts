@@ -25,10 +25,10 @@ import type { PublicView, SeatIndex } from '@engine/types';
 import type { Step } from './course';
 import { tilesInRivers } from './table';
 
-export type CoachSlot = 'top' | 'bottom' | 'rail';
-export type CoachSize = 'sm' | 'md' | 'lg';
+type CoachSlot = 'top' | 'bottom' | 'rail';
+type CoachSize = 'sm' | 'md' | 'lg';
 
-export interface CoachPlacement {
+interface CoachPlacement {
   slot: CoachSlot;
   size: CoachSize;
   /** Share of the felt the card is allowed to take, 0..1. */
@@ -45,7 +45,7 @@ const BAND: Record<CoachSize, number> = { sm: 0.32, md: 0.46, lg: 0.58 };
  * ponds and their backs; 'centre' is the dora tray and wall count, which sits
  * in the middle and is dodged by neither end.
  */
-export type CoachSubject = 'bottom' | 'top' | 'both' | 'centre' | 'none';
+type CoachSubject = 'bottom' | 'top' | 'both' | 'centre' | 'none';
 
 export function subjectOf(step: Step, view: PublicView | null): CoachSubject {
   if (step.focusCentre) return 'centre';

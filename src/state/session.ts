@@ -1,13 +1,13 @@
 /**
  * SHARED CONTRACT (light) — screen routing + session-scoped state.
- * Owned by Worker D. Nothing persists between sessions.
+ * Nothing persists between sessions.
  */
 import { create } from 'zustand';
 import { DEFAULT_SETTINGS, type TableSettings } from '@engine/types';
 import { DEFAULT_OPPONENTS } from '@ai/personalities';
 import { assignOpponent, normalizeOpponents, type OpponentSeat, type OpponentSeats } from './opponents';
 
-export type Screen =
+type Screen =
   | 'menu'
   | 'opponents'
   | 'settings'

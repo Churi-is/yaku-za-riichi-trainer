@@ -1,13 +1,14 @@
-/** Tile — renders a single mahjong tile face or back. Owned by Worker D. */
+/** Tile — renders a single mahjong tile face or back. */
 import type { CSSProperties } from 'react';
 import type { TileId } from '@engine/types';
-import { isRedFiveId, tileFace } from '@ui/tiles';
+import { isRed } from '@engine/index';
+import { tileLabel } from '@ui/tiles';
 import TileFace from './TileFace';
 
-export type TileSize = 'xs' | 'sm' | 'md' | 'lg' | 'rv' | 'bk' | 'hand' | 'meld';
+type TileSize = 'xs' | 'sm' | 'md' | 'rv';
 export type TileRotation = 0 | 90 | 180 | 270;
 
-export interface TileProps {
+interface TileProps {
   id: TileId;
   /** Render the tile back (never reveals a concealed opponent tile). */
   faceDown?: boolean;
@@ -29,7 +30,7 @@ export default function Tile({
   id, faceDown = false, size = 'md', rotation = 0, dimmed = false,
   selected = false, disabled = false, onClick, title, ariaLabel, className, style,
 }: TileProps) {
-  const red = !faceDown && isRedFiveId(id);
+  const red = !faceDown && isRed(id);
   const cls = [
     'tile',
     `tile-${size}`,
@@ -47,8 +48,8 @@ export default function Tile({
     return <div className={cls} aria-hidden="true" title={title} style={style} />;
   }
 
-  const face = tileFace(id);
-  const label = ariaLabel ?? (red ? `red ${face.label}` : face.label);
+  const faceLabel = tileLabel(id);
+  const label = ariaLabel ?? (red ? `red ${faceLabel}` : faceLabel);
   const content = <span className="tile-art"><TileFace id={id} /></span>;
 
   if (onClick) {

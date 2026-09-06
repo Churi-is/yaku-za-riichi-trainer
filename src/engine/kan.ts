@@ -1,5 +1,5 @@
 /**
- * engine/kan — ankan / kakan / minkan rules. Owned by Worker A.
+ * engine/kan — ankan / kakan / minkan rules.
  *
  * Ankan needs a replacement tile, so it is unavailable on an empty live wall.
  * After riichi an ankan is allowed only when it cannot change the wait: all
@@ -10,7 +10,7 @@
  * (kakan) for any hand, and on a CLOSED kan (ankan) only for kokushi musou.
  */
 import { kindOf, sortIds } from './tiles';
-import { shanten, waits } from './shanten';
+import { waits } from './shanten';
 import type { GameState, Meld, SeatIndex, TileId, TileKind } from './types';
 
 /** Kinds the seat holds four of, across hand + drawn tile. */
@@ -67,12 +67,4 @@ export function kakanOptions(state: GameState, seat: SeatIndex): TileId[] {
   return out;
 }
 
-/** Would this tile complete kokushi? (the only ankan chankan we allow) */
-export function isKokushiWait(state: GameState, seat: SeatIndex, tile: TileId): boolean {
-  const p = state.players[seat];
-  const hand = [...p.hand, tile];
-  return p.melds.length === 0 && shanten(hand, p.melds) === -1;
-}
-
 export { ankanMeldOf };
-export type { SeatIndex };

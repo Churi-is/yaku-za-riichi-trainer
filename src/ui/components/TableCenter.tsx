@@ -20,7 +20,7 @@ const SEAT_POS: { seat: SeatIndex; cls: string }[] = [
   { seat: 0, cls: 'b' }, { seat: 1, cls: 'r' }, { seat: 2, cls: 't' }, { seat: 3, cls: 'l' },
 ];
 
-export interface TableCenterProps {
+interface TableCenterProps {
   view: PublicView;
   center: CenterBlock;
   /** an opponent is deciding right now */

@@ -18,9 +18,9 @@ import {
 import type {
   GameState, PublicView, SeatIndex, TableSettings, TileId, Wind,
 } from '@engine/types';
-import { parseHand } from '@ai/handEval';
+import { parseHand } from '@engine/index';
 
-export interface TableScript {
+interface TableScript {
   /** The viewer's concealed tiles, in engine notation. */
   hand: string;
   /** The tile just drawn, shown apart from the hand. */

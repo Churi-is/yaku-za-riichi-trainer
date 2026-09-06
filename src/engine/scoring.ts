@@ -1,5 +1,5 @@
 /**
- * engine/scoring — han/fu table, payments, and `scoreHand`. Owned by Worker A.
+ * engine/scoring — han/fu table, payments, and `scoreHand`.
  *
  * Mangan 5 han, haneman 6-7, baiman 8-10, sanbaiman 11-12, 13+ = counted
  * yakuman. Kazoe yakuman and true yakuman both pay a SINGLE yakuman: no
@@ -13,7 +13,7 @@ import { enumerateWinShapes, type WinShape } from './decompose';
 import { calculateFu } from './fu';
 import { detectYaku, totalHan, type YakuFlags } from './yaku';
 import type {
-  Meld, ScoreResult, SeatIndex, TableSettings, TileId, Wind, YakuHit,
+  Meld, ScoreResult, SeatIndex, TableSettings, TileId, YakuHit
 } from './types';
 import type { ScoreInput } from './index';
 
@@ -43,7 +43,7 @@ export function limitNameFor(han: number): ScoreResult['limitName'] {
   return '';
 }
 
-export interface PaymentInput {
+interface PaymentInput {
   base: number;
   winner: SeatIndex;
   /** Winner is the dealer. */
@@ -108,7 +108,7 @@ function countIndicators(counts: number[], indicators: TileId[]): number {
 }
 
 /** Dora / aka / ura across the whole hand, kans counting all four tiles. */
-export function countDora(
+function countDora(
   hand: TileId[], melds: Meld[], doraIndicators: TileId[], settings: TableSettings,
 ): { dora: number; aka: number } {
   const counts = countsFromIds(hand);
@@ -128,7 +128,7 @@ function emptyResult(): ScoreResult {
   };
 }
 
-/** Score a complete hand. Used by the engine and by replay grading. */
+/** Score a completed hand, for engine settlement and hypothetical AI evaluations. */
 export function scoreHand(input: ScoreInput): ScoreResult {
   const shapes = enumerateWinShapes(input.hand, input.melds, input.winningTile);
   if (shapes.length === 0) return emptyResult();

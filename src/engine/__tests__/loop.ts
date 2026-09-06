@@ -1,5 +1,5 @@
 /**
- * Scenario builder for the game-loop tests. Worker A.
+ * Scenario builder for the game-loop tests.
  *
  * `setupGame` produces a real, internally consistent `GameState` with hands,
  * melds, rivers and a wall we choose, so tests can drive `applyAction` into an
@@ -15,7 +15,7 @@ import type {
   GameState, HandPhase, Meld, SeatIndex, TableSettings, TileId, Wind,
 } from '../types';
 
-export interface MeldSpec {
+interface MeldSpec {
   type: Meld['type'];
   text: string;
   /** Seat the called tile came from; ignored for ankan. */
@@ -24,7 +24,7 @@ export interface MeldSpec {
   calledAt?: number;
 }
 
-export interface SetupOptions {
+interface SetupOptions {
   /** Four 13-tile hands (10 if that seat has one open meld, etc.). */
   hands: string[];
   melds?: (MeldSpec[] | undefined)[];
@@ -130,7 +130,6 @@ export function setupGame(opts: SetupOptions): GameState {
   state.kanCount = 0;
   state.lastDiscard = null;
   state.callWindow = null;
-  state.chankanTile = null;
   state.paoSeat = null;
   state.handOver = null;
   state.matchOver = null;
@@ -188,13 +187,6 @@ export function setupGame(opts: SetupOptions): GameState {
     state.players[state.turn].drawnTile = state.wall.shift()!;
   }
   return state;
-}
-
-/** The kinds (not ids) of a player's concealed tiles, including the draw. */
-export function concealedKinds(state: GameState, seat: SeatIndex): number[] {
-  const p = state.players[seat];
-  const pool = [...p.hand, ...(p.drawnTile !== null ? [p.drawnTile] : [])];
-  return pool.map((id) => Math.floor(id / 4)).sort((x, y) => x - y);
 }
 
 /** Every tile id on the table, to assert nothing is duplicated or lost. */

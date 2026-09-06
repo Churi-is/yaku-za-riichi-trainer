@@ -287,7 +287,7 @@ describe('placement and legal dama value', () => {
     const waiting = view.hand.filter((t) => t !== discard);
     expect(doraCount(waiting, [], view.doraIndicators, true)).toBe(3);
     expect(damaValue(view, waiting, waits(waiting), discard)).toBe(0);
-    expect(shouldRiichi(view, precise({ riichiPatience: 0.9 }), new Rng(1), discard).riichi).toBe(true);
+    expect(shouldRiichi(view, precise({ riichiPatience: 0.9 }), new Rng(1), discard)).toBe(true);
   });
 
   it('keeps a genuinely valuable legal hand in dama for patient characters', () => {
@@ -295,7 +295,7 @@ describe('placement and legal dama value', () => {
     const discard = view.hand.find((t) => kindOf(t) === 30)!;
     const waiting = view.hand.filter((t) => t !== discard);
     expect(damaValue(view, waiting, waits(waiting), discard)).toBeGreaterThan(0);
-    expect(shouldRiichi(view, precise({ riichiPatience: 0.9 }), new Rng(1), discard).riichi).toBe(false);
+    expect(shouldRiichi(view, precise({ riichiPatience: 0.9 }), new Rng(1), discard)).toBe(false);
   });
 
   it('respects the two-han minimum even when a one-yaku hand carries dora', () => {

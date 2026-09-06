@@ -53,7 +53,7 @@ describe('top-down table layout', () => {
     expect(dock!.querySelector('.hand-dock')).toBeNull();
     expect(dock!.querySelector('.call-bar')).toBeTruthy();
     // no redundant points plate or waiting row in the dock: the score strip
-    // carries points and the turn status lives up with the trainer toggles
+    // carries points and the turn status lives up with the table controls
     expect(dock!.querySelector('.player-plate')).toBeNull();
     expect(dock!.querySelector('.hand-status')).toBeNull();
   });

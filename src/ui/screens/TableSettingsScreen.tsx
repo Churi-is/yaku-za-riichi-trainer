@@ -1,4 +1,4 @@
-/** TableSettingsScreen — rule selection before every match. Owned by Worker D. */
+/** TableSettingsScreen — rule selection before every match. */
 import { DIFFICULTY_LABEL, opponentDifficulty, personalityById, rosterDifficulty } from '@ai/personalities';
 import { OPPONENT_POSITIONS } from '@state/opponents';
 import { useSession } from '@state/session';

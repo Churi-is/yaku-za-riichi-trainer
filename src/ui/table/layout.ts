@@ -29,8 +29,8 @@ import { sortTiles } from '@ui/tiles';
 
 export type BoardVariant = 'portrait' | 'landscape' | 'compact';
 
-export interface Box { w: number; h: number }
-export interface Placed { x: number; y: number }
+interface Box { w: number; h: number }
+interface Placed { x: number; y: number }
 export type Rect = Box & Placed;
 
 export interface BoardMetrics {
@@ -68,7 +68,7 @@ export const METRICS: Record<BoardVariant, BoardMetrics> = {
   },
 };
 
-export type TileRot = 0 | 90 | 180 | 270;
+type TileRot = 0 | 90 | 180 | 270;
 
 export interface PlacedTile {
   id: TileId;
@@ -84,7 +84,7 @@ export interface PlacedTile {
   key: string;
 }
 
-export interface PlacedStick {
+interface PlacedStick {
   seat: SeatIndex;
   x: number;
   y: number;
@@ -98,7 +98,7 @@ export interface CenterBlock extends Rect {
   cube: number;
 }
 
-export interface BoardLayout {
+interface BoardLayout {
   m: BoardMetrics;
   backs: PlacedTile[];
   ponds: Record<SeatIndex, PlacedTile[]>;
@@ -107,7 +107,6 @@ export interface BoardLayout {
   hand: PlacedTile[];
   handBox: Rect;
   /** bounding box of the human's own called sets */
-  ownMeldBox: Rect | null;
   sticks: PlacedStick[];
   center: CenterBlock;
   /** bounding boxes of each seat's pond, for debugging/tests */
@@ -235,9 +234,7 @@ export function layoutBoard(
   // beside the hand (the player's right), else a right-aligned row above it
   const ownMeldY = beside ? handY + handSz.h - tile.h : handY - 4 - tile.h;
   let ownX = beside ? hx + handRowW + meldGap : W - rim - ownMeldW + meldGap;
-  let ownMeldBox: Rect | null = null;
   if (ownMelds.length > 0) {
-    ownMeldBox = { x: ownX, y: ownMeldY, w: ownMeldW - meldGap, h: tile.h };
   }
   for (const meld of ownMelds) {
     let cx = ownX;
@@ -488,7 +485,6 @@ export function layoutBoard(
     melds: melds.map(snap),
     hand: hand.map(snap),
     handBox: snapRect(handBox),
-    ownMeldBox: ownMeldBox ? snapRect(ownMeldBox) : null,
     sticks: sticks.map((st) => ({ ...st, x: Math.round(st.x), y: Math.round(st.y) })),
     center,
     pondBoxes: {

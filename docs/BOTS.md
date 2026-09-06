@@ -99,8 +99,8 @@ risks—difficulty is not a guaranteed placement.
 presets, native/uniform level wiring, per-character execution scaling, safety
 against multiple threats, kan decisions, value counting, legal dama, and every
 named character playing real-engine matches under rule variations. Existing
-seeded self-play and benchmark checks continue to cover legal actions,
-execution separation, call rates, riichi, and hand completion. Specials additionally
+seeded self-play and benchmark checks use the same strict real-engine driver
+to cover legal actions, execution separation, call rates, riichi, and hand completion. Specials additionally
 have tests for intentional win refusal, worst-shanten selection, the actual
 mangan payout floor, value-over-speed choices, ron-only reshaping, gear changes,
 forced actions, category labels/estimates, and full all-Special matches.

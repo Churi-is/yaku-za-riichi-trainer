@@ -4,7 +4,7 @@
    .match is a column:
      score strip  (who's who, points, whose turn)
      match-main   (the felt)
-     dock-bottom  (the action row + trainer toggles, in thumb reach)
+     dock-bottom  (the action row + pause controls, in thumb reach)
 
    The felt holds a fixed-coordinate board (see src/ui/table/layout.ts) that is
    scaled to fit: every tile is absolutely positioned, so the layout is
@@ -245,7 +245,7 @@
 
 .discard-confirm { display: flex; align-items: center; gap: 8px; }
 
-/* trainer toggles + pause, at the bottom where the thumb already is */
+/* table status + pause, at the bottom where the thumb already is */
 .tool-row { display: flex; align-items: center; gap: 5px; }
 .tool-row .spacer { flex: 1; }
 .tab-btn {
@@ -254,10 +254,6 @@
   border-radius: var(--radius); color: var(--muted); cursor: pointer;
   font-size: 12px; letter-spacing: 0.04em;
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-}
-.tab-btn.on {
-  color: #221704; background: linear-gradient(180deg, #e7c476, #a8802c);
-  border-color: var(--gold); font-weight: 700;
 }
 .tab-btn .kan { font-family: var(--font-jp); font-size: 14px; }
 .tab-btn .en { font-size: 11px; letter-spacing: 0.06em; }

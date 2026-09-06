@@ -1,6 +1,6 @@
 /**
- * SHARED CONTRACT — AI entry point. Owned by Worker B.
- * The game loop (Worker D) only needs `PERSONALITIES` and `createAI().decide()`.
+ * AI entry point.
+ * The game loop uses `PERSONALITIES` and `createAI().decide()`.
  *
  * One parameterized decision engine: archetype × difficulty resolve into
  * AIParams (see params.ts). The engine consumes ONLY a PublicView.
@@ -20,7 +20,7 @@ import { decideSpecial } from './specials';
 export * from './types';
 export {
   PERSONALITIES, personalityById, ARCHETYPE_SAMPLE, DEFAULT_OPPONENTS,
-  opponentDifficulty, DIFFICULTY_LABEL, rosterDifficulty, REGULAR_PERSONALITIES, SPECIAL_PERSONALITIES,
+  opponentDifficulty, rosterDifficulty, REGULAR_PERSONALITIES, SPECIAL_PERSONALITIES,
 } from './personalities';
 export { paramsFor } from './params';
 
@@ -38,13 +38,11 @@ export function createAI(
   const rng = new Rng(hashSeed('ai', personality.id, difficulty, seed));
 
   const player: AIPlayer = {
-    personality,
     params,
     decide(view: PublicView, legal: LegalAction[]): AIDecision {
       if (personality.special) return decideSpecial(personality.special.style, view, legal, params, rng);
       const { action, rationale } = decideAction(view, legal, {
         params,
-        archetype: personality.archetype,
         rng,
       });
       return { action, rationale };

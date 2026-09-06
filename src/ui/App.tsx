@@ -1,4 +1,4 @@
-/** App shell + screen router. Owned by Worker D. */
+/** App shell + screen router. */
 import { useSession } from '@state/session';
 import MainMenu from './screens/MainMenu';
 import TableSettingsScreen from './screens/TableSettingsScreen';

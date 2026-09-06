@@ -5,6 +5,7 @@
  * modulates how easily marginal calls are taken. Honors kuikae via the legal
  * action's forbiddenDiscards and the closed/yaku state.
  */
+import { idsFromCounts } from '@engine/index';
 import type {
   LegalAction,
   Meld,
@@ -26,7 +27,7 @@ import {
   countsOf,
 } from './handEval';
 
-export interface CallChoice {
+interface CallChoice {
   /** The legal action to take (a call), or null to decline (pass). */
   action: LegalAction | null;
   rationale: string;
@@ -35,8 +36,6 @@ export interface CallChoice {
 interface CallOption {
   legal: LegalAction;
   meld: Meld;
-  /** Tile to discard after the call (the follow-up discard). */
-  discardTile: TileId;
   postShanten: number;
   gain: number; // pre-shanten - post-shanten
   score: number;
@@ -46,15 +45,6 @@ interface CallOption {
 
 function ownSeat(view: PublicView) {
   return view.seats[view.viewer];
-}
-
-/** Expand a count array into representative tile ids (lowest copies first). */
-function countsToIds(counts: readonly number[]): TileId[] {
-  const ids: TileId[] = [];
-  for (let k = 0; k < counts.length; k++) {
-    for (let c = 0; c < counts[k]; c++) ids.push(k * 4 + c);
-  }
-  return ids;
 }
 
 /**
@@ -89,7 +79,7 @@ function bestDiscardAfterCall(
   const forbid = new Set(forbidden);
   // An open kan is followed by a replacement DRAW, not an immediate discard.
   if (meld.type === 'minkan') {
-    const hand = countsToIds(counts);
+    const hand = idsFromCounts(counts);
     return { tile: hand[0], shanten: shanten(hand, afterMelds) };
   }
 
@@ -98,7 +88,7 @@ function bestDiscardAfterCall(
     if (counts[k] === 0) continue;
     if (forbid.has(k)) continue; // kuikae: this discard would be illegal
     counts[k]--;
-    const hand = countsToIds(counts);
+    const hand = idsFromCounts(counts);
     const sh = shanten(hand, afterMelds);
     counts[k]++;
     if (best === null || sh < best.shanten) {
@@ -178,7 +168,7 @@ export function chooseCall(
   const preShanten = currentShanten(view);
   const fromDiscarder = view.lastDiscard?.from ?? -1;
   const wasClosed = isHandClosed(seat.melds);
-  const threat = tableThreat(view).level;
+  const threat = tableThreat(view);
   const direction = params.flushBias > 0 ? flushDirection(view.hand, seat.melds) : null;
 
   const options: CallOption[] = [];
@@ -188,12 +178,12 @@ export function chooseCall(
     if (meld.type === 'minkan' && (view.tilesRemaining <= 8
       || (threat >= 0.6 && (params.kanGreed < 0.9 || preShanten > 0)))) continue;
     const follow = bestDiscardAfterCall(view, meld, legalCall.forbiddenDiscards ?? []);
-    if (!follow) continue;
+    if (follow === null) continue;
 
     const gain = preShanten - follow.shanten;
     const afterCounts = postCallCounts(view, meld);
     if (meld.type !== 'minkan') afterCounts[kindOf(follow.tile)]--;
-    const afterHand = countsToIds(afterCounts);
+    const afterHand = idsFromCounts(afterCounts);
     // Check the actual post-discard state, including the prospective meld.
     // A pair thrown away as the follow-up is not a future yakuhai path.
     const yakuPath = hasOpenYakuPath(
@@ -212,7 +202,6 @@ export function chooseCall(
     options.push({
       legal: legalCall,
       meld,
-      discardTile: follow.tile,
       postShanten: follow.shanten,
       gain,
       score, valueCall, keepsYaku: yakuPath,
@@ -288,7 +277,7 @@ export function chooseSelfKan(
   const seat = ownSeat(view);
   const pool = ownTiles(view);
   const before = shanten(pool, seat.melds);
-  const threat = tableThreat(view).level;
+  const threat = tableThreat(view);
   // More dora helps every opponent. Only the boldest character risks it into
   // a declared threat, and then only with a ready hand of their own.
   if (threat >= 0.6 && (params.kanGreed < 0.9 || before > 0)) {

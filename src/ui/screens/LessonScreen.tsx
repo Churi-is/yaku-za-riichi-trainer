@@ -21,9 +21,9 @@
  * answered the board lights the correct discard while the coach explains.
  */
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import type { LegalAction, SeatIndex, TileId } from '@engine/types';
+import type { LegalAction, TileId } from '@engine/types';
 import { getLegalActions, kindOf, toPublicView } from '@engine/index';
-import { parseHand } from '@ai/handEval';
+import { parseHand } from '@engine/index';
 import TableBoard from '@ui/components/TableBoard';
 import Tile from '@ui/components/Tile';
 import { useOrientation } from '@ui/hooks/useOrientation';
@@ -32,20 +32,18 @@ import { coachPlacement } from '@dojo/coach';
 import { scriptedState, tilesInHand, tilesInRivers } from '@dojo/table';
 import { useSession } from '@state/session';
 
-const NO_NAME = (s: SeatIndex) => (s === 0 ? 'You' : `Seat ${s}`);
-
 /** True when a step is a drill whose options are tile discards. */
 function isTileDrillStep(s: Step): boolean {
   return s.kind === 'drill' && (s.options ?? []).some((o) => o.tile);
 }
 
-function TileRow({ notation, size = 'sm' }: { notation: string; size?: 'sm' | 'md' }) {
+function TileRow({ notation }: { notation: string }) {
   const ids = useMemo<TileId[]>(() => {
     try { return parseHand(notation); } catch { return []; }
   }, [notation]);
   return (
     <div className="tile-row">
-      {ids.map((id, i) => <Tile key={`${id}-${i}`} id={id} size={size} />)}
+      {ids.map((id, i) => <Tile key={`${id}-${i}`} id={id} size="sm" />)}
     </div>
   );
 }
@@ -328,7 +326,6 @@ export default function LessonScreen() {
           {table ? (
             <TableBoard
               view={table.view}
-              seatName={NO_NAME}
               aiThinking={false}
               orient={orient}
               compact={compact}
@@ -364,7 +361,7 @@ export default function LessonScreen() {
         )}
 
         <section
-          className={`coach coach-${slot} coach-${place.size}${answered ? ' coach-open' : ''}${collapsed ? ' coach-collapsed' : ''}`}
+          className={`coach coach-${slot} coach-${place.size}${collapsed ? ' coach-collapsed' : ''}`}
           style={coachStyle}
           aria-label="Lesson coach"
         >

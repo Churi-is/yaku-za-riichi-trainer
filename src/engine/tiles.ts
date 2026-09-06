@@ -1,5 +1,5 @@
 /**
- * engine/tiles — tile encoding helpers. Owned by Worker A.
+ * engine/tiles — tile encoding helpers.
  *
  * THE ENCODING (memorize):
  *   TileKind 0..33: m1-m9 = 0-8, p1-p9 = 9-17, s1-s9 = 18-26,
@@ -7,11 +7,11 @@
  *   TileId 0..135:  id = kind * 4 + copyIndex, copyIndex 0..3.
  *   Red fives are copy index 0 of m5/p5/s5 -> TileId 16, 52, 88.
  *
- * CONVENTION: functions named `*Of`/`isRed` take a **TileId** (0..135);
- * the predicate helpers (`isHonor`, `isTerminal`, `isSimple`, ...) take a
- * **TileKind** (0..33). They are not interchangeable — don't mix them.
+ * `kindOf` and `isRed` take TileId values (0..135). Suit/rank helpers and
+ * predicates (`isHonor`, `isTerminal`, `isSimple`, ...) take TileKind values
+ * (0..33). They are not interchangeable.
  */
-import type { SeatIndex, Suit, Tile, TileId, TileKind, Wind } from './types';
+import type { SeatIndex, Suit, TileId, TileKind, Wind } from './types';
 
 /** Seats in turn order. Iterate this instead of doing modular arithmetic on
  *  a `SeatIndex` — `(3 + 1) % 4` is 0, which silently never terminates a loop. */
@@ -28,36 +28,29 @@ export function seatsAfter(from: SeatIndex): SeatIndex[] {
 }
 
 export const KIND_COUNT = 34;
-export const TILE_COUNT = 136;
-export const COPIES_PER_KIND = 4;
+const TILE_COUNT = 136;
+const COPIES_PER_KIND = 4;
 
-export const SUIT_OF_KIND: Suit[] = (() => {
+const SUIT_OF_KIND: Suit[] = (() => {
   const out: Suit[] = new Array(KIND_COUNT);
   for (let k = 0; k < KIND_COUNT; k++) out[k] = k < 9 ? 'm' : k < 18 ? 'p' : k < 27 ? 's' : 'z';
   return out;
 })();
 
-export const RANK_OF_KIND: number[] = (() => {
+const RANK_OF_KIND: number[] = (() => {
   const out: number[] = new Array(KIND_COUNT);
   for (let k = 0; k < KIND_COUNT; k++) out[k] = k < 27 ? (k % 9) + 1 : (k - 27) + 1;
   return out;
 })();
 
-export const WINDS: Wind[] = ['east', 'south', 'west', 'north'];
+const WINDS: Wind[] = ['east', 'south', 'west', 'north'];
 /** Kind index of the first honor tile (East). */
-export const HONOR_START = 27;
-export const WIND_KINDS: TileKind[] = [27, 28, 29, 30];
-export const DRAGON_KINDS: TileKind[] = [31, 32, 33];
-export const TERMINAL_KINDS: TileKind[] = [0, 8, 9, 17, 18, 26];
-export const SIMPLE_KINDS: TileKind[] = (() => {
-  const out: TileKind[] = [];
-  for (let k = 0; k < 27; k++) if (k % 9 !== 0 && k % 9 !== 8) out.push(k);
-  return out;
-})();
+const HONOR_START = 27;
+
+const DRAGON_KINDS: TileKind[] = [31, 32, 33];
 
 /** Red five = copy index 0 of m5 (kind 4), p5 (kind 13), s5 (kind 22). */
 export const RED_FIVE_KINDS: TileKind[] = [4, 13, 22];
-export const RED_FIVE_IDS: TileId[] = RED_FIVE_KINDS.map((k) => k * COPIES_PER_KIND);
 
 /** Ryuuiisou (all green): 2s,3s,4s,6s,8s + Hatsu. */
 export const GREEN_KINDS: TileKind[] = [19, 20, 21, 23, 25, 32];
@@ -70,33 +63,13 @@ export function kindOf(id: TileId): TileKind {
   return (id / 4) | 0;
 }
 
-export function copyIndex(id: TileId): number {
-  return id % 4;
-}
-
 export function idOf(kind: TileKind, copy = 0): TileId {
   return kind * COPIES_PER_KIND + copy;
 }
 
-export function isValidId(id: number): boolean {
-  return Number.isInteger(id) && id >= 0 && id < TILE_COUNT;
-}
-
-export function isValidKind(kind: number): boolean {
-  return Number.isInteger(kind) && kind >= 0 && kind < KIND_COUNT;
-}
-
 // ---------------------------------------------------------------------------
-// suit / rank (TileId in)
+// suit / rank (TileKind in)
 // ---------------------------------------------------------------------------
-
-export function suitOf(id: TileId): Suit {
-  return SUIT_OF_KIND[kindOf(id)];
-}
-
-export function rankOf(id: TileId): number {
-  return RANK_OF_KIND[kindOf(id)];
-}
 
 export function suitOfKind(kind: TileKind): Suit {
   return SUIT_OF_KIND[kind];
@@ -144,15 +117,6 @@ export function isTerminalOrHonor(kind: TileKind): boolean {
   return kind >= 27 || kind % 9 === 0 || kind % 9 === 8;
 }
 
-export function isGreen(kind: TileKind): boolean {
-  return kind === 19 || kind === 20 || kind === 21 || kind === 23 || kind === 25 || kind === 32;
-}
-
-/** Suit tiles only (no honors). */
-export function isSuitKind(kind: TileKind): boolean {
-  return kind < 27;
-}
-
 // ---------------------------------------------------------------------------
 // winds
 // ---------------------------------------------------------------------------
@@ -161,24 +125,12 @@ export function kindOfWind(wind: Wind): TileKind {
   return 27 + WINDS.indexOf(wind);
 }
 
-export function windOfKind(kind: TileKind): Wind | null {
-  return isWind(kind) ? WINDS[kind - 27] : null;
-}
-
-export function windName(wind: Wind): string {
-  return wind.charAt(0).toUpperCase() + wind.slice(1);
-}
-
 /** Yakuhai kinds for a seat: dragons always, plus round and seat wind. */
 export function yakuhaiKinds(seatWind: Wind, roundWind: Wind): TileKind[] {
   const kinds = [...DRAGON_KINDS, kindOfWind(roundWind)];
   const sw = kindOfWind(seatWind);
   if (sw !== kindOfWind(roundWind)) kinds.push(sw);
   return kinds;
-}
-
-export function isYakuhai(kind: TileKind, seatWind: Wind, roundWind: Wind): boolean {
-  return isDragon(kind) || kind === kindOfWind(seatWind) || kind === kindOfWind(roundWind);
 }
 
 // ---------------------------------------------------------------------------
@@ -192,13 +144,8 @@ export function countsFromIds(ids: TileId[]): number[] {
   return counts;
 }
 
-/** 34-slot count array where every kind is present `copies` times. */
-export function fullCounts(copies = COPIES_PER_KIND): number[] {
-  return new Array<number>(KIND_COUNT).fill(copies);
-}
-
 /** Expand a 34-slot count array back into tile ids (lowest copies first). */
-export function idsFromCounts(counts: number[]): TileId[] {
+export function idsFromCounts(counts: readonly number[]): TileId[] {
   const ids: TileId[] = [];
   for (let k = 0; k < KIND_COUNT; k++) {
     for (let c = 0; c < counts[k]; c++) ids.push(idOf(k, c));
@@ -210,12 +157,8 @@ export function sortIds(ids: TileId[]): TileId[] {
   return [...ids].sort((a, b) => a - b);
 }
 
-export function sortKinds(kinds: TileKind[]): TileKind[] {
+function sortKinds(kinds: TileKind[]): TileKind[] {
   return [...kinds].sort((a, b) => a - b);
-}
-
-export function uniqueKinds(kinds: TileKind[]): TileKind[] {
-  return sortKinds([...new Set(kinds)]);
 }
 
 // ---------------------------------------------------------------------------
@@ -231,17 +174,6 @@ export function tileName(kind: TileKind): string {
   return `${RANK_OF_KIND[kind]}${SUIT_OF_KIND[kind]}`;
 }
 
-/** Short canonical name for a physical tile id. */
-export function tileNameOfId(id: TileId): string {
-  return tileName(kindOf(id));
-}
-
-/** Name with a red-five marker, for UI labels. */
-export function tileLabel(kind: TileKind, red = false): string {
-  const base = tileName(kind);
-  return red ? `${base}*` : base;
-}
-
 /** "Chi 3-4m"-style label for a set of kinds. */
 export function kindsLabel(kinds: TileKind[]): string {
   if (!kinds.length) return '';
@@ -252,13 +184,6 @@ export function kindsLabel(kinds: TileKind[]): string {
     return `${sorted.map((k) => RANK_OF_KIND[k]).join('-')}${suit}`;
   }
   return sorted.map((k) => tileName(k)).join(' ');
-}
-
-/** Build a full `Tile` record for an id. */
-export function makeTile(id: TileId, redDoraEnabled = true): Tile {
-  const kind = kindOf(id);
-  const red = redDoraEnabled && isRed(id);
-  return { id, kind, suit: SUIT_OF_KIND[kind], rank: RANK_OF_KIND[kind], red };
 }
 
 /** Every tile id in the 136-tile set, in order. */

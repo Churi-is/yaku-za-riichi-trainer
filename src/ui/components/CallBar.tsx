@@ -7,10 +7,10 @@
  * costliest mistake in the game — a fat-fingered discard — impossible.
  */
 import type { Action, LegalAction, TileId } from '@engine/types';
-import { tileFace } from '@ui/tiles';
+import { tileLabel } from '@ui/tiles';
 import Tile from './Tile';
 
-export interface CallBarProps {
+interface CallBarProps {
   legal: LegalAction[];
   riichiMode: boolean;
   /** tile lifted out of the hand, awaiting confirmation */
@@ -55,7 +55,7 @@ export default function CallBar({
         onClick={onConfirmDiscard}
       >
         {riichiMode ? 'Riichi + discard' : 'Discard'}
-        <span className="kan">{tileFace(selected).label}</span>
+        <span className="kan">{tileLabel(selected)}</span>
       </button>
       <button
         className="call-btn pass slim"

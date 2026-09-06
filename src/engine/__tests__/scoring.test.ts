@@ -1,5 +1,5 @@
 /**
- * engine/scoring tests — hand-verified reference hands. Worker A.
+ * engine/scoring tests — hand-verified reference hands.
  *
  * Every expected fu / han / point figure below was worked out by hand from the
  * rules in the brief and cross-checked against the standard payment table
@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { scoreHand, type ScoreInput } from '../index';
 import { basePoints, limitNameFor, computePayments } from '../scoring';
 import { parse, meld } from './helpers';
-import { DEFAULT_SETTINGS, type Meld, type SeatIndex, type TableSettings, type TileId } from '../types';
+import { DEFAULT_SETTINGS, type Meld, type SeatIndex, type TableSettings } from '../types';
 
 const CLEAN: TableSettings = { ...DEFAULT_SETTINGS, redDora: false };
 

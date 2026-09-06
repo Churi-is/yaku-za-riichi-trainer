@@ -1,10 +1,10 @@
-/** HandEndBanner — result of a finished hand with the reveal. Owned by Worker D. */
+/** HandEndBanner — result of a finished hand with the reveal. */
 import type { HandResult, Meld, SeatIndex } from '@engine/types';
 import Tile from './Tile';
 import { sortTiles } from '@ui/tiles';
 import { useFocusTrap } from '@ui/hooks/useFocusTrap';
 
-export interface HandEndBannerProps {
+interface HandEndBannerProps {
   result: HandResult;
   roundLabel: string;
   seatName: (seat: SeatIndex) => string;

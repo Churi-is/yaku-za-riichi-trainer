@@ -1,5 +1,5 @@
 /**
- * engine/yaku — yaku detection. Owned by Worker A.
+ * engine/yaku — yaku detection.
  *
  * Full set from the brief. Exclusions handled here:
  *   - any yakuman suppresses every non-yakuman yaku (single yakuman, no stack)
@@ -22,7 +22,7 @@ import { allKinds, allSets, concealedTriplets, effectiveSets, type WinShape } fr
 import { isPinfuShape } from './fu';
 import type { TableSettings, Wind, YakuId, YakuHit } from './types';
 
-export const YAKU_NAMES: Record<YakuId, string> = {
+const YAKU_NAMES: Record<YakuId, string> = {
   menzenTsumo: 'Menzen Tsumo',
   riichi: 'Riichi',
   ippatsu: 'Ippatsu',
@@ -68,7 +68,7 @@ export const YAKU_NAMES: Record<YakuId, string> = {
 };
 
 /** Han for every non-yakuman yaku as [closed, open]. */
-export const YAKU_HAN: Record<string, [number, number]> = {
+const YAKU_HAN: Record<string, [number, number]> = {
   menzenTsumo: [1, 0],
   riichi: [1, 0],
   doubleRiichi: [2, 0],
@@ -114,7 +114,7 @@ export interface YakuFlags {
   renhou: boolean;
 }
 
-export interface YakuContext {
+interface YakuContext {
   isClosed: boolean;
   isTsumo: boolean;
   seatWind: Wind;
@@ -294,11 +294,6 @@ export function detectYaku(shape: WinShape, ctx: YakuContext): YakuHit[] {
   }
 
   return out;
-}
-
-/** Convenience: does this yaku set contain at least one scoring yaku? */
-export function hasYaku(yaku: YakuHit[]): boolean {
-  return yaku.length > 0;
 }
 
 /** Sum of han across a yaku list (yakuman contribute 0 here). */

@@ -2,7 +2,7 @@
 import type { LegalAction, Meld, PublicView, SeatIndex, TileId } from '@engine/types';
 import { parseHand, kindOf, ownTiles } from '../handEval';
 
-export interface SeatFix {
+interface SeatFix {
   hand?: string;          // tiles visible to viewer (own hand)
   melds?: Meld[];
   river?: string[];       // discarded tile notations (e.g. "4m")
@@ -59,7 +59,6 @@ export function makeView(opts: {
       riichiTurn: fix?.riichi ? (fix.riichiTurn ?? (river.length - 1)) : null,
       ippatsu: false,
       concealedCount: fix?.concealedCount ?? (s === viewer ? hand.length : 13),
-      isClosed: melds.every((mm) => mm.concealed),
       aiPersonalityId: null,
     };
   }

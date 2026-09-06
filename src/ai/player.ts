@@ -12,7 +12,7 @@ import type {
   PublicView,
   TileId,
 } from '@engine/types';
-import type { AIParams, Archetype } from './types';
+import type { AIParams } from './types';
 import { Rng } from './rng';
 import {
   shanten,
@@ -63,7 +63,7 @@ function classify(legal: LegalAction[]): DecisionKind {
 export function shouldFold(
   view: PublicView, params: AIParams, ownShanten: number,
 ): boolean {
-  const threat = tableThreat(view).level;
+  const threat = tableThreat(view);
   const seat = view.seats[view.viewer];
   const drawsLeft = Math.ceil(view.tilesRemaining / 4);
 
@@ -128,9 +128,8 @@ function passAction(legal: LegalAction[]): LegalAction | undefined {
   return actionOfType(legal, 'pass');
 }
 
-export interface DecideContext {
+interface DecideContext {
   params: AIParams;
-  archetype: Archetype;
   rng: Rng;
 }
 
@@ -235,7 +234,7 @@ export function decideAction(
   }
   let declareRiichi = false;
   if (riichiAction && closed && !folding) {
-    declareRiichi = shouldRiichi(view, params, rng, riichiTile).riichi;
+    declareRiichi = shouldRiichi(view, params, rng, riichiTile);
   }
 
   const chosen: Action | null = declareRiichi
