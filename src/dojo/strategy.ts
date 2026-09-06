@@ -143,7 +143,7 @@ export const STRATEGY_CHAPTERS: Chapter[] = [
             rivers: { 0: '9p 1m 8m 9s 2s 6p 8p 2m', 1: '9s 2s 6p 8p 2m 7m 4p 1z', 2: '6p 8p 2m 7m 9p 1m 4p 9m', 3: '7m 9p 1m 8m 9s 2s 4p 3z' },
             focus: '9s',
             text: [
-              'The 9s goes, obviously — but look at the three ponds before the next turn, because that ryankan is about to matter.',
+              'The 9s goes, obviously — but before the next turn, look at the three ponds. What they show is about to matter more than the shape on the table does.',
               'Three of the four 4p are gone. So of the eight tiles 135p theoretically accepts, only five are actually out there: four 2p and a single 4p.',
             ],
             note: {
@@ -212,7 +212,7 @@ export const STRATEGY_CHAPTERS: Chapter[] = [
               { tiles: '78s', caption: 'Ryanmen — 6s and 9s. Eight tiles.' },
               { tiles: '46s', caption: 'Kanchan — 5s only. Four tiles.' },
               { tiles: '12s', caption: 'Penchan — 3s only. Four tiles.' },
-              { tiles: '55s', caption: 'Shanpon or tanki — two or four tiles.' },
+              { tiles: '55s', caption: 'Shanpon — two pairs, waiting on a third copy of either: four tiles. A tanki — one lone tile — waits on three (two, when the wait is a third copy of a pair you already hold).' },
             ],
           },
           {
@@ -716,7 +716,7 @@ export const STRATEGY_CHAPTERS: Chapter[] = [
             wall: 49,
             text: [
               'You have just drawn into tenpai. Throw the 1m and you are waiting on 6s and 9s with a closed hand on turn six.',
-              'Declare. Riichi is worth far more than the one han printed on the card: the han itself, plus the ippatsu you will sometimes catch, plus the ura dora only riichi hands see, plus three opponents who stop pushing tiles at you.',
+              'Declare. Riichi is worth far more than the one han printed on the card, because it comes with two bonuses you will keep hearing about. Ippatsu: if you win by ron on a discard thrown between your declaration and your next draw, with no call by anyone in between, the hand gains an extra han — the window is one go-around, no more. Ura dora: hidden indicators wait in the dead wall, invisible to everyone; if your riichi hand wins, they are revealed in your score and every matching tile in your hand adds a han.',
             ],
             note: {
               title: 'The honest arithmetic',
@@ -838,9 +838,9 @@ export const STRATEGY_CHAPTERS: Chapter[] = [
               rivers: { 0: '1m 8m 9m 1p 5p 6p', 1: '1p 5p 6p 7p 8p 9p', 2: '7p 8p 9p 1s 2s 3s', 3: '1s 2s 3s 4s 5s E' },
               wall: 45,
               table: 'The dora indicator makes your pair of 4p dora — two of them. Closed, tenpai on 6s/9s.',
-              prompt: 'Three dora, closed, a good wait. Riichi or dama?',
+              prompt: 'Two dora, closed, a good wait. Riichi or dama?',
               options: [
-                { label: 'Riichi', correct: true, why: 'Dama-because-it-is-big applies to hands that are already at the mangan ceiling on a narrow wait. This is three dora on an eight-tile wait: riichi adds a han, ippatsu and ura on top and pushes it well past mangan. Declare.' },
+                { label: 'Riichi', correct: true, why: 'Dama-because-it-is-big applies to hands already on a limit tier on a narrow wait. Pinfu, tanyao and two dora is four han — riichi adds the fifth, which crosses into mangan, on an eight-tile wait. Declare.' },
                 { label: 'Dama to keep it quiet', why: 'The instinct is right in principle — big hands can afford silence — but it applies when riichi adds little and the wait is thin. Here it adds a lot and the wait is wide.' },
                 { label: 'Dama and fish for a better wait', why: 'You already have the best wait shape in the game. There is nothing to fish for.' },
               ],

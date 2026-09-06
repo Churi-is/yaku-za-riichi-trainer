@@ -40,7 +40,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               'It needs no particular shape, no particular wait, and no declaration. It simply arrives the moment you self-draw a closed hand. Open the hand with any call and it disappears.',
             ],
             figures: [
-              { tiles: '123m 456m 234p 234s 55s', caption: 'A closed hand that self-draws its winning tile scores pinfu, tanyao and menzen tsumo — the self-draw is the one that costs you nothing.' },
+              { tiles: '234m 456m 234p 345s 66p', caption: 'A closed hand that self-draws its winning tile scores pinfu, tanyao and menzen tsumo — the self-draw is the one that costs you nothing.' },
             ],
           },
           {
@@ -91,22 +91,22 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
           {
             kind: 'teach',
             text: [
-              'Riichi (1 han) you have met: declare on any closed tenpai hand. Double riichi (2 han) is the same declaration made on your very first discard — before the hand has really started — if you are dealt a tenpai opening hand.',
-              'Ippatsu (1 han) is a bonus that rides on a riichi: win on your very next draw, or on a discard before your next draw, with no calls in between, and ippatsu is added.',
+              'Riichi (1 han) you have met: declare on any closed tenpai hand. Double riichi (2 han) is the same declaration made on your very first discard — before the hand has really started — when you are dealt a tenpai opening hand.',
+              'Ippatsu (1 han) is a bonus that rides on a riichi: if you win by ron on a discard thrown between your declaration and your next draw, with no call by anyone in between, the hand gains an extra han. The window is one go-around — it closes the moment you draw again — and it is a discard win: drawing your own winning tile does not carry it in this game.',
             ],
             figures: [
-              { tiles: '123m 456m 234p 234s 88p', caption: 'A hand that is tenpai on the opening deal can be declared double riichi for two han.' },
+              { tiles: '123m 456m 234p 78p 88s', caption: 'A thirteen-tile deal that is already tenpai: declare on your opening discard and the declaration is double riichi, two han.' },
             ],
           },
           {
             kind: 'teach',
             text: [
-              'These stack. A double riichi that wins on its very first draw is double riichi plus ippatsu plus menzen tsumo, before you even count the hand’s shapes and any dora.',
-              'A single call by anyone at the table between your riichi and your win cancels ippatsu, because the win no longer happens immediately. Furiten riichi can still ippatsu on a self-draw.',
+              'These stack. A double riichi that wins by ron on the first discard of the hand is double riichi plus ippatsu, before you even count the hand’s shapes and any dora.',
+              'A call by anyone — chi, pon or a kan on a discard — between your riichi and your win closes the ippatsu window, because the win no longer happens immediately. The window also dies at your next draw, so ippatsu is a fast bonus: it pays when the table feeds you before you can act again.',
             ],
             note: {
               title: 'Recognition cues',
-              text: 'Declare on turn one = double riichi. Win the very first draw/discard after declaring (no calls) = ippatsu. Declare later = ordinary riichi. All require a closed tenpai hand.',
+              text: 'Declare on your first discard = double riichi. Ron on a discard before your next draw, no calls in between = ippatsu. Declare later = ordinary riichi. All require a closed tenpai hand.',
             },
           },
           ...drills([
@@ -119,21 +119,22 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'You declare riichi. Your very next draw is the winning tile, and nobody called in between. What extra han do you gain?',
+              prompt: 'You declare riichi. Before your next turn, an opponent discards the exact tile you are waiting on, and nobody calls it. You ron. What extra han do you gain?',
               options: [
-                { label: 'Ippatsu, plus menzen tsumo', correct: true, why: 'Winning on the immediate next draw after declaring — with no intervening call — is ippatsu, one han, and because it was a self-draw on a closed hand menzen tsumo stacks too. This is the best small sequence in the game.' },
-                { label: 'Double riichi', why: 'Double riichi is about WHEN you declare (the first turn), not about winning quickly. A normal-turn riichi that wins fast is still ordinary riichi plus ippatsu.' },
-                { label: 'Rinshan kaihou', why: 'Rinshan is a win on the dead-wall draw after a kan. This was a normal draw from the live wall.' },
+                { label: 'Ippatsu — the discard landed inside the one-go-around window', correct: true, why: 'A ron on a discard between the declaration and your next draw, with no call in between, is exactly ippatsu, one han. In this game ippatsu is a discard win: had you drawn the tile yourself instead, the self-draw would carry menzen tsumo, not ippatsu.' },
+                { label: 'Double riichi', why: 'Double riichi is about WHEN you declare (your very first discard), not about winning quickly. A riichi declared on turn six that wins fast is still ordinary riichi.' },
+                { label: 'Rinshan kaihou', why: 'Rinshan is a win on the dead-wall replacement tile after a kan. Nothing here involved a kan.' },
               ],
             },
             {
-              prompt: 'You declare riichi. The player after you pons a tile, and then on your next turn you draw your winning tile. Do you get ippatsu?',
+              prompt: 'You declare riichi. Your very next draw is the winning tile, and nobody called in between. You win on your own draw. What does that win carry besides the hand’s own yaku?',
               options: [
-                { label: 'No — the opponent’s pon broke the immediate-win window before your draw', correct: true, why: 'Ippatsu rewards a win on the very next turn with nothing interrupting it. A call by anyone resets that clock, so even though you drew the win yourself on the following turn, the pon in between means there is no ippatsu.' },
-                { label: 'Yes — you drew the win on your first draw after declaring, which is exactly ippatsu', why: 'It would be ippatsu if that draw truly followed the declaration uninterrupted. But an opponent’s call counts as an interruption, so “my first draw” after a call is not the clean first draw the bonus requires.' },
-                { label: 'Yes — calls by other players do not affect your own ippatsu', why: 'Ippatsu reads the whole table, not just your hand. A pon or chi by anyone between your declaration and your win cancels the one-shot bonus; only riichi itself is unaffected by their call.' },
+                { label: 'Menzen tsumo — but not ippatsu', correct: true, why: 'A closed self-draw always carries menzen tsumo. But the ippatsu window closes the moment you draw, and ippatsu pays only on a discard — so a self-draw on your next turn is menzen tsumo, not ippatsu, in this game.' },
+                { label: 'Ippatsu — the draw followed the declaration with nothing in between', why: 'The timing looks right and the rule is one word narrower: ippatsu is a win on a DISCARD inside the window, and the window dies at your next draw. A self-draw carries no ippatsu here.' },
+                { label: 'Double riichi', why: 'Double riichi depends on declaring on your first discard, which has nothing to do with this turn.' },
               ],
             },
+
           ]),
         ],
       },
@@ -203,8 +204,8 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
           {
             kind: 'teach',
             text: [
-              'Both are rare because both need a kan to happen. Rinshan is a self-draw (a tsumo), chankan is a ron on the kan-adding tile.',
-              'Note the interaction: rinshan draws are dead-wall tiles, so they are never also ippatsu draws in the ordinary sense, and a chankan win on a promoted (open) kan does not disturb your own closed status.',
+            'Both are rare because both need a kan to happen. Rinshan is a self-draw (a tsumo), chankan is a ron on the kan-adding tile.',
+            'Note the interaction with ippatsu: ippatsu pays only on a win by discard, and a rinshan win is a self-draw — so the two never combine in this game. A chankan win, being a ron on someone else’s tile, does not disturb your own hand’s closed status at all.',
             ],
             note: {
               title: 'Recognition cues',
@@ -972,7 +973,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               'It is the near-miss of daisangen (three full dragon triplets), which is a yakuman.',
             ],
             figures: [
-              { tiles: 'PPP FFF CC 123m 456m', caption: 'White and green triplets with a red-dragon pair — all three dragons accounted for. Shousangen, two han, plus two yakuhai.' },
+              { tiles: 'PPP FFF CC 123m 456s', caption: 'White and green triplets with a red-dragon pair, two plain runs and no flush — all three dragons accounted for. Shousangen, two han, plus two yakuhai: four han before dora.' },
             ],
           },
           {
@@ -1037,7 +1038,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               'It is the loudest hand in mahjong: a player discarding whole suits tells the table exactly what they hold.',
             ],
             figures: [
-              { tiles: '222m 789m 345m EEE FF', caption: 'Only man tiles and honours — no pin or sou at all. Honitsu, three han closed, plus the East and dragon yakuhai triplets.' },
+              { tiles: '222m 789m 345m EEE FF', caption: 'Only man tiles and honours — no pin or sou at all. Honitsu, three han closed; in an East round the East triplet adds its own yakuhai han, making four before dora.' },
             ],
           },
           {
@@ -1087,11 +1088,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
           {
             kind: 'teach',
             text: [
-              'Chinitsu is the pure flush: fourteen tiles all from one numbered suit, with not a single honour. Six han closed, five open — a mangan on its own before anything else stacks.',
+              'Chinitsu is the pure flush: fourteen tiles all from one numbered suit, with not a single honour. Six han closed, five open — at mangan or better on its own before anything else stacks.',
               'It is honitsu with the honours removed. Because it commits you to one suit so completely, it is usually a deliberate early decision off a suit-heavy deal.',
             ],
             figures: [
-              { tiles: '222m 345m 789m 123m 11m', caption: 'Every tile is man — no pin, no sou, no winds or dragons. Chinitsu, six han closed.' },
+              { tiles: '123m 456m 789m 111m 22m', caption: 'Every tile is man — no pin, no sou, no winds or dragons. Chinitsu, six han closed — and the 123-456-789 ladder inside it is ittsu as well.' },
             ],
           },
           {
@@ -1109,7 +1110,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             {
               prompt: 'Which complete hand is chinitsu?',
               options: [
-                { label: '222m 345m 789m 123m with an 11m pair', correct: true, why: 'Every tile is man: four groups and a pair all in one suit with zero honours. That is chinitsu, six han closed — a guaranteed mangan on its own, and the 123-789 within it may also make ittsu.' },
+                { label: '123m 456m 789m 111m with a 22m pair', correct: true, why: 'Every tile is man: four sets and a pair in one suit with zero honours. That is chinitsu, six han closed — a limit hand on its own, already past mangan — and the 123-456-789 ladder inside it is ittsu, stacked on top.' },
                 { label: '222m 789m 345m with EEE and an FF pair', why: 'One suit but with honour triplets is honitsu, the half-flush (three han). Chinitsu requires NO honours anywhere in the hand.' },
                 { label: '123m 456m 789p 234s with a pair', why: 'Three suits are present, so this is not any flush. The pure flush demands all fourteen tiles share a single suit.' },
               ],
@@ -1426,7 +1427,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               'A pure-honour hand has no possible runs and very few kinds (only seven), which makes it rigid but unmistakable.',
             ],
             figures: [
-              { tiles: 'PPP FFF CCC EEE SS', caption: 'Three dragon triplets, an East triplet and a South pair — every tile an honour. Tsuuiisou yakuman (and it also contains daisangen).' },
+              { tiles: 'PPP FFF EEE SSS WW', caption: 'Two dragon triplets and two wind triplets with a South pair — fourteen tiles, all honours, not a single numbered tile. Tsuuiisou, a yakuman.' },
             ],
           },
           {
@@ -1444,7 +1445,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             {
               prompt: 'Which complete hand is tsuuiisou?',
               options: [
-                { label: 'PPP FFF CCC EEE with an SS pair', correct: true, why: 'Every tile is a dragon or a wind — there are no numbered tiles at all. That all-honour hand is tsuuiisou, a yakuman (and the three dragon triplets inside also make daisangen, which the yakuman supersedes).' },
+                { label: 'PPP FFF EEE SSS with a WW pair', correct: true, why: 'Every tile is a dragon or a wind — there are no numbered tiles at all. That all-honour hand is tsuuiisou, a yakuman. (Had three dragon triplets sat inside it, the table would show daisangen instead — one yakuman, no stacking.)' },
                 { label: '111m 999m PPP FFF with a 11p pair', why: 'Terminals are present (1m, 9m, 1p), so it is honroutou, not tsuuiisou. Tsuuiisou excludes ALL numbered tiles, terminals included.' },
                 { label: '123m 456m 789p 234s with a pair', why: 'Entirely numbered with middle tiles — an ordinary run hand, nowhere near the all-honour requirement.' },
               ],
