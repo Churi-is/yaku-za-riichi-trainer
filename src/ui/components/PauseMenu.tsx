@@ -1,6 +1,7 @@
 /** PauseMenu — mid-match menu: table legend, rules reminder, resume or quit.
  *  Quitting abandons the match, so it takes a deliberate second tap. */
 import { useState } from 'react';
+import { DIFFICULTY_LABEL } from '@ai/personalities';
 import { useSession } from '@state/session';
 import { useFocusTrap } from '@ui/hooks/useFocusTrap';
 
@@ -9,16 +10,10 @@ export interface PauseMenuProps {
   onQuitToMenu: () => void;
 }
 
-const DIFFICULTY_WORD: Record<string, string> = {
-  easy: 'Easy', normal: 'Normal', hard: 'Hard',
-};
-
 export default function PauseMenu({ onResume, onQuitToMenu }: PauseMenuProps) {
   const settings = useSession((s) => s.settings);
   const [confirming, setConfirming] = useState(false);
   const trapRef = useFocusTrap<HTMLDivElement>(true);
-
-  const difficultyWord = DIFFICULTY_WORD[settings.difficulty] ?? settings.difficulty;
 
   return (
     <div className="modal-backdrop" onClick={confirming ? undefined : onResume}>
@@ -71,7 +66,7 @@ export default function PauseMenu({ onResume, onQuitToMenu }: PauseMenuProps) {
           <span className="pill">{settings.kuitan ? 'Kuitan on' : 'Kuitan off'}</span>
           <span className="pill">{settings.twoHanMinimum ? '2-han minimum' : '1-han ok'}</span>
           <span className="pill">{settings.gameLength === 'east' ? 'East only' : 'Hanchan'}</span>
-          <span className="pill">{difficultyWord} opponents</span>
+          <span className="pill">{settings.opponentDifficulty === 'uniform' ? `All ${DIFFICULTY_LABEL[settings.difficulty]}` : 'Character levels'}</span>
         </div>
 
         {confirming ? (

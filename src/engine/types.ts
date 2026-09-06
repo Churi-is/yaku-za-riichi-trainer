@@ -72,7 +72,10 @@ export interface TableSettings {
   /** Two-han minimum to win. */
   twoHanMinimum: boolean;
   gameLength: GameLength;
+  /** Used when opponentDifficulty is 'uniform'. */
   difficulty: Difficulty;
+  /** Native character levels by default; uniform overrides all three for practice. */
+  opponentDifficulty?: 'character' | 'uniform';
 }
 
 export const DEFAULT_SETTINGS: TableSettings = {
@@ -81,6 +84,7 @@ export const DEFAULT_SETTINGS: TableSettings = {
   twoHanMinimum: false,
   gameLength: 'hanchan',
   difficulty: 'normal',
+  opponentDifficulty: 'character',
 };
 
 // ---------------------------------------------------------------------------

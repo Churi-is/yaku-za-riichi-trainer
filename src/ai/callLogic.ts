@@ -14,6 +14,8 @@ import type {
 } from '@engine/types';
 import type { AIParams } from './types';
 import { Rng } from './rng';
+import { tableThreat, buildSafetyContext, dangerOf } from './defense';
+import { flushDirection } from './strategy';
 import {
   shanten,
   hasOpenYakuPath,
@@ -38,6 +40,8 @@ interface CallOption {
   postShanten: number;
   gain: number; // pre-shanten - post-shanten
   score: number;
+  valueCall: boolean;
+  keepsYaku: boolean;
 }
 
 function ownSeat(view: PublicView) {
@@ -83,6 +87,11 @@ function bestDiscardAfterCall(
   const afterMelds = seat.melds.concat(meld);
   const counts = postCallCounts(view, meld);
   const forbid = new Set(forbidden);
+  // An open kan is followed by a replacement DRAW, not an immediate discard.
+  if (meld.type === 'minkan') {
+    const hand = countsToIds(counts);
+    return { tile: hand[0], shanten: shanten(hand, afterMelds) };
+  }
 
   let best: { tile: TileId; shanten: number } | null = null;
   for (let k = 0; k < counts.length; k++) {
@@ -169,47 +178,50 @@ export function chooseCall(
   const preShanten = currentShanten(view);
   const fromDiscarder = view.lastDiscard?.from ?? -1;
   const wasClosed = isHandClosed(seat.melds);
+  const threat = tableThreat(view).level;
+  const direction = params.flushBias > 0 ? flushDirection(view.hand, seat.melds) : null;
 
   const options: CallOption[] = [];
   for (const legalCall of calls) {
     const meld = buildMeldForAction(legalCall, view, fromDiscarder);
     if (!meld) continue;
+    if (meld.type === 'minkan' && (view.tilesRemaining <= 8
+      || (threat >= 0.6 && (params.kanGreed < 0.9 || preShanten > 0)))) continue;
     const follow = bestDiscardAfterCall(view, meld, legalCall.forbiddenDiscards ?? []);
     if (!follow) continue;
 
     const gain = preShanten - follow.shanten;
-    const afterHand = countsToIds(postCallCounts(view, meld));
-    // Yaku path over the post-call state: afterHand (contributed tiles removed)
-    // plus the new meld's tiles (including the called tile).
+    const afterCounts = postCallCounts(view, meld);
+    if (meld.type !== 'minkan') afterCounts[kindOf(follow.tile)]--;
+    const afterHand = countsToIds(afterCounts);
+    // Check the actual post-discard state, including the prospective meld.
+    // A pair thrown away as the follow-up is not a future yakuhai path.
     const yakuPath = hasOpenYakuPath(
-      afterHand,
-      seat.melds,
-      seat.seatWind,
-      view.roundWind,
-      view.settings.kuitan,
-      meld.tiles,
+      afterHand, seat.melds.concat(meld), seat.seatWind, view.roundWind, view.settings.kuitan,
     );
-
-    // Score the call for ranking among multiple offers. Shanten gain is the
-    // engine; yakuhai pons are premium; kans are discounted.
-    let score = gain * 2.0;
     const valueKinds = new Set(yakuhaiKinds(seat.seatWind, view.roundWind));
-    if (meld.type !== 'chi' && valueKinds.has(kindOf(meld.tiles[0]))) score += 3.0;
-    if (meld.type === 'minkan') score -= 1.5;
-    // Keep the yaku-path flag per option for the acceptance gate below.
-    score += yakuPath ? 0.5 : -4.0;
+    const valueCall = meld.type !== 'chi' && valueKinds.has(kindOf(meld.tiles[0]));
+    let score = gain * 2 + (valueCall ? 2 + params.valueGreed * 2 : 0);
+    if (meld.type === 'minkan') score -= 2 * (1 - params.kanGreed);
+    if (direction !== null) {
+      const followsSuit = meld.tiles.every((t) => kindOf(t) >= 27 || Math.floor(kindOf(t) / 9) === direction);
+      score += params.flushBias * (followsSuit ? 1 : -2);
+    }
+    if (meld.type === 'chi') score -= params.pairBias;
+    score += yakuPath ? 0.5 : -100;
     options.push({
       legal: legalCall,
       meld,
       discardTile: follow.tile,
       postShanten: follow.shanten,
       gain,
-      score: yakuPath ? score : -100, // no-yaku open hand is essentially never taken
+      score, valueCall, keepsYaku: yakuPath,
     });
   }
 
   options.sort((a, b) => b.score - a.score || a.postShanten - b.postShanten);
   const best = options[0];
+  if (!best) return { action: pass ?? null, rationale: 'no sound legal follow-up' };
 
   // Acceptance gate.
   //
@@ -222,8 +234,8 @@ export function chooseCall(
   //
   // Once the hand is already open there is nothing left to protect, so a
   // one-shanten gain is enough and archetype greed decides the rest.
-  const bestKeepsYaku = best.score > -50;
-  const valueCall = best.score >= 3.0;      // yakuhai pon and the like
+  const bestKeepsYaku = best.keepsYaku;
+  const valueCall = best.valueCall;      // yakuhai pon and the like
   const bringsTenpai = best.postShanten <= 0;
   const alreadyOpen = !wasClosed;
 
@@ -245,6 +257,8 @@ export function chooseCall(
   } else {
     callProb = 0;
   }
+  if (best.meld.type === 'minkan') callProb *= 0.2 + params.kanGreed * 0.8;
+  if (wasClosed && best.meld.type === 'chi') callProb *= 1 - params.pairBias * 0.5;
   const take = rng.chance(callProb);
 
   if (best && take && bestKeepsYaku) {
@@ -267,40 +281,42 @@ export function chooseSelfKan(
   rng: Rng,
   folding: boolean,
 ): CallChoice {
-  const kans = legal.filter(
-    (l) => l.action.type === 'ankan' || l.action.type === 'kakan',
-  );
-  const pass = legal.find((l) => l.action.type === 'discard');
-  if (kans.length === 0) return { action: null, rationale: 'no self-kan' };
-  // Kans add dora risk for everyone and commit tiles; only aggressive-ish or
-  // clearly-winning hands bother. When folding, never kan.
-  if (folding) return { action: null, rationale: 'no kan while folding' };
+  const kans = legal.filter((l) => l.action.type === 'ankan' || l.action.type === 'kakan');
+  if (!kans.length) return { action: null, rationale: 'no self-kan' };
+  if (folding || view.tilesRemaining <= 8) return { action: null, rationale: 'no kan while folding or near wall exhaustion' };
 
-  // "Only when it does not wreck the hand" was the stated intent, but nothing
-  // checked it: an ankan of a tile that was doing duty in a run costs a whole
-  // block. Take only kans that leave the shape no worse.
   const seat = ownSeat(view);
-  const before = shanten(ownTiles(view), seat.melds);
-  const safe = kans.filter((k) => {
-    const kind = k.action.type === 'ankan'
-      ? k.action.kind
-      : kindOf((k.action as { tile: TileId }).tile);
-    const kept = ownTiles(view).filter((t: TileId) => kindOf(t) !== kind);
-    const meldsAfter = [...seat.melds, {
-      type: k.action.type as Meld['type'],
-      tiles: ownTiles(view).filter((t: TileId) => kindOf(t) === kind).slice(0, 4),
-      calledFrom: null,
-      calledTile: null,
-      concealed: k.action.type === 'ankan',
-    } as Meld];
-    return shanten(kept, meldsAfter) <= before;
-  });
-  if (safe.length === 0) return { action: pass ?? null, rationale: 'kan would break the hand' };
-
-  // Base probability: modest, scaled down for patient bots.
-  const p = 0.25 * (0.4 + params.callGreed) * (1 - params.riichiPatience * 0.5);
-  if (rng.chance(Math.max(0.05, p))) {
-    return { action: safe[0], rationale: 'self-kan' };
+  const pool = ownTiles(view);
+  const before = shanten(pool, seat.melds);
+  const threat = tableThreat(view).level;
+  // More dora helps every opponent. Only the boldest character risks it into
+  // a declared threat, and then only with a ready hand of their own.
+  if (threat >= 0.6 && (params.kanGreed < 0.9 || before > 0)) {
+    return { action: null, rationale: 'kan would feed an opponent threat' };
   }
-  return { action: pass ?? null, rationale: 'decline self-kan' };
+  const safety = buildSafetyContext(view);
+  const sound = kans.filter(({ action }) => {
+    if (action.type === 'ankan') {
+      const tiles = pool.filter((t) => kindOf(t) === action.kind);
+      const kept = pool.filter((t) => kindOf(t) !== action.kind);
+      const meld: Meld = { type: 'ankan', tiles, calledFrom: null, calledTile: null, concealed: true };
+      return tiles.length === 4 && shanten(kept, [...seat.melds, meld]) <= before;
+    }
+    if (action.type === 'kakan') {
+      const index = seat.melds.findIndex((m) => m.type === 'pon' && kindOf(m.tiles[0]) === kindOf(action.tile));
+      if (index < 0 || !pool.includes(action.tile)) return false;
+      if (threat >= 0.5 && dangerOf(kindOf(action.tile), safety) > 0.65) return false;
+      // Upgrade the existing pon; a kakan does NOT create a fifth block.
+      const melds = seat.melds.map((m, i): Meld => i === index
+        ? { ...m, type: 'kakan', tiles: [...m.tiles, action.tile].sort((a, b) => a - b) }
+        : m);
+      return shanten(pool.filter((t) => t !== action.tile), melds) <= before;
+    }
+    return false;
+  });
+  if (!sound.length) return { action: null, rationale: 'kan would break the hand or expose a dangerous tile' };
+  const probability = (0.08 + params.kanGreed * 0.8) * (1 - params.riichiPatience * 0.25);
+  return rng.chance(probability)
+    ? { action: sound[0], rationale: 'sound kan: personality risk preference' }
+    : { action: null, rationale: 'decline self-kan' };
 }

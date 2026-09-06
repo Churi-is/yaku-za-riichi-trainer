@@ -26,6 +26,7 @@ import { tableThreat } from './defense';
 import { chooseDiscard } from './efficiency';
 import { chooseCall, chooseSelfKan } from './callLogic';
 import { shouldRiichi } from './riichiLogic';
+import { placementPressure } from './strategy';
 
 /** What kind of decision point this is, inferred from the legal actions. */
 type DecisionKind = 'win' | 'callWindow' | 'discard';
@@ -59,7 +60,7 @@ function classify(legal: LegalAction[]): DecisionKind {
  * the threshold now rises with how much is at stake: how close to complete,
  * how much it pays, and whether the noten penalty is about to land.
  */
-function shouldFold(
+export function shouldFold(
   view: PublicView, params: AIParams, ownShanten: number,
 ): boolean {
   const threat = tableThreat(view).level;
@@ -88,7 +89,9 @@ function shouldFold(
   // archetype itself, not guessed from a derived threshold.
   const aggression = params.archetype === 'aggressive' ? 0.2 : 0;
 
-  const threshold = params.defenseThreshold + shape + value + late + aggression;
+  const dealer = view.dealer === view.viewer && ownShanten <= 1 ? params.placementAwareness * 0.1 : 0;
+  const threshold = params.defenseThreshold + shape + value + late + aggression
+    + dealer + placementPressure(view, params);
   return threat >= threshold;
 }
 
@@ -142,6 +145,7 @@ export function decideAction(
     throw new Error('AI: no legal actions available');
   }
 
+  if (legal.length === 1) return { action: legal[0].action, rationale: 'only legal action' };
   const kind = classify(legal);
 
   // 1) Win — always take ron/tsumo (declines are off by default). A winning
@@ -154,7 +158,7 @@ export function decideAction(
   if (kind === 'callWindow') {
     const ownShanten = shanten(view.hand, view.seats[view.viewer].melds);
     const folding = shouldFold(view, params, ownShanten);
-    if (folding && ownShanten > 0) {
+    if (folding) {
       const pass = passAction(legal);
       if (pass) return { action: pass.action, rationale: 'fold: pass on call' };
     }
@@ -189,21 +193,23 @@ export function decideAction(
     }
   }
 
-  // Choose the discard tile (efficiency when pushing, safety when folding).
-  const disc = chooseDiscard(view, params, rng, folding);
+  // Kuikae and forced tsumogiri constrain the candidates BEFORE ranking,
+  // instead of falling back to an arbitrary first action after a forbidden pick.
+  const discardTiles = legal.flatMap((l) => l.action.type === 'discard' ? [l.action.tile] : []);
+  if (discardTiles.length === 0) return { action: legal[0].action, rationale: 'forced non-discard' };
+  const disc = chooseDiscard(view, params, rng, folding, discardTiles);
 
   // Find the legal plain-discard action for the chosen tile (match id, then
   // kind for identical copies). The engine offers discards over the whole pool
   // (hand + drawnTile), minus kuikae-forbidden kinds.
   const findDiscard = (wantRiichi: boolean): Action | null => {
     const k = kindOf(disc.tile);
-    const match = legal.find(
-      (l) =>
-        l.action.type === 'discard' &&
-        l.action.seat === view.viewer &&
-        (l.action.tile === disc.tile || kindOf(l.action.tile) === k) &&
-        (l.action.riichi === true) === wantRiichi,
-    );
+    const offers = legal.filter((l) => l.action.type === 'discard'
+      && l.action.seat === view.viewer && (l.action.riichi === true) === wantRiichi);
+    // Match the physical copy FIRST. A kind-first find can throw a red five
+    // even when the efficiency layer explicitly chose the non-red copy.
+    const match = offers.find((l) => l.action.type === 'discard' && l.action.tile === disc.tile)
+      ?? offers.find((l) => l.action.type === 'discard' && kindOf(l.action.tile) === k);
     return match ? match.action : null;
   };
 

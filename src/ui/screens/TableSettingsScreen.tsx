@@ -1,4 +1,6 @@
 /** TableSettingsScreen — rule selection before every match. Owned by Worker D. */
+import { DIFFICULTY_LABEL, opponentDifficulty, personalityById, rosterDifficulty } from '@ai/personalities';
+import { OPPONENT_POSITIONS } from '@state/opponents';
 import { useSession } from '@state/session';
 import { useMatch } from '@state/gameLoop';
 import type { Difficulty, GameLength, TableSettings } from '@engine/types';
@@ -64,7 +66,7 @@ function summaryChips(s: TableSettings): string[] {
     s.kuitan ? 'Open tanyao: on' : 'Open tanyao: off',
     s.twoHanMinimum ? '2-han minimum: on' : '2-han minimum: off',
     s.gameLength === 'east' ? 'Length: East only' : 'Length: Hanchan',
-    `Opponents: ${s.difficulty[0].toUpperCase()}${s.difficulty.slice(1)}`,
+    s.opponentDifficulty === 'uniform' ? `Levels: All ${DIFFICULTY_LABEL[s.difficulty]}` : 'Levels: By character',
   ];
 }
 
@@ -120,18 +122,54 @@ export default function TableSettingsScreen() {
               ]}
               onChange={(v) => setSettings({ gameLength: v })}
             />
-            <Segmented<Difficulty>
-              label="Opponent difficulty"
+            <Segmented<'character' | 'uniform'>
+              label="Opponent levels"
+              hint={settings.opponentDifficulty === 'uniform'
+                ? 'Every bot plays at the practice level you pick below; Special gimmicks stay active'
+                : 'Regulars play their listed level; Special opponents use the estimated strength in their descriptions'}
+              value={settings.opponentDifficulty ?? 'character'}
+              options={[
+                { v: 'character', l: 'By character', hint: 'Each bot plays its listed level' },
+                { v: 'uniform', l: 'Same for all', hint: 'Override every bot to one practice level' },
+              ]}
+              onChange={(v) => setSettings({ opponentDifficulty: v })}
+            />
+            {settings.opponentDifficulty === 'uniform' && <Segmented<Difficulty>
+              label="Practice difficulty"
               value={settings.difficulty}
               options={[
-                { v: 'easy', l: 'Easy', hint: 'Bots overcall, rarely fold, and play with readable mistakes' },
-                { v: 'normal', l: 'Normal', hint: 'Competent efficiency and defense, with small errors' },
-                { v: 'hard', l: 'Hard', hint: 'Tight suji defense, sharp riichi timing, and subtle tells' },
+                { v: 'easy', l: 'Easy', hint: 'Bots overcall, rarely fold, and make readable mistakes' },
+                { v: 'normal', l: 'Medium', hint: 'Competent efficiency and defense, with small errors' },
+                { v: 'hard', l: 'Hard', hint: 'Tight suji defense, sharp riichi timing, subtle tells' },
               ]}
               onChange={(v) => setSettings({ difficulty: v })}
-            />
+            />}
+            <p className="muted" style={{ fontSize: 11, lineHeight: 1.5 }}>
+              {settings.opponentDifficulty === 'uniform'
+                ? 'Override execution for practice. All Special rules stay active; their estimated difficulty describes the character defaults.'
+                : 'Regulars use their listed level. Special opponents have estimated strength in their descriptions, not a higher difficulty tier.'}
+            </p>
           </div>
         </div>
+      </div>
+
+      <div className="card stack">
+        <h3 style={{ margin: 0 }}>Your lineup</h3>
+        <div className="lineup-summary">
+          {OPPONENT_POSITIONS.map(({ seat, label }) => {
+            const id = opponents[seat - 1];
+            const p = id ? personalityById(id) : null;
+            const difficulty = p ? rosterDifficulty({ ...p, difficulty: opponentDifficulty(p, settings) }) : null;
+            return <div className="lineup-seat" key={seat}>
+              <span className="lineup-position">{label}</span>
+              <span className="lineup-name"><strong>{p?.name ?? 'Empty seat'}</strong>
+                {p?.special && <span className="lineup-estimate">Estimated difficulty: {p.special.estimatedDifficulty}</span>}
+              </span>
+              {difficulty && <span className={`level level-${difficulty}`}>{DIFFICULTY_LABEL[difficulty]}</span>}
+            </div>;
+          })}
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => go('opponents')}>Edit seats & characters</button>
       </div>
 
       <div className="card stack">
@@ -146,7 +184,7 @@ export default function TableSettingsScreen() {
       </div>
 
       <div className="start-bar">
-        <button className="btn btn-primary" onClick={startMatch}>Start Match</button>
+        <button className="btn btn-primary" disabled={!opponents.every(Boolean)} onClick={startMatch}>Start Match</button>
       </div>
     </div>
   );

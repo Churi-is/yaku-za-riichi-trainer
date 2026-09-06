@@ -12,6 +12,22 @@ Browser-based single-player riichi mahjong trainer:
 
 No backend, no accounts, no multiplayer, nothing persisted between sessions.
 
+## Choose your table
+
+Play against **22 Yakuza / Like a Dragon-inspired characters**: six Easy,
+six Medium, six Hard, and four **Special** opponents. Specials have a separate
+label and estimated difficulty in their descriptions—not a tier above Hard.
+Select a seat on the small table, then a character—or drag their card into place. Seated characters swap places; clearing
+one seat never shifts the others. Search, level filters, and quick table presets
+help you build a lineup.
+
+Characters use their own difficulty by default, with an optional uniform
+practice level in Table Settings. Distinct preferences cover calls, dora,
+flushes, pairs, kans, defense, and final-round position. Specials add Nugget's
+self-sabotage, Mr. Shakedown's mangan minimum, Komaki's ron-only counters, and
+Pocket Circuit Fighter's alternating racing gears. All bots use public
+information only. See [`docs/BOTS.md`](docs/BOTS.md) for the roster and logic.
+
 ## Getting started
 
 ```bash

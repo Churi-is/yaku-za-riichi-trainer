@@ -319,3 +319,9 @@
 @media (prefers-reduced-motion: reduce) {
   .board.spotlit .tile-focus { animation: none; }
 }
+
+/* A visible rule/status, never a read of a concealed hand. */
+.special-bot-status {
+  margin-top: 3px; color: #c7b3ec; font-size: 8.5px; line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
