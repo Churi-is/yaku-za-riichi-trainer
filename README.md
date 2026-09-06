@@ -8,13 +8,16 @@ Browser-based single-player riichi mahjong trainer:
   two-han minimum toggle.
 - **The Dojo** — a structured course taught on the real game table, where
   every lesson is a scripted, playable position with spotlights, a coach card,
-  and tile-tap or judgement drills. It runs in two tracks:
+  and tile-tap or judgement drills. It runs in three tracks:
   - **Basics** — a gentle on-ramp for players who have never touched mahjong:
     the tiles, a turn of play, sets and the pair, tenpai and waits, the common
     yaku, riichi, calling, dora and scoring, and furiten.
   - **Strategy** — tile efficiency and judgement (the five-block method,
     pursuing yaku, riichi timing, defence, calling), structured on *Riichi
     Book I* by Daina Chiba.
+  - **Yaku Codex** — a reference through every yaku the game recognises, from
+    the one-han luck yaku and everyday shapes to the flushes and yakuman limit
+    hands, each with recognition drills on complete example hands.
 
 No backend, no accounts, no multiplayer, nothing persisted between sessions.
 

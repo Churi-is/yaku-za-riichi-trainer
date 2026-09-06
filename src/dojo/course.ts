@@ -101,7 +101,7 @@ export interface Chapter {
   lessons: Lesson[];
 }
 
-export type TrackId = 'basics' | 'strategy';
+export type TrackId = 'basics' | 'strategy' | 'yaku';
 
 export interface Track {
   id: TrackId;
@@ -113,6 +113,7 @@ export interface Track {
 
 import { BASICS_CHAPTERS } from './basics';
 import { STRATEGY_CHAPTERS } from './strategy';
+import { YAKU_CODEX_CHAPTERS } from './yakucodex';
 
 /**
  * The two tracks in teaching order. Basics is the on-ramp for a complete
@@ -132,6 +133,13 @@ export const TRACKS: Track[] = [
     kanji: '戦略',
     blurb: 'The original course, structured on Riichi Book I: tile efficiency, yaku, riichi timing, defence, and calling — taught on playable positions.',
     chapters: STRATEGY_CHAPTERS,
+  },
+  {
+    id: 'yaku',
+    title: 'Yaku Codex',
+    kanji: '役一覧',
+    blurb: 'A reference through every yaku in the game — the one-han luck yaku, the everyday shapes, the two-han hands, the flushes, and the yakuman limit hands — each with recognition drills.',
+    chapters: YAKU_CODEX_CHAPTERS,
   },
 ];
 

@@ -85,8 +85,8 @@ describe('modes', () => {
   it('walks a lesson turn by turn and will not skip a drill', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /The Dojo/i }));
-    // The dojo is the basics track plus the strategy track.
-    expect(screen.getByText(/of 25 lessons/i)).toBeTruthy();
+    // The dojo is the basics, strategy and yaku-codex tracks.
+    expect(screen.getByText(/of 56 lessons/i)).toBeTruthy();
     expect(screen.getByText('Basics')).toBeTruthy();
     expect(screen.getByText('Strategy')).toBeTruthy();
     // The course opens on the first basics lesson; jump into the first
@@ -128,8 +128,10 @@ describe('modes', () => {
     expect(screen.getByText('1 / 2')).toBeTruthy();
     expect(useSession.getState().completed).not.toContain('source');
     fireEvent.click(screen.getByRole('button', { name: /^Next$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^Finish$/i }));
+    // It is followed by the yaku codex, so the button advances to the next
+    // lesson (the very last lesson in the course reads "Finish").
+    fireEvent.click(screen.getByRole('button', { name: /Next lesson/i }));
     expect(useSession.getState().completed).toContain('source');
-    expect(useSession.getState().screen).toBe('dojo');
+    expect(useSession.getState().lessonId).toBe('menzen-tsumo');
   });
 });
