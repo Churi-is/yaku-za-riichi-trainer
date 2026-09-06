@@ -56,9 +56,27 @@ export const BASICS_CHAPTERS: Chapter[] = [
               'You win by arranging your fourteen tiles into four sets of three plus one pair — exactly like the hand in the first picture — AND by holding a yaku, a named pattern that makes the hand count. A complete hand with no yaku is not a win.',
               'You can win in two ways. Draw the finishing tile yourself and it is tsumo, paid by all three opponents. Or claim the finishing tile the moment somebody discards it, and it is ron, paid entirely by the player who threw it.',
             ],
+          },
+          {
+            kind: 'teach',
+            text: [
+              'Each of the four seats is named after a wind. The player who deals the hand — the dealer — is East, and going clockwise the other seats are South, West and North. The dealer and the deal rotate around the table from hand to hand.',
+              'One wind is also named the round wind, East to begin with. A wind that is either the round wind or your own seat wind is valued: holding three copies of it scores points, as you will see when yaku are explained. A wind that is neither round nor seat is worth nothing and is usually among the first tiles you discard.',
+            ],
             note: {
-              title: 'The one rule that makes it riichi',
-              text: 'If you are one tile from winning with a completely closed hand — no calls — you may declare riichi, betting a thousand points that you will finish. It is the signature move of the game and a whole strategy lesson is about it. For now just know the word.',
+              title: 'Whose wind is which',
+              text: 'If you sit South in an East round, then East is the round wind (valuable to everyone), South is your seat wind (valuable to you), and West and North are dead weight in your hand. This is why later drills ask which seat you are.',
+            },
+          },
+          {
+            kind: 'teach',
+            text: [
+              'Most of the time you build your thirteen tiles entirely from your own draws and keep them hidden from the other players. A hand you have built yourself and kept private is called a closed (or concealed) hand.',
+              'There is also a way to take a tile an opponent has just discarded, out of turn, to finish one of your sets. Taking a tile like that is called making a call, and it lays that set face-up for everyone to see. A hand that contains a call is called open. Closed hands keep all their options; open hands trade some scoring patterns for speed. Calls are taught properly later in this track.',
+            ],
+            note: {
+              title: 'One word you will keep hearing: riichi',
+              text: 'When your CLOSED hand gets to one tile from winning, you may make a declaration called riichi — the move the game is named after. It bets a thousand points that you will finish, boosts the hand’s score, and puts pressure on your opponents. A whole lesson is devoted to it; for now just know that a closed, one-tile-from-winning hand is the moment it appears.',
             },
           },
           ...drills([
@@ -121,7 +139,8 @@ export const BASICS_CHAPTERS: Chapter[] = [
             focus: 'E NN',
             text: [
               'Every kind of tile has exactly four copies. When you look at a pond and see two of a tile already discarded, only two copies are left for you.',
-              'A little vocabulary the rest of the course uses constantly. The 1s and 9s of each suit are terminals; 2 through 8 are simples; terminals and honours together are often called the outside tiles. Some tables add one red five per suit — a normal five worth a bonus tile. You can see them rendered bright red.',
+              'A little vocabulary the rest of the course uses constantly. The 1s and 9s of each suit are terminals; 2 through 8 are simples; terminals and honours together are often called the outside tiles.',
+              'Some tables add one red five per suit — an ordinary five coloured bright red that is worth bonus points when it is in a winning hand. You will meet the bonus system properly later, under dora; for now just recognise that a red five is a valuable tile rather than an error on the printing press.',
             ],
             note: {
               title: 'Honours cannot make runs',
@@ -155,7 +174,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               prompt: 'You drew the East wind, but you are South seat in an East round and already have a North pair. You are one tile from winning and this East finishes nothing. What leaves?',
               check: 'efficiency',
               options: [
-                { tile: 'E', correct: true, why: 'Three finished runs, a two-sided 78s waiting on 6s or 9s, and the North pair as your head: this hand is already tenpai. The East you drew is attached to nothing and finishes nothing, so it goes and the hand stays complete-but-one.' },
+                { tile: 'E', correct: true, why: 'Three finished runs, a two-sided 78s waiting on 6s or 9s, and the North pair as your head: this hand is already one tile from winning. The East you drew is attached to nothing, and it is neither the round wind nor your seat wind, so it is the dead weight you discard to keep the hand intact.' },
                 { tile: '8s', why: 'That breaks the two-sided wait and drops you back to one tile from a winning hand, to keep a wind that does no work. Throw the junk, keep the shape.' },
                 { tile: 'N', why: 'Your North pair is the pair every hand needs. Breaking it leaves three runs and a wait with no head — a step backwards.' },
                 { tile: '2m', why: 'Breaking a finished run while an honour tile sits detached in your hand. Sets are the hardest thing to rebuild.' },
@@ -217,7 +236,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               prompt: 'You drew the 2m. You already have three finished runs, a pair and a two-sided 78s — one tile from winning. What goes?',
               check: 'efficiency',
               options: [
-                { tile: '2m', correct: true, why: 'The 2m touches nothing: 345m is already complete and does not extend. Discarding it leaves three runs, the 88p pair and the 78s wait on 6s or 9s — a clean tenpai hand.' },
+                { tile: '2m', correct: true, why: 'The 2m touches nothing: 345m is already complete and does not extend. Discarding it leaves three runs, the 88p pair and the 78s wait on 6s or 9s — a clean hand one tile from winning.' },
                 { tile: '9m', why: 'That breaks the finished 789m run. The hand is still one tile from a win, but you smashed a complete set to keep a detached 2m — pointless destruction.' },
                 { tile: '8p', why: 'That is your only pair, the head. Break it and the hand has three runs, a wait, and nothing to act as the pair — a full step back.' },
                 { tile: '8s', why: 'That breaks the two-sided 78s wait. The detached 2m was the spare tile; breaking the shape that finishes the hand is the wrong way around.' },
@@ -346,7 +365,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               options: [
                 { label: 'Four sets and a pair that include a completed dragon triplet', correct: true, why: 'Three dragons is yakuhai — a guaranteed one han whether the hand is open or closed. You literally cannot forget to include it; as soon as the third dragon lands, the hand has a yaku.' },
                 { label: 'A closed hand one tile from winning', why: 'A closed tenpai hand can declare riichi, but it only has the yaku once you actually declare. Until then it has no yaku and cannot win.' },
-                { label: 'A hand containing several red fives', why: 'Dora — including red fives — add value to a hand that already has a yaku, but they are not a yaku themselves. Tons of dora and no yaku is a classic painful hand.' },
+                { label: 'A hand containing several red fives', why: 'Red fives and the other bonus tiles you will meet under “dora” add points to a hand that already has a yaku, but they are not a yaku themselves. A hand full of bonus tiles and no actual yaku cannot be declared — a painful trap.' },
               ],
             },
             {
@@ -420,7 +439,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               options: [
                 { label: 'A half-flush on man tiles', correct: true, why: 'Tiles a player discards are tiles they cannot use. A river full of pin and sou alongside a kept suit says the kept suit plus honours — a half-flush, the loudest tell in riichi. Your man tiles are dangerous against them; the tiles they throw are safe.' },
                 { label: 'Tanyao — an all-simples speed hand', why: 'They are keeping a whole suit including its terminals and calling triplets of honours — tanyao forbids both terminals and honours. The pattern points to a flush, not a fast simple hand.' },
-                { label: 'Nothing readable yet', why: 'Six turns of one-suit discards plus honour calls is unambiguous. Waiting to be hit is how beginners pay a mangan they were told about twice.' },
+                { label: 'Nothing readable yet', why: 'Six turns of one-suit discards plus honour calls is unambiguous. Waiting to be hit is how beginners pay for a big hand they were warned about twice.' },
               ],
             },
             {
@@ -446,60 +465,6 @@ export const BASICS_CHAPTERS: Chapter[] = [
     kanji: '実戦',
     blurb: 'Riichi, calling, dora and points, and the one safety rule that stops the bleeding.',
     lessons: [
-      {
-        id: 'declaring-riichi',
-        title: 'Riichi: the declaration that defines the game',
-        summary: 'When you can declare it, what it costs, and why you almost always should.',
-        steps: [
-          {
-            kind: 'teach',
-            text: [
-              'Riichi is the move the game is named after. If your hand is tenpai and completely closed — you have called no tiles — you may declare it by placing a thousand-point stick on the table and discarding your tile sideways.',
-              'It buys a lot: an automatic han, an extra bonus draw chance on the very next turn, and hidden bonus dora that only a riichi winner gets to reveal. It also tells the table you are one tile from winning, which itself makes opponents stop discarding freely.',
-            ],
-          },
-          {
-            kind: 'teach',
-            text: [
-              'The price is that you lock your hand. After declaring, you cannot change it — every tile you draw must simply be discarded unless it is the winning tile — and folding is no longer possible. Staying silent is called dama.',
-              'The beginner rule is simple: closed and tenpai means declare. The handful of genuine exceptions — a hand already at its value ceiling, or no draws left — are judgement calls the strategy track drills. For now, declaring is the default.',
-            ],
-            note: {
-              title: 'Even a poor wait declares',
-              text: 'Beginners stay silent because their wait feels bad. The math disagrees: riichi roughly multiplies the hand’s value and pressures all three opponents, and a wait that wins less often is still worth far more when it lands. The strategy chapter proves it.',
-            },
-          },
-          ...drills([
-            {
-              turn: 'Turn 1',
-              prompt: 'What must be true of your hand to declare riichi?',
-              options: [
-                { label: 'You are tenpai and your hand is completely closed', correct: true, why: 'Tenpai (one tile from winning) and concealed (no calls this hand) are the two requirements, full stop. You do not need a good wait, a dora, or a big hand — closed and ready is enough.' },
-                { label: 'You are tenpai, open or closed', why: 'Calling opens your hand and riichi belongs to closed hands only. An open tenpai hand can still win on a yaku such as tanyao or yakuhai, but it cannot declare riichi.' },
-                { label: 'You hold at least one yaku already', why: 'Riichi is itself the yaku. A closed hand with no other pattern but riichi is perfectly legal — that is the most common declaration there is.' },
-              ],
-            },
-            {
-              turn: 'Turn 6',
-              prompt: 'You declare riichi and the very next tile you draw is a spare tile that would reshape your hand. What may you do?',
-              options: [
-                { label: 'Discard it — after riichi your hand is fixed', correct: true, why: 'Riichi locks the hand: every non-winning draw goes straight to the pond, sideways, until you win or draw the hand. That inability to adapt is exactly what the thousand-point stick and the bonuses pay you for.' },
-                { label: 'Keep it and discard something better', why: 'Not allowed once declared. Changing your hand after riichi invalidates the declaration and is treated as a mistake at the table.' },
-                { label: 'Withdraw the riichi and keep building', why: 'Riichi cannot be cancelled — the stick is spent, the declaration stands, and the side-ways tile in your pond tells the whole table so.' },
-              ],
-            },
-            {
-              turn: 'Turn 6',
-              prompt: 'Why is declaring riichi on a closed tenpai hand usually right, even with a small wait?',
-              options: [
-                { label: 'It adds a han, bonus chances, and makes opponents play safely', correct: true, why: 'The han multiplies the score, the next-turn and hidden-dora bonuses add free chances, and opponents under riichi pressure discard proven-safe tiles — which sometimes hands you exactly your wait. Silent tenpai gives away most of that.' },
-                { label: 'It guarantees you will win the hand', why: 'Nothing guarantees a win. Riichi raises the value and applies pressure; it does not change which tiles the wall holds.' },
-                { label: 'It refunds your stick if anyone else wins', why: 'The thousand-point stick stays in the pool until someone wins a hand, and it goes to that winner. You are betting it, not depositing it for later.' },
-              ],
-            },
-          ]),
-        ],
-      },
       {
         id: 'calling-tiles',
         title: 'Calling tiles: chi, pon and kan',
@@ -534,7 +499,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               options: [
                 { label: 'No — you can only chi the player on your left', correct: true, why: 'Chi is a turn-order shortcut: you may only steal the discard of the player directly before you, to your left. The player across is neither before nor after you in the turn sequence you need for a run call. Their tile could only be pounced on by pon or kan.' },
                 { label: 'Yes — any discard that completes a run can be chi-ed', why: 'Only the left player’s. The other players’ discards are yours to pon or kan — the triplet calls — but never to chi.' },
-                { label: 'Yes, but only if you have no dora', why: 'Dora has nothing to do with call direction. The direction rule is purely about seating and turn order.' },
+                { label: 'Yes, but only if you are the dealer', why: 'Being the dealer — the East seat — never changes call direction. Chi is decided purely by turn order: only the player to your left can be chi-ed, regardless of seat or round.' },
               ],
             },
             {
@@ -608,6 +573,60 @@ export const BASICS_CHAPTERS: Chapter[] = [
                 { label: 'Only the player who discarded the finishing tile', correct: true, why: 'That is ron: a win on a discard is paid in full by the player who threw it, which is why learning to throw safe tiles when someone declares riichi matters so much. A win on your own draw — tsumo — is split between all three opponents instead.' },
                 { label: 'All three opponents, split equally', why: 'That is tsumo, a self-draw win. A ron win concentrates the entire payment on the one player whose discard fed the hand.' },
                 { label: 'The player whose tile it is and the round wind holder', why: 'There is no special extra debtor. Either one player pays on a discard or all three pay on a self-draw; nothing in between.' },
+              ],
+            },
+          ]),
+        ],
+      },
+      {
+        id: 'declaring-riichi',
+        title: 'Riichi: the declaration that defines the game',
+        summary: 'When you can declare it, what it costs, and why you almost always should.',
+        steps: [
+          {
+            kind: 'teach',
+            text: [
+              'Riichi is the move the game is named after. If your hand is tenpai and completely closed — you have called no tiles — you may declare it by placing a thousand-point stick on the table and discarding your tile sideways.',
+              'It buys a lot: an automatic han, an extra bonus draw chance on the very next turn, and hidden bonus dora that only a riichi winner gets to reveal. It also tells the table you are one tile from winning, which itself makes opponents stop discarding freely.',
+            ],
+          },
+          {
+            kind: 'teach',
+            text: [
+              'The price is that you lock your hand. After declaring, you cannot change it — every tile you draw must simply be discarded unless it is the winning tile — and folding is no longer possible. Staying silent is called dama.',
+              'The beginner rule is simple: closed and tenpai means declare. The handful of genuine exceptions — a hand already at its value ceiling, or no draws left — are judgement calls the strategy track drills. For now, declaring is the default.',
+            ],
+            note: {
+              title: 'Even a poor wait declares',
+              text: 'Beginners stay silent because their wait feels bad. The math disagrees: riichi roughly multiplies the hand’s value and pressures all three opponents, and a wait that wins less often is still worth far more when it lands. The strategy chapter proves it.',
+            },
+          },
+          ...drills([
+            {
+              turn: 'Turn 1',
+              prompt: 'What must be true of your hand to declare riichi?',
+              options: [
+                { label: 'You are tenpai and your hand is completely closed', correct: true, why: 'Tenpai (one tile from winning) and concealed (no calls this hand) are the two requirements, full stop. You do not need a good wait, a dora, or a big hand — closed and ready is enough.' },
+                { label: 'You are tenpai, open or closed', why: 'Calling opens your hand and riichi belongs to closed hands only. An open tenpai hand can still win on a yaku such as tanyao or yakuhai, but it cannot declare riichi.' },
+                { label: 'You hold at least one yaku already', why: 'Riichi is itself the yaku. A closed hand with no other pattern but riichi is perfectly legal — that is the most common declaration there is.' },
+              ],
+            },
+            {
+              turn: 'Turn 6',
+              prompt: 'You declare riichi and the very next tile you draw is a spare tile that would reshape your hand. What may you do?',
+              options: [
+                { label: 'Discard it — after riichi your hand is fixed', correct: true, why: 'Riichi locks the hand: every non-winning draw goes straight to the pond, sideways, until you win or draw the hand. That inability to adapt is exactly what the thousand-point stick and the bonuses pay you for.' },
+                { label: 'Keep it and discard something better', why: 'Not allowed once declared. Changing your hand after riichi invalidates the declaration and is treated as a mistake at the table.' },
+                { label: 'Withdraw the riichi and keep building', why: 'Riichi cannot be cancelled — the stick is spent, the declaration stands, and the side-ways tile in your pond tells the whole table so.' },
+              ],
+            },
+            {
+              turn: 'Turn 6',
+              prompt: 'Why is declaring riichi on a closed tenpai hand usually right, even with a small wait?',
+              options: [
+                { label: 'It adds a han, bonus chances, and makes opponents play safely', correct: true, why: 'The han multiplies the score, the next-turn and hidden-dora bonuses add free chances, and opponents under riichi pressure discard proven-safe tiles — which sometimes hands you exactly your wait. Silent tenpai gives away most of that.' },
+                { label: 'It guarantees you will win the hand', why: 'Nothing guarantees a win. Riichi raises the value and applies pressure; it does not change which tiles the wall holds.' },
+                { label: 'It refunds your stick if anyone else wins', why: 'The thousand-point stick stays in the pool until someone wins a hand, and it goes to that winner. You are betting it, not depositing it for later.' },
               ],
             },
           ]),
