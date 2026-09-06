@@ -186,18 +186,38 @@ svg { display: block; }
 
 /* ---------- shared screen chrome ---------- */
 .screen {
-  padding: 18px 14px calc(32px + env(safe-area-inset-bottom, 0px));
+  padding: 18px 14px 14px;
   padding-top: calc(18px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   max-width: 1000px; margin: 0 auto;
-  height: 100%; overflow-y: auto; overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  height: 100%;
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
 .screen-narrow { max-width: 720px; }
+/* Everything above a sticky footer scrolls inside .screen-body; the footer
+   (start bar) is a flex sibling, so it can never cover scroll content. */
+.screen-body {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
+}
 .screen-head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding-bottom: 10px; margin-bottom: 14px;
+  padding-bottom: 10px; margin-bottom: 14px; flex: none;
   border-bottom: 1px solid var(--hairline);
 }
 .screen-head h1 { margin: 0; font-size: clamp(19px, 5vw, 26px); }
 .screen-head .kan { color: var(--gold-dim); font-size: 0.75em; margin-left: 8px; }
-@media (min-width: 720px) { .screen { padding: 26px 22px 44px; } }
+/* A start-bar used to be sticky INSIDE the scroller, where its stuck footprint
+   overlapped the last card. As a flex footer it simply sits below the scroll
+   region and reserves no negative margin. */
+.start-bar {
+  flex: none; position: static;
+  margin: 14px 0 0; padding: 0;
+  background: none; border-top: 0;
+}
+.start-bar .btn { width: 100%; font-size: 16px; min-height: 50px; }
+@media (min-width: 760px) {
+  .screen { padding: 26px 22px; padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+}

@@ -50,18 +50,18 @@ export default function PauseMenu({ onResume, onQuitToMenu }: PauseMenuProps) {
             <li><span className="lg lg-draw" aria-hidden="true" />The gold line marks the tile you just drew</li>
             <li><span className="lg lg-cube" aria-hidden="true" />The centre cube shows each seat&apos;s wind; the lit one is to act</li>
           </ul>
-          <ul className="legend">
+          <ul className="legend legend-keys">
             <li>
               <span className="pos-key" aria-hidden="true">▼ ▶ ▲ ◀</span>
-              Seat positions on the score strip, in fixed order: you (bottom), right, across, left
+              <span>Seat positions on the score strip, in fixed order: you (bottom), right, across, left</span>
             </li>
             <li>
               <span className="pos-key" aria-hidden="true">残 69</span>
-              Tiles left in the live wall
+              <span>Tiles left in the live wall</span>
             </li>
             <li>
               <span className="pos-key jp" aria-hidden="true">振聴</span>
-              Furiten: ron is blocked for that seat — a wait of theirs is in their own pond
+              <span>Furiten: ron is blocked for that seat — a wait of theirs is in their own pond</span>
             </li>
           </ul>
         </div>

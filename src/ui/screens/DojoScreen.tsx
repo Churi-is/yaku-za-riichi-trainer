@@ -22,12 +22,13 @@ export default function DojoScreen() {
   const next = ALL_LESSONS.find((x) => !completed.includes(x.lesson.id));
 
   return (
-    <div className="screen screen-narrow stack">
+    <div className="screen screen-narrow">
       <div className="screen-head">
         <h1>The Dojo<span className="kan jp">道場</span></h1>
         <button className="btn btn-ghost btn-sm" onClick={() => go('menu')}>← Menu</button>
       </div>
 
+      <div className="screen-body stack">
       <div className="card stack" style={{ gap: 10 }}>
         <div className="row spread" style={{ margin: 0, alignItems: 'baseline' }}>
           <strong style={{ fontSize: 15 }}>{done} of {total} lessons</strong>
@@ -101,6 +102,7 @@ export default function DojoScreen() {
           </section>
         );
       })}
+      </div>
     </div>
   );
 }

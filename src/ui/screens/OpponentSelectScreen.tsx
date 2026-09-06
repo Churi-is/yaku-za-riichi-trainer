@@ -45,39 +45,41 @@ export default function OpponentSelectScreen() {
   };
 
   return (
-    <div className="screen screen-narrow stack">
+    <div className="screen screen-narrow">
       <div className="screen-head">
         <h1>Choose Your Table<span className="kan jp">対戦相手</span></h1>
         <button className="btn btn-ghost btn-sm" onClick={() => go('menu')}>← Menu</button>
       </div>
 
-      <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-        Pick three opponents. Seats fill in the order you tap them: right, across, then left.
-        {' '}When all three seats are taken, tapping a fourth player swaps out the one chosen longest ago —
-        tap a seated player to remove them instead.
-      </p>
+      <div className="screen-body stack">
+        <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+          Pick three opponents. Seats fill in the order you tap them: right, across, then left.
+          {' '}When all three seats are taken, tapping a fourth player swaps out the one chosen longest ago —
+          tap a seated player to remove them instead.
+        </p>
 
-      <div className="roster">
-        {PERSONALITIES.map((p) => {
-          const seat = seatLabel(p.id);
-          return (
-            <button
-              type="button"
-              key={p.id}
-              className={`roster-card${seat ? ' on' : ''}`}
-              aria-pressed={seat !== null}
-              onClick={() => toggle(p.id)}
-            >
-              <span className={`arch arch-${p.archetype}`}>
-                <span className="jp">{ARCHETYPE_KANJI[p.archetype]}</span>
-                {ARCHETYPE_LABEL[p.archetype]}
-              </span>
-              <span className="who">{p.name}</span>
-              {seat && <span className="seat-tag">{seat}</span>}
-              <span className="tag">{p.tagline}</span>
-            </button>
-          );
-        })}
+        <div className="roster">
+          {PERSONALITIES.map((p) => {
+            const seat = seatLabel(p.id);
+            return (
+              <button
+                type="button"
+                key={p.id}
+                className={`roster-card${seat ? ' on' : ''}`}
+                aria-pressed={seat !== null}
+                onClick={() => toggle(p.id)}
+              >
+                <span className={`arch arch-${p.archetype}`}>
+                  <span className="jp">{ARCHETYPE_KANJI[p.archetype]}</span>
+                  {ARCHETYPE_LABEL[p.archetype]}
+                </span>
+                <span className="who">{p.name}</span>
+                {seat && <span className="seat-tag">{seat}</span>}
+                <span className="tag">{p.tagline}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="start-bar">

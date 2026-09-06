@@ -81,12 +81,13 @@ export default function TableSettingsScreen() {
   };
 
   return (
-    <div className="screen screen-narrow stack">
+    <div className="screen screen-narrow">
       <div className="screen-head">
         <h1>Table Settings<span className="kan jp">ルール</span></h1>
         <button className="btn btn-ghost btn-sm" onClick={() => go('opponents')}>← Opponents</button>
       </div>
 
+      <div className="screen-body stack">
       <div className="card">
         <div className="settings-grid">
           <div>
@@ -141,6 +142,7 @@ export default function TableSettingsScreen() {
         <p className="muted" style={{ fontSize: 12, margin: 0 }}>
           A reminder of what you selected — not a how-to. Adjust anything above before you start.
         </p>
+      </div>
       </div>
 
       <div className="start-bar">
