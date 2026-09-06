@@ -169,8 +169,34 @@ export default function LessonScreen() {
     return held.filter((t) => drillChoiceKinds.has(kindOf(t)));
   }, [table, drillChoiceKinds]);
 
+  // Drill options are stored with the correct answer first; display them in a
+  // deterministic, per-question order so position is never the signal. The
+  // order is seeded from the lesson id and step index, so it stays stable
+  // across re-renders and after answering (no reshuffling under the player),
+  // but two different questions almost never share it.
+  const orderedOptions = useMemo(() => {
+    const opts = step.options ?? [];
+    const seed = `${lesson.id}#${at}`;
+    let h = 2166136261;
+    for (let i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    let rand = h >>> 0;
+    const rnd = () => {
+      rand = (Math.imul(rand, 1664525) + 1013904223) >>> 0;
+      return rand / 4294967296;
+    };
+    const idx = opts.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) {
+      const j = Math.floor(rnd() * (i + 1));
+      [idx[i], idx[j]] = [idx[j], idx[i]];
+    }
+    return idx.map((i) => opts[i]);
+  }, [step.options, lesson.id, at]);
+
   const answered = picked !== null;
-  const chosen = answered ? step.options?.[picked!] : null;
+  const chosen = answered ? orderedOptions[picked!] : null;
   const isTileDrill = step.kind === 'drill' && (step.options ?? []).some((o) => o.tile);
   const blocked = step.kind === 'drill' && !answered;
   const collapsed = !wide && cardCollapsed;
@@ -225,7 +251,7 @@ export default function LessonScreen() {
   /** Tapping a tile on the felt answers a discard drill. */
   const tapTile = (tile: TileId | null) => {
     if (tile === null || !isTileDrill || answered) return;
-    const i = (step.options ?? []).findIndex(
+    const i = orderedOptions.findIndex(
       (o) => o.tile && kindOf(parseHand(o.tile)[0]) === kindOf(tile),
     );
     if (i < 0) {
@@ -405,7 +431,7 @@ export default function LessonScreen() {
                   )}
                   {(!isTileDrill || answered) && (
                     <div className="drill-options">
-                      {(step.options ?? []).map((o, i) => {
+                      {orderedOptions.map((o, i) => {
                         const state = !answered ? '' : o.correct ? ' right' : i === picked ? ' wrong' : ' dim';
                         return (
                           <button
@@ -423,7 +449,7 @@ export default function LessonScreen() {
                   )}
                   {answered && (
                     <div className="drill-why">
-                      {(step.options ?? []).map((o, i) => (
+                      {orderedOptions.map((o, i) => (
                         <p key={i} className={o.correct ? 'why right' : i === picked ? 'why wrong' : 'why'}>
                           <strong>{o.correct ? '✓' : i === picked ? '✕' : '·'}</strong> {o.why}
                         </p>

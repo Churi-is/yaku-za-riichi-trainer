@@ -880,11 +880,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              prompt: 'What is required to score sankantsu?',
+              prompt: 'A hand reaches the finish with three four-of-a-kind melds, each formed by declaring a kan and taking a replacement from the dead wall. What is it?',
               options: [
-                { label: 'Three declared kans (four-of-a-kind quads) in the same hand', correct: true, why: 'Sankantsu counts the number of quads: three kans, however made — closed shouminkan-style additions or open promotions — earns the two han. Each kan also draws a dead-wall replacement.' },
-                { label: 'Three concealed triplets', why: 'That is sanankou, a different two-han yaku. Sankantsu is specifically about kans (quads), not triplets.' },
-                { label: 'Three ponned triplets', why: 'Three pons contribute nothing like sankantsu; that would tend toward toitoi. Only four-of-a-kind kan declarations count.' },
+                { label: 'Sankantsu — three quads', correct: true, why: 'Three declared kans in one hand, however they were formed, is sankantsu for two han. Each kan pulls its own dead-wall replacement, which is part of why reaching three is so unusual.' },
+                { label: 'Sanankou — three concealed triplets', why: 'Sanankou counts self-drawn TRIPLETS; this hand has three full four-of-a-kind KAN declarations, which is a different pattern entirely.' },
+                { label: 'Toitoi — all triplets', why: 'Three pons alone would lean toward toitoi, but three four-of-a-kind quads satisfy the specific sankantsu count, which scores separately.' },
               ],
             },
             {
@@ -1658,11 +1658,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              prompt: 'What defines suukantsu?',
+              prompt: 'A player’s hand finishes with four separate declared quads. The table has had to draw a replacement tile after each one. Which limit hand is this?',
               options: [
-                { label: 'Four declared kan quads in the same hand', correct: true, why: 'Suukantsu is simply the maximum four kans in one hand — four different kinds each held as a four-of-a-kind with a dead-wall replacement drawn. That many quads in a single hand is a yakuman limit event.' },
-                { label: 'Four concealed triplets', why: 'Four self-drawn triplets is suuankou, a different yakuman. Suukantsu is about KAN quads (four copies each), and those are commonly promoted open.' },
-                { label: 'Four triplets of the same number across suits', why: 'There are only three suits, so that arrangement cannot reach four groups. Matching triplet ranks is sanshoku doukou; four quads is suukantsu.' },
+                { label: 'Suukantsu — four kans', correct: true, why: 'Four different kinds each held as a four-of-a-kind, each declared as a kan with its dead-wall replacement, is suukantsu — a yakuman. Quads that numerous in one hand are a table-stopping event.' },
+                { label: 'Suuankou — four concealed triplets', why: 'Suuankou is about self-drawn TRIPLETS; suukantsu is about declared KAN quads. Four full four-of-a-kind melds point to suukantsu instead.' },
+                { label: 'Sankantsu — three kans', why: 'Sankantsu stops at three quads and is worth two han. The fourth quad pushes the hand past it into the yakuman.' },
               ],
             },
             {

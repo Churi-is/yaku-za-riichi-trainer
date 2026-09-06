@@ -100,11 +100,11 @@ export const BASICS_CHAPTERS: Chapter[] = [
             },
             {
               turn: 'Turn 1',
-              prompt: 'Your hand is four sets and a pair but holds no yaku. Someone discards a tile you could finish on. What happens?',
+              prompt: 'Your hand is four sets and a pair, and a tile an opponent throws would complete it. But it contains no yaku at all. What do you do?',
               options: [
-                { label: 'Nothing — you cannot claim it', correct: true, why: 'A complete shape is necessary and not sufficient: a winning hand must also contain a yaku. With no yaku you cannot ron, and the game does not even let you declare a win on a hand that scores nothing.' },
-                { label: 'You declare ron and they pay the minimum', why: 'There is no minimum payment for a yakuless hand — it is simply not a legal win. Beginners spend whole hands building a beautiful hand that cannot be declared.' },
-                { label: 'You may declare tsumo but not ron', why: 'Tsumo and ron are just the two ways to take the finishing tile; both require a yaku. The shape and the yaku are checked at the same moment.' },
+                { label: 'You cannot declare the win — the hand scores nothing without a yaku', correct: true, why: 'A complete shape is necessary but not sufficient: the game only lets you declare a winning hand that contains a yaku. A finished-looking hand with no yaku cannot ron or tsumo, no matter how neatly it is arranged.' },
+                { label: 'You ron now, and take a smaller payout', why: 'There is no consolation payout. A hand with no yaku is not a legal win, so declaring it achieves nothing — the tile is simply not yours to claim.' },
+                { label: 'You wait and tsumo the same tile yourself', why: 'Drawing the tile does not change anything: a self-draw (tsumo) needs a yaku just as much as a ron does. The missing ingredient is a scoring pattern, not the tile’s source.' },
               ],
             },
           ]),
@@ -679,11 +679,11 @@ export const BASICS_CHAPTERS: Chapter[] = [
             },
             {
               turn: 'Turn 11',
-              prompt: 'While you are furiten, in which way can you still legitimately win the hand?',
+              prompt: 'You are furiten, and the hand is not going to change shape now. How can it still be won?',
               options: [
-                { label: 'By drawing the finishing tile yourself (tsumo)', correct: true, why: 'Furiten only forbids claiming another player’s discard. Drawing into your own wait is your own tile, and tsumo still scores. This is also why declaring riichi while furiten is playable but risky: you can no longer fold and may only self-draw.' },
-                { label: 'By claiming the finishing tile from any player as usual', why: 'That ron is exactly what furiten blocks. The rule exists so players cannot wait on a tile after already throwing it away.' },
-                { label: 'By calling chi or pon to change the hand', why: 'If you are tenpai and waiting, calls are not available on your wait, and opening would not clear the furiten on a tenpai hand. Only a drawn win or a genuinely changed wait helps.' },
+                { label: 'Draw the finishing tile from the wall on your own turn', correct: true, why: 'Furiten only forbids taking someone else’s discard. The tile you draw yourself is always fair, so a furiten hand can still win by self-draw (tsumo) — which is exactly why riichi while furiten is playable but risky, since you can only win on your own draws and can no longer fold.' },
+                { label: 'Claim it on a discard from the player on your right only', why: 'No opponent’s discard can be claimed by a furiten hand — the restriction applies to every player at the table, not just some seats. The only route left is your own draw.' },
+                { label: 'Call a pon to change the wait, then ron', why: 'Opening the hand does not clear furiten, and a tenpai wait cannot be ponned into shape. Calls do not rescue a furiten hand.' },
               ],
             },
             {
