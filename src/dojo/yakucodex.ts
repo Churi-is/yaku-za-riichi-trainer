@@ -65,19 +65,19 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Why does an open hand that self-draws NOT score menzen tsumo?',
+              prompt: 'You called a pon early on, then later draw your own winning tile. The menzen tsumo bonus is NOT added to your score. Why not?',
               options: [
-                { label: 'Menzen means “closed” — the yaku only exists for concealed hands', correct: true, why: '“Menzen” literally means the hand stays closed (you have called no tiles). Self-drawing an open hand is still a tsumo win, but the one-han menzen-tsumo bonus is a closed-hand privilege, like pinfu and riichi.' },
-                { label: 'Open hands cannot win on a self-draw', why: 'Open hands win on self-draws all the time — tsumo has nothing to do with being open or closed. Only the menzen bonus requires a concealed hand.' },
-                { label: 'The dealer cancels it', why: 'Seat and round never cancel a yaku. The only requirement is that the hand is closed when it wins.' },
+                { label: 'The bonus belongs to closed hands — calling a pon opened the hand, so the self-draw bonus is gone', correct: true, why: '“Menzen” means concealed. The extra han is the reward for building the whole hand yourself and drawing the win; once you take any call, the hand is open and that bonus no longer applies, even though the win itself was self-drawn.' },
+                { label: 'An open hand cannot win on a self-draw at all', why: 'Open hands win on self-draws all the time — tsumo has nothing to do with being open. You lost only the menzen bonus, not the win.' },
+                { label: 'Self-draw bonuses only count in the first few turns', why: 'There is no turn limit on menzen tsumo; it depends solely on the hand being closed when it wins, not on timing.' },
               ],
             },
             {
-              prompt: 'Closed tenpai, and the tile that completes your hand comes from the player on your right as a discard. Do you get menzen tsumo?',
+              prompt: 'Your hand is fully closed and tenpai, and the player on your right throws the exact tile you are waiting on. You declare ron. Do you also get menzen tsumo?',
               options: [
-                { label: 'No — winning on a discard is ron, not tsumo', correct: true, why: 'Menzen tsumo specifically rewards drawing the tile yourself. A win on someone else’s discard is a ron win: your hand is still closed (so riichi and pinfu are intact), but there is no self-draw han.' },
-                { label: 'Yes — the hand is still closed', why: 'Closed keeps riichi, pinfu and the other concealed yaku, but menzen tsumo is about the source of the winning tile, not the openness of the hand. A discard win is ron.' },
-                { label: 'Yes, but only half a han', why: 'Yaku do not award fractions. It is one han on a self-draw and zero han on a discard win; there is no middle value.' },
+                { label: 'No — you won on a discard, and menzen tsumo requires drawing the tile yourself', correct: true, why: 'Menzen tsumo rewards a SELF-drawn win with a closed hand. The hand here is closed, but the winning tile came from another player, so it is a ron: riichi and pinfu survive, but the self-draw han does not.' },
+                { label: 'Yes — a completely closed hand is all that menzen tsumo requires', why: 'Being closed is necessary but not sufficient; the win must also be a self-draw. “Closed” and “self-drawn” are two separate conditions and this hand meets only one.' },
+                { label: 'No — discards from the player on your right cannot be won on', why: 'You absolutely can ron the player on your right (only chi is limited to the left player). The reason there is no menzen tsumo is that the win was a discard, not whose discard it was.' },
               ],
             },
           ]),
@@ -127,11 +127,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'You declare riichi, then an opponent calls a pon, and you win on your following draw. Do you score ippatsu?',
+              prompt: 'You declare riichi. The player after you pons a tile, and then on your next turn you draw your winning tile. Do you get ippatsu?',
               options: [
-                { label: 'No — a call between the declaration and the win breaks ippatsu', correct: true, why: 'Ippatsu means the win comes immediately after the declaration, on the first draw or discard with nothing in between. Any call by anyone resets that window; you can still win and keep riichi, but the ippatsu bonus is gone.' },
-                { label: 'Yes — ippatsu depends only on your own hand', why: 'Ippatsu is sensitive to the whole table: it is the “one-shot” bonus, and a call from anyone interrupts the shot. Your riichi survives; the bonus does not.' },
-                { label: 'Yes, but it is halved', why: 'Ippatsu is all-or-nothing. Either the win is the very next one after the declaration with no call, or the bonus does not apply at all.' },
+                { label: 'No — the opponent’s pon broke the immediate-win window before your draw', correct: true, why: 'Ippatsu rewards a win on the very next turn with nothing interrupting it. A call by anyone resets that clock, so even though you drew the win yourself on the following turn, the pon in between means there is no ippatsu.' },
+                { label: 'Yes — you drew the win on your first draw after declaring, which is exactly ippatsu', why: 'It would be ippatsu if that draw truly followed the declaration uninterrupted. But an opponent’s call counts as an interruption, so “my first draw” after a call is not the clean first draw the bonus requires.' },
+                { label: 'Yes — calls by other players do not affect your own ippatsu', why: 'Ippatsu reads the whole table, not just your hand. A pon or chi by anyone between your declaration and your win cancels the one-shot bonus; only riichi itself is unaffected by their call.' },
               ],
             },
           ]),
@@ -178,11 +178,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'How much are haitei and houtei worth, and do they need a particular hand shape?',
+              prompt: 'Your plain hand has tanyao for one han, and you draw the very last tile of the wall to win. What does winning on that last tile add?',
               options: [
-                { label: 'One han each, and no shape at all — they depend only on timing', correct: true, why: 'They are timing yaku: the bonus is for winning on the last tile, not for how the tiles are arranged. The hand still needs a normal yaku to win; haitei/houtei add one han on top and stack freely.' },
-                { label: 'Two han each, and require an all-simples hand', why: 'They are one-han luck yaku and have no tanyao requirement — an all-terminals last-tile win scores haitei or houtei just the same.' },
-                { label: 'They are yakuman on the final tile', why: 'Yakuman are the rare mega-hands like daisangen and kokushi. Winning on the last tile is a nice one-han bonus, never a yakuman.' },
+                { label: 'One more han (haitei) — last-tile timing is a bonus on top of whatever yaku you already have', correct: true, why: 'Haitei and houtei are timing yaku worth one han, with no shape requirement of their own. The hand still needs an ordinary yaku to be legal — here tanyao provides it — and the last-tile bonus simply adds on.' },
+                { label: 'Nothing — the last tile only matters for a limit hand', why: 'The last tile carries its own one-han bonus on any winning hand, not just a big one. Timing, not size, triggers it.' },
+                { label: 'It turns the tanyao into a limit hand', why: 'A timing bonus never inflates a one-han hand to yakuman; it adds a single han and leaves the hand’s other yaku exactly as they were.' },
               ],
             },
           ]),
@@ -221,19 +221,19 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'An opponent calls a fourth tile and turns a triplet into a kan. That exact tile is the one your tenpai hand is waiting on. What can you do?',
+              prompt: 'Your hand is closed and tenpai. You declare a closed kan, draw the replacement from the dead wall — and that replacement tile completes your hand. Which yaku do you score together?',
               options: [
-                { label: 'Claim it as chankan — rob the kan to win', correct: true, why: 'The added kan tile is momentarily exposed, and if it is your winning wait you may take it: that is chankan, one han, a ron win. It is one of the few ways to win on a tile that is not an ordinary discard.' },
-                { label: 'Nothing — a kan tile cannot be won on', why: 'Chankan exists precisely so you can win on that tile. The kan still completes for them, but your win takes precedence and scores chankan.' },
-                { label: 'Pon it for a triplet', why: 'You cannot call a pon off a kan declaration to build your hand; the only special claim on that tile is chankan, which requires you to be tenpai and waiting on it as your win.' },
+                { label: 'Rinshan kaihou plus menzen tsumo — the replacement is a self-draw, and the hand stayed closed', correct: true, why: 'Winning on the dead-wall tile drawn after your own kan is rinshan kaihou, one han. Because that tile is self-drawn and your hand was never opened (a closed kan keeps it concealed), menzen tsumo stacks too — a kan win can quietly carry two luck han.' },
+                { label: 'Chankan plus rinshan — winning near a kan always scores both', why: 'Chankan is a RON on an OPPONENT’s newly added kan tile, not on your own draw. You won on your own replacement tile, so there is no chankan here at all.' },
+                { label: 'Haitei raoyue — any draw late in the wall is the last-tile yaku', why: 'Haitei is the final tile of the LIVE wall. A dead-wall replacement after a kan is rinshan, even when it happens near the end, and the two do not coincide.' },
               ],
             },
             {
-              prompt: 'Which best describes how rinshan and chankan differ?',
+              prompt: 'You are tenpai. Your left opponent adds a fourth tile and promotes an open triplet to a kan — and that exact tile is the one your hand is waiting on. What are you entitled to?',
               options: [
-                { label: 'Rinshan is your self-draw after your kan; chankan is a ron on an opponent’s kan tile', correct: true, why: 'Rinshan rewards your own kan: you draw the dead-wall replacement and win. Chankan punishes someone else’s kan: the fourth tile they reveal is the tile you were waiting on. One is a tsumo, the other a ron; both are one han.' },
-                { label: 'They are two names for the same yaku', why: 'They are distinct: one is a self-draw from the dead wall, the other a claim on an opponent’s added tile. The tile source is opposite.' },
-                { label: 'Chankan is worth two han, rinshan one', why: 'Both are one han. Rinshan kaihou and chankan are each standard one-han luck yaku.' },
+                { label: 'Call chankan: that newly exposed kan tile is your winning ron tile, for one han', correct: true, why: 'The fourth tile added to make a kan is momentarily exposed, and if it is your wait you may claim it as a chankan win — a ron on the kan tile. (Had YOU declared a kan and then won on your own dead-wall replacement, that would instead be rinshan.)' },
+                { label: 'Call rinshan, because a kan was declared', why: 'Rinshan applies to the player who declared the kan winning on THEIR OWN dead-wall replacement draw. Here you are winning on the opponent’s exposed tile, which is chankan.' },
+                { label: 'Nothing — a tile turned into a kan can no longer be won on', why: 'That is the opposite of the chankan rule: the added kan tile is precisely the moment a tenpai hand can steal it. The call is legal and scores.' },
               ],
             },
           ]),
@@ -345,11 +345,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Why does an open pinfu-shaped hand score no pinfu?',
+              prompt: 'You melded an early chi and your hand is now four runs and a plain 55s pair, with a two-sided wait. You expected pinfu, but your score has none. What happened?',
               options: [
-                { label: 'Pinfu is a closed-only yaku — a call forfeits it', correct: true, why: 'Like riichi and menzen tsumo, pinfu belongs to concealed hands. The whole point is a perfectly clean, closed no-fu hand; melding opens it and the yaku disappears, even if the four runs remain.' },
-                { label: 'Open hands cannot contain four runs', why: 'An open hand can certainly be four runs and a pair — that shape is common. It just scores tanyao or yakuhai instead, never pinfu.' },
-                { label: 'The pair stops being plain after a call', why: 'The pair does not change; the openness does. Pinfu is a closed-hand yaku regardless of which tile the pair is made of.' },
+                { label: 'Pinfu is closed-only — that one chi opened the hand and forfeited it', correct: true, why: 'Pinfu rewards a perfectly concealed, zero-fu hand. The very first meld breaks that: even though the four runs, plain pair and two-sided wait are all still there, the chi introduced fu and an open hand can never be pinfu. The same hand closed would score it.' },
+                { label: 'An open hand can no longer hold four runs and a pair', why: 'Open four-runs-and-a-pair hands are common — a chi just supplies one of the runs. The shape survived; it is the closed/no-fu condition that the meld violated, not the arrangement of sets.' },
+                { label: 'The chi turned the pair into a valued pair', why: 'Melding does not change which tile the pair is made of, and a 5s pair was never valued anyway. The disqualifier is openness itself, not any change to the pair.' },
               ],
             },
           ]),
@@ -391,11 +391,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'You call a chi to finish a hand made entirely of 2-through-8 tiles. Is tanyao available?',
+              prompt: 'You call a chi to finish a hand made entirely of 2-through-8 tiles, and you have no dragon or wind triplet. Does the hand still win?',
               options: [
-                { label: 'Yes — with kuitan on, an all-simples open hand scores tanyao', correct: true, why: 'Tanyao is the main yaku that survives opening. This table plays with open tanyao (kuitan), so an all-simples hand that calls its way to tenpai still wins on one han — the standard cheap, fast open hand.' },
-                { label: 'No — tanyao is closed-only like pinfu', why: 'Pinfu and riichi are closed-only; tanyao is the exception. With kuitan enabled, an all-simples open hand is exactly the legal melded win.' },
-                { label: 'Yes, but only as a yakuhai triplet', why: 'There are no honours here, so there is no yakuhai. The yaku is tanyao, earned from the tiles’ ranks, not from any triplet.' },
+                { label: 'Yes — all simples is tanyao, and tanyao is the yaku that survives being open', correct: true, why: 'Tanyao is the main shape yaku that works after a call. On a table with open tanyao (kuitan), an all-simples hand can call its way to a win with no dragon or wind needed — that is exactly the standard cheap, fast melded hand.' },
+                { label: 'No — an open hand must contain a dragon or wind triplet or it is illegal', why: 'Open hands need a yaku, but tanyao itself is that yaku; it does not have to be yakuhai. An all-simples open hand is legal precisely because tanyao survives melding.' },
+                { label: 'No — tanyao is closed-only like pinfu and riichi', why: 'Pinfu and riichi are the closed-only ones; tanyao is the exception that scores open. The chi is fine here because every tile is still a simple.' },
               ],
             },
             {
@@ -499,11 +499,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Can you win chiitoitsu on an open hand after calling?',
+              prompt: 'You are collecting six pairs toward chiitoitsu, then an opponent discards a tile that would let you pon a triplet. If you take it, can you still finish the seven-pairs hand?',
               options: [
-                { label: 'No — chiitoitsu is strictly closed', correct: true, why: 'A call breaks the concealed structure and chiitoitsu cannot be melded. It is a closed-only yaku; the moment you pon or chi, the seven-pairs path is gone.' },
-                { label: 'Yes, it stacks with open tanyao', why: 'Tanyao can be opened; chiitoitsu cannot. There is no open seven-pairs hand.' },
-                { label: 'Yes, but for one fewer han', why: 'Chiitoitsu is not reduced when opened — it simply ceases to exist. It is two han closed and impossible open.' },
+                { label: 'No — the pon opens the hand and chiitoitsu is closed-only, so that path is gone', correct: true, why: 'Chiitoitsu cannot be melded: a single call breaks the concealed seven-pairs structure. Once you pon, the hand is open and the two-han seven-pairs yaku is no longer available; you would have to rebuild toward an open hand like toitoi or tanyao.' },
+                { label: 'Yes — the pon just turns one pair into a triplet and the hand keeps scoring seven pairs', why: 'A seven-pairs hand cannot contain a triplet at all, and a call opens the hand besides. Poning does not simply upgrade a pair; it destroys the chiitoitsu shape.' },
+                { label: 'Yes — tanyao survives being open, so chiitoitsu does too', why: 'Tanyao is unusual in staying valid on an open hand; chiitoitsu is not. Each yaku has its own rules, and seven pairs strictly requires a concealed hand.' },
               ],
             },
             {
@@ -553,11 +553,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Why do honour triplets make a toitoi hand especially valuable?',
+              prompt: 'Your toitoi hand contains a white-dragon triplet, a green-dragon triplet and a round-wind East triplet. Before counting dora, how big is it?',
               options: [
-                { label: 'Each dragon or valued-wind triplet adds its own yakuhai han', correct: true, why: 'Toitoi’s two han is just the start. Every triplet that is a dragon or a valued wind is independently yakuhai, so three honour triplets inside toitoi can total five han or more even on an open hand.' },
-                { label: 'Honour triplets are worth double as triplets', why: 'There is no special triplet multiplier. The value comes from yakuhai stacking — each valued honour triplet is its own separate one-han yaku.' },
-                { label: 'They make the hand closed', why: 'Honour triplets are usually made by pon, which opens the hand. Toitoi is open-legal; the honour value comes from yakuhai, not from being closed.' },
+                { label: 'Five han — two for toitoi plus one yakuhai han for each of the three valued triplets', correct: true, why: 'Toitoi gives two han, and every dragon or valued-wind triplet inside it is independently yakuhai for another han. Here that is two plus three, so the open hand is already five han before dora — the stacking is why honour-heavy toitoi grows quietly large.' },
+                { label: 'Two han — toitoi is a flat bonus and the triplets add nothing on top', why: 'Toitoi’s two han is only the shape; each valued honour triplet carries its own yakuhai han regardless of the surrounding yaku, so they are counted separately.' },
+                { label: 'One han — an open hand can only ever hold a single yaku', why: 'Open hands may stack as many yaku as they contain; yakuhai and toitoi coexist and add together. Opening a hand never collapses multiple yaku into one.' },
               ],
             },
             {
@@ -618,11 +618,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'How does opening the hand affect sanshoku doujun?',
+              prompt: 'You complete the matching 234 run in all three suits, but one of the three runs was taken by chi, so the hand is open. What does the three-colour pattern score?',
               options: [
-                { label: 'It stays, but drops from two han to one', correct: true, why: 'Sanshoku survives calls but loses a han — two closed, one open. That still makes it a popular open-hand target, because a single han can legalise and pay a melded hand.' },
-                { label: 'It disappears like pinfu', why: 'Pinfu is closed-only; sanshoku is not. It remains a valid yaku after melding, just reduced to one han.' },
-                { label: 'It becomes a yakuman', why: 'Opening never escalates a yaku to yakuman. The three-colour run is a modest two-han (one-han open) pattern.' },
+                { label: 'One han — sanshoku survives calls but drops from two han to one', correct: true, why: 'Sanshoku doujun is worth two closed and one open. Because you melded a run, the hand is open, so the pattern pays one han. That still matters: a single han can both legalise and pay a melded hand.' },
+                { label: 'Nothing — once you chi, a run-coordination yaku is lost like pinfu', why: 'Pinfu is the closed-only pattern; sanshoku is not. It remains a valid yaku after a call and is deliberately built by meld when the shapes line up.' },
+                { label: 'Two han — the han value of the pattern does not change after a call', why: 'Most two-han shape yaku lose a han when the hand is opened, and sanshoku does: it pays two closed and one open, so the melded version scores less.' },
               ],
             },
             {
@@ -672,11 +672,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'What distinguishes ittsu from sanshoku doujun?',
+              prompt: 'You are tenpai waiting on 456p. Your hand already holds 123p and 789p, and your pair and fourth set are in sou. Which run-coordination yaku are you one tile from?',
               options: [
-                { label: 'Ittsu is three connected runs in ONE suit; sanshoku is one run across THREE suits', correct: true, why: 'Ittsu climbs 1-to-9 inside one suit (123-456-789); sanshoku repeats one number span in all three suits (234m/234p/234s). Same broad idea of coordinating runs, opposite direction.' },
-                { label: 'They are two names for one yaku', why: 'They are separate yaku and can even coexist in a hand. The arrangement of runs is genuinely different.' },
-                { label: 'Ittsu is closed-only, sanshoku is open', why: 'Both follow the same rule: two han closed, one han open. Neither is restricted to concealed hands.' },
+                { label: 'Ittsu — drawing the 456p run completes the 1-to-9 straight inside pin', correct: true, why: '123p, 456p and 789p cover ranks 1 through 9 of a single suit, which is the ittsu straight. The give-away is two completed end runs (123 and 789) in the SAME suit waiting for the middle.' },
+                { label: 'Sanshoku doujun — the 456 run links the three suits', why: 'Sanshoku would want the same-numbered run repeated across man, pin and sou. Here all the runs climb one suit, which is the straight, not the three-colour match.' },
+                { label: 'Chanta — the 123 and 789 runs touch terminals', why: 'Chanta needs EVERY set and the pair to touch a terminal or honour, not just two runs. The hand is aimed at the 1–9 ladder (ittsu); one plain pair and sou set would not satisfy chanta.' },
               ],
             },
             {
@@ -826,11 +826,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
           },
           ...drills([
             {
-              prompt: 'What makes a triplet “concealed” (ankou) for the purposes of sanankou?',
+              prompt: 'Your hand has four triplets. Two of them were completed by ponning an opponent’s discard; the other two came together entirely from tiles you drew. How many concealed triplets (ankou) do you have?',
               options: [
-                { label: 'You formed all three copies yourself by drawing, rather than ponning', correct: true, why: 'An ankou is a triplet built entirely from your own draws; a triplet completed by calling an opponent’s discard is a pon (an open meld) and does not count. Sanankou needs three self-made triplets.' },
-                { label: 'The three tiles are hidden face-down', why: 'Tiles in your hand are always hidden; that is not the distinction. What matters is whether the third copy was drawn or taken from a discard.' },
-                { label: 'It contains a red five', why: 'Red fives are dora and have nothing to do with concealed triplets. An ankou is defined by how it was formed.' },
+                { label: 'Two — only the triplets whose third copy you drew yourself count as ankou', correct: true, why: 'A triplet is concealed only if all three copies came from your own draws. Completing it by pon from a discard makes it an open meld, so the two ponned triplets do not count. With just two ankou the hand is one short of sanankou (three), though it may still be toitoi.' },
+                { label: 'Four — a triplet is the same in the finished hand however you built it', why: 'How a triplet was formed matters: sanankou specifically counts concealed ones. A ponned triplet is exposed and can never become an ankou, even though it is still a triplet for toitoi.' },
+                { label: 'Three — sanankou always finds three concealed triplets once you have four triplets', why: 'There is no automatic upgrade. Here exactly two triplets are self-drawn; you cannot round two up to three, so sanankou is not satisfied.' },
               ],
             },
             {
@@ -888,11 +888,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Why is sankantsu so rare at the table?',
+              prompt: 'Why do players almost never actually score sankantsu, even though the rule is simple?',
               options: [
-                { label: 'Each kan needs all four copies of a tile, so three of them is a long shot', correct: true, why: 'A kan consumes all four copies of one kind and pulls a dead-wall tile. Requiring three such quads in a single hand means gathering twelve specific tiles — far rarer than any triplet-based yaku. Kans also reveal extra dora, which makes players cautious about declaring them.' },
-                { label: 'It is banned after the first round', why: 'There is no round restriction; kans and sankantsu are legal all game. The rarity is purely statistical.' },
-                { label: 'It requires a dealer-only win', why: 'Sankantsu is not seat-dependent. Any player with three declared kans in a winning hand scores it.' },
+                { label: 'Each kan uses all four copies of a tile, so three quads in one hand means collecting twelve specific tiles — and players avoid declaring kans', correct: true, why: 'A kan consumes all four copies of one kind and pulls a dead-wall replacement. Three of them in a single hand is a long statistical shot, and declaring a kan also flips extra dora indicators that can help your opponents, so experienced players call kans sparingly.' },
+                { label: 'Calling three kans ends the round early as a draw', why: 'Multiple kans do not cancel the round. The game tolerates up to four kans in a hand (the fourth completing suukantsu); rarity comes from gathering the tiles, not from the round aborting.' },
+                { label: 'Only the dealer may score a kan-based yaku', why: 'Sankantsu and suukantsu are available to every seat. Kan yaku have no dealer restriction; they are simply unlikely to occur.' },
               ],
             },
             {
@@ -1004,11 +1004,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Even though shousangen is only two han, why is it usually a big hand?',
+              prompt: 'Your hand has white and green dragon triplets plus a red-dragon pair, with two ordinary runs. A friend says “that’s only the two-han little dragons, nothing special.” What is the hand actually worth before dora?',
               options: [
-                { label: 'Its two dragon triplets each add a yakuhai han, so it starts around four han', correct: true, why: 'Shousangen contains two completed dragon triplets, each independently worth one han as yakuhai, plus its own two han. Before counting dora it is already a four-han hand, and a melded shousangen can still clear mangan.' },
-                { label: 'It is secretly worth a yakuman', why: 'Shousangen is genuinely two han; the yakuman is the full three-triplet daisangen. The size comes from stacked yakuhai, not from misclassification.' },
-                { label: 'It requires seven pairs', why: 'Shousangen is a normal four-sets-and-pair hand. The two triplets plus pair are ordinary triplet melds, not chiitoitsu.' },
+                { label: 'Around four han — two for shousangen plus one yakuhai han for each dragon triplet', correct: true, why: 'The two completed dragon triplets are each independently yakuhai, so they add two han on top of shousangen’s own two. That is four han before dora even on an open hand, which is why the “little” dragons are rarely small in payout.' },
+                { label: 'Exactly two han — shousangen is a single flat yaku and the triplets count for nothing extra', why: 'Dragon triplets always carry their own yakuhai han, inside shousangen or out. The pattern does not swallow them; the yaku are counted and added together.' },
+                { label: 'It is the yakuman daisangen because all three dragons are in the hand', why: 'Daisangen needs all three dragons as completed TRIPLETS. Here red is only a pair, so it stays shousangen — big, but not a limit hand.' },
               ],
             },
           ]),
@@ -1069,11 +1069,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Why does honitsu often pay far more than its three-han rating?',
+              prompt: 'Your man honitsu includes an East triplet (the round wind) and a white-dragon triplet, with two dora, and you win open. The flush alone would be two han open. Why is the payout much larger than that?',
               options: [
-                { label: 'Its honour triplets stack yakuhai and dora concentrate in one suit', correct: true, why: 'Honitsu commonly includes dragon or valued-wind triplets (each yakuhai), and all the dora you hold tend to be in the one suit you kept. Honitsu plus two yakuhai plus a few dora regularly reaches haneman even on an open hand.' },
-                { label: 'It is counted as a yakuman when open', why: 'Honitsu is three han closed, two open — never a yakuman. The full flush chinitsu is the bigger cousin, not honitsu.' },
-                { label: 'It triples the value of every run', why: 'There is no per-run multiplier; the extra value comes from stacked yakuhai and concentrated dora on top of the flush’s own han.' },
+                { label: 'Each honour triplet adds its own yakuhai han, and your dora tend to sit in the one suit you kept', correct: true, why: 'The East and white triplets are each yakuhai for another han, and because the hand is all man, man dora you picked up count directly. Flush plus two yakuhai plus two dora is six han — that stacking is how a “two-han open” hand clears mangan.' },
+                { label: 'Opening a half-flush upgrades it to a limit hand', why: 'Honitsu is three han closed and only two open — opening never escalates a flush to yakuman. The size here comes from the yaku stacked on it, not from any limit bonus for being melded.' },
+                { label: 'The flush multiplies the value of every run it contains', why: 'There is no per-run multiplier. Mahjong adds yaku han together rather than multiplying sets; the extra value is the stacked yakuhai and dora on top of the flush’s own han.' },
               ],
             },
           ]),
@@ -1115,11 +1115,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'What is the relationship between chinitsu and honitsu?',
+              prompt: 'Your opponent is visibly discarding only pin and sou. At first a dragon is visible in their hand, so you read half-flush. Later the dragon is gone and no honour appears at all. How does your read — and the danger — change?',
               options: [
-                { label: 'Chinitsu is the no-honour, higher version and supersedes honitsu', correct: true, why: 'Both keep to one numbered suit; honitsu permits honours (three han) and chinitsu forbids them (six). When the flush is pure the engine scores chinitsu and drops honitsu, since the strict condition implies the loose one.' },
-                { label: 'They are unrelated and can both score together', why: 'They are the same suit-commitment at two strictness levels. The pure flush replaces the half-flush rather than stacking with it.' },
-                { label: 'Honitsu is worth more', why: 'It is the reverse: the harder, no-honour chinitsu pays six han to honitsu’s three. Removing the honour options makes the hand rarer and dearer.' },
+                { label: 'They have tightened into a full flush, chinitsu: same safe suits for you, but a much bigger hand to avoid feeding', correct: true, why: 'A one-suit hand with honours is honitsu (three han); the moment no honour remains anywhere it becomes the pure chinitsu (six han). The tiles that are safe to discard do not change — pin and sou are still dead against them — but the penalty for feeding a man tile roughly doubles.' },
+                { label: 'Losing the dragon means the flush has broken and they are no longer dangerous', why: 'Discarding the dragon is a sign the hand committed harder to one suit, not that it fell apart. A flush needs no honours, so shedding them points to the higher chinitsu rather than to giving up.' },
+                { label: 'Honitsu and chinitsu both score, so the dragon they discarded cost them nothing', why: 'The two flushes are the same suit-commitment at two strictness levels and do not stack; the pure flush replaces the half-flush. Which yaku applies depends entirely on whether honours remain.' },
               ],
             },
             {
@@ -1242,11 +1242,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Can you complete kokushi musou after calling tiles?',
+              prompt: 'You are one tile from the thirteen orphans, then you pon a discarded terminal to speed it up. What effect does that call have on kokushi musou?',
               options: [
-                { label: 'No — it is strictly closed, like seven pairs', correct: true, why: 'Kokushi is a closed-only special hand; any pon or chi destroys the concealed orphan collection and the yaku. It is built solely by drawing the thirteen (plus one) terminal and honour tiles.' },
-                { label: 'Yes, ponned terminals count', why: 'An open meld cannot form part of kokushi. The hand must be concealed and contains no triplet structure to call for anyway.' },
-                { label: 'Yes, but for half value', why: 'There is no open kokushi — the yakuman requires a completely closed hand. Calling forfeits it outright.' },
+                { label: 'It destroys the yaku — kokushi is strictly closed, like chiitoitsu', correct: true, why: 'Kokushi must be completely concealed; a single pon or chi breaks it. The orphans also have no triplet structure to build by calling, so the hand is meant to be assembled tile by tile from your own draws.' },
+                { label: 'None — ponned terminals count toward the thirteen kinds', why: 'An open meld can never be part of kokushi. The winning hand has to be concealed, and a pon marks the hand as open regardless of which tile was called.' },
+                { label: 'It still wins but only as an ordinary limit hand, not yakuman', why: 'There is no partial kokushi. A hand with any call simply has no orphan yaku at all; it must find its value in ordinary open-hand patterns instead.' },
               ],
             },
           ]),
@@ -1296,11 +1296,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Why is suuankou so much rarer than toitoi?',
+              prompt: 'You hold three triplets you drew yourself, plus a pair, and you are waiting to draw the third copy that makes your fourth self-made triplet. A rival points out you could just pon the next matching discard and win faster. Why might you decline and keep drawing?',
               options: [
-                { label: 'Toitoi freely pons its third copies; suuankou must draw all of them', correct: true, why: 'Toitoi completes triplets by calling the exact tiles opponents throw, which is quick. Suuankou forbids those calls, so every triplet’s third copy has to arrive from your own draw — roughly the difference between being dealt three of a kind and waiting for it four times.' },
-                { label: 'Toitoi is the yakuman and suuankou is common', why: 'It is the reverse: suuankou is the rare concealed yakuman, toitoi the common two-han open-or-closed pattern.' },
-                { label: 'Suuankou needs seven pairs', why: 'Seven pairs is chiitoitsu. Suuankou is four triplets (plus pair) and is structurally the all-triplet hand.' },
+                { label: 'Poning the last triplet caps the hand at toitoi/sanankou; drawing it keeps the four-concealed-triplet yakuman (suuankou) alive', correct: true, why: 'Suuankou needs all four triplets formed from your own draws. A single pon makes one triplet open, dropping the hand to ordinary two-han toitoi (plus sanankou at most). Refusing the call is slow, but it is the only way to preserve the limit hand.' },
+                { label: 'Poning is illegal once you already have three triplets', why: 'Poning remains legal throughout; three triplets does not lock the hand. The cost of the pon is strategic — it gives up suuankou — not a rule against calling.' },
+                { label: 'A pon would make the hand worth less because called triplets score fewer fu', why: 'The fu difference is minor; the decisive loss is the yakuman itself. One pon changes the hand from a limit suuankou to an ordinary toitoi, which is far more than a fu adjustment.' },
               ],
             },
           ]),
@@ -1404,11 +1404,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Why are the four-wind yakuman even rarer than the three-dragon one?',
+              prompt: 'Aiming at a four-wind hand, you notice your three opponents each seem to be keeping a different wind — one holds East as their seat wind, one South, and so on. Why does that make the wind yakuman even harder to complete than daisangen?',
               options: [
-                { label: 'There are four winds to collect rather than three, and winds are scattered across seat/round value', correct: true, why: 'Daisangen needs three dragon triplets; daisuushii needs four wind triplets and shousuushi still needs three plus the pair. Wind tiles are also held as seat/round value by different players, so fewer copies ever reach the discards you can pon.' },
-                { label: 'Dragons cannot be ponned', why: 'Dragons are ponned constantly. The rarity difference is that four kinds must align rather than three, not any restriction on calling.' },
-                { label: 'They score less so people avoid them', why: 'Both are full yakuman. The rarity is statistical — collecting the whole set of winds happens far less often than collecting the three dragons.' },
+                { label: 'You need four wind triplets rather than three dragon ones, and each wind is someone’s valued seat/round tile, so copies rarely reach the discards you can pon', correct: true, why: 'Daisangen gathers three kinds nobody else has a personal reason to hold; the winds are each valuable to a particular seat, so players cling to them. Collecting all four wind triplets (or three plus a pair) means pulling tiles that opponents are least likely to throw.' },
+                { label: 'Wind tiles cannot be ponned the way dragons can', why: 'Winds are ponned exactly like dragons — triplets of honours are all called the same way. The scarcity comes from how tightly the other players hold their valued winds, not from any rule on calling.' },
+                { label: 'Wind triplets score nothing until the full yakuman forms', why: 'A valued wind triplet is yakuhai for a han just like a dragon triplet, long before any yakuman. The hand stacks value while it grows; the difficulty is the number and supply of wind tiles.' },
               ],
             },
           ]),
@@ -1458,11 +1458,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Tsuuiisou never contains runs. Why not?',
+              prompt: 'A beginner looks at a completed tsuuiisou and asks why the player never formed a “run” of winds like East-South-West. What is the correct answer?',
               options: [
-                { label: 'Runs need consecutive numbered tiles, and honours have no numbers', correct: true, why: 'A run is three consecutive ranks in a numbered suit; winds and dragons have neither suit nor rank, so they can only form triplets and pairs. An all-honour hand is therefore all triplets (toitoi) or all pairs (chiitoitsu) in structure.' },
-                { label: 'Honour runs exist but score less', why: 'There is no such thing as an honour run — “East, South, West” is not a set. Honours only ever make koutsu and pairs.' },
-                { label: 'Runs are forbidden in yakuman', why: 'Other yakuman (like daisuushii) also lack runs, but the rule is structural: honours cannot sequence. It is not a yakuman scoring rule.' },
+                { label: 'A run needs three consecutive NUMBERED ranks of one suit; winds and dragons have no rank at all, so honours can only make triplets and pairs', correct: true, why: 'Runs (sequences) exist only within a numbered suit — e.g. 2-3-4 of sou. The winds are not ordered numbers; East, South, West do not form a sequence any more than three different dragons do. That is why an all-honour hand is always triplets (toitoi) or pairs (chiitoitsu).' },
+                { label: 'Honour sequences are allowed but they are worth too little to bother with', why: 'There is no such meld as an honour run — the game offers no set for sequenced winds or dragons. It is not a matter of value; the combination simply is not a legal set.' },
+                { label: 'Yakuman hands are banned from containing runs by the limit rules', why: 'The absence of runs is structural to honours, not a yakuman restriction. Any all-honour hand — even before it becomes tsuuiisou — can only be built from triplets and pairs.' },
               ],
             },
           ]),
@@ -1512,11 +1512,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Why is chinroutou so much rarer than honroutou?',
+              prompt: 'You see one player pons dragons and winds into honroutou while another silently gathers only 1s and 9s. Both avoid middle tiles, but why is the second player chasing something far rarer?',
               options: [
-                { label: 'It forbids both simples AND honours, leaving only six terminal kinds and no value triplets', correct: true, why: 'Honroutou can use the seven honour kinds (including valuable dragons/winds that get ponned) plus terminals; chinroutou must draw solely from six terminal kinds with no yakuhai draw. Fewer kinds and less value-tile flow make the pure terminal hand far rarer and a yakuman.' },
-                { label: 'Honroutou is the yakuman, chinroutou the small one', why: 'It is the reverse: chinroutou (terminals only) is the yakuman, honroutou (terminals + honours) the two-han hand.' },
-                { label: 'Terminals are removed from the wall', why: 'Terminals are normal tiles; there are four copies of each. The rarity comes from needing all fourteen from just six kinds, with no honour triplets to anchor them.' },
+                { label: 'The all-terminal hand can use just six kinds (the 1 and 9 of each suit) with no valued honour triplets to attract tiles, while honroutou also has seven honour kinds', correct: true, why: 'Honroutou leans on dragons and winds that get ponned freely and carry yakuhai value; chinroutou must assemble fourteen tiles from only six terminal kinds with no value triplets to anchor them. That narrow pool with no “draw” for the tiles is exactly why the pure-terminal version is a yakuman and the terminal-or-honour one is only two han.' },
+                { label: 'Terminal tiles are rarer in the wall than honour tiles', why: 'Every tile kind — terminal, honour or simple — has four copies in the wall. The difference is how many kinds the hand may use and whether other players discard them, not the count per kind.' },
+                { label: 'Honroutou is the yakuman and chinroutou is the smaller hand', why: 'It is the reverse: restricting to terminals only (chinroutou) is the stricter, rarer yakuman; allowing honours as well (honroutou) is the easier two-han hand.' },
               ],
             },
           ]),
@@ -1620,11 +1620,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'Can you win chuuren poutou on an open hand?',
+              prompt: 'Your hand is building the nine-lantern shape in man — three 1s, three 9s and the middle ranks — when an opponent discards a 1m that would complete one of your terminal triplets. You could pon it. What happens to chuuren poutou if you do?',
               options: [
-                { label: 'No — it is a closed-only yakuman', correct: true, why: 'Chuuren poutou requires a concealed hand, like kokushi and suuankou. Any call opens the hand and disqualifies the pattern; it must be drawn entirely in your own tiles.' },
-                { label: 'Yes, for half value', why: 'There is no open chuuren. As a closed-only limit hand, it is simply unavailable after a call.' },
-                { label: 'Yes, if the terminal triplets are ponned', why: 'Ponned terminal triplets would open the hand and break the concealed requirement — and the middle-run core would still need to be drawn closed. No form of calling is permitted.' },
+                { label: 'The pon opens the hand and destroys the yaku — chuuren must be drawn entirely concealed, so you would have to abandon the limit hand', correct: true, why: 'Chuuren poutou is a closed-only yakuman like kokushi and suuankou. Even a single meld disqualifies it; the all-one-suit tiles would then be worth at most a flush (and a flush with ponned triplets cannot be chinitsu closed anyway). Players chasing chuuren decline calls precisely for this reason.' },
+                { label: 'It still scores, because a pon keeps the same fourteen tiles in place', why: 'Yaku look at how the hand was formed, not just its finished tiles. A pon is an open meld, and this pattern requires a concealed hand, so the identical tiles reached via a call do not qualify.' },
+                { label: 'It scores as a smaller but still valid nine-lantern hand', why: 'There is no open or reduced version of chuuren. After a call the hand is simply not the yakuman and must earn its value from ordinary open-hand yaku.' },
               ],
             },
           ]),
@@ -1666,11 +1666,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               ],
             },
             {
-              prompt: 'What changes each time a player declares a kan — relevant to why suukantsu is eventful?',
+              prompt: 'A rival across the table declares their third kan of the hand. Beyond moving toward suukantsu, what practical effect on the game should you be aware of after each kan?',
               options: [
-                { label: 'It reveals a new kan dora indicator and draws a dead-wall replacement', correct: true, why: 'Every kan flips an additional dora indicator from the dead wall (and pulls a replacement tile), so by the time four kans exist several extra dora are live. The hand is suukantsu yakuman on the quads alone regardless of that dora, but the table stakes rise with each quad.' },
-                { label: 'The wall is completely unaffected', why: 'Each kan both consumes the four copies and draws from the fourteen-tile dead wall, and reveals kan dora. The wall and dora supply change notably.' },
-                { label: 'It skips the player’s next turn', why: 'A kan does not forfeit a turn; the replacement draw lets the hand continue to fourteen and the player discards as normal.' },
+                { label: 'Each kan flips an additional dora indicator and draws a dead-wall replacement, so more dora are now live and the hand’s values can jump', correct: true, why: 'Every kan reveals a kan dora from the dead wall (and the player draws a replacement tile to stay at fourteen). By the third or fourth kan several extra dora indicators are showing, which can swell every winning hand — meaning a rival’s kans raise the stakes for the whole table, not just for them.' },
+                { label: 'A kan ends the declaring player’s turn, so they cannot win on that hand', why: 'Declaring a kan does not forfeit anything: the player draws a replacement tile and then discards as usual, remaining fully in play. The meld even counts as a strong block toward their win.' },
+                { label: 'Kans only expose tiles and have no effect on dora or the wall', why: 'A kan specifically consumes all four copies, pulls a replacement from the dead wall, and flips a new dora indicator — it changes both the wall and the live dora every time.' },
               ],
             },
             {

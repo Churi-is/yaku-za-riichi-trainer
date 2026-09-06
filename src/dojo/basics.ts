@@ -318,7 +318,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               options: [
                 { label: 'They are exactly one tile from a complete hand', correct: true, why: 'Tenpai means complete-but-one: four sets and a pair with the final tile outstanding. It is the state that lets you declare riichi, and the state your opponents fear because any discard from here could be their win.' },
                 { label: 'They have won the hand', why: 'Winning is agari or tsumo/ron. Tenpai is the step before — you are waiting, not finished.' },
-                { label: 'They have ten pairs', why: 'There are only four copies of any tile, and an ordinary hand never holds more than one pair. Tenpai is a Japanese word for “ready”, unrelated to the number ten.' },
+                { label: 'Their hand already contains a yaku and is legal to declare', why: 'Tenpai only means one tile from a complete shape; it says nothing about value. A hand can be tenpai with no yaku at all, so being tenpai does not guarantee the win will score.' },
               ],
             },
           ]),
@@ -427,8 +427,8 @@ export const BASICS_CHAPTERS: Chapter[] = [
               prompt: 'Your hand is 11m 33m 55p 77p 99p 22s 66s — seven different pairs, no runs. What is this?',
               options: [
                 { label: 'Seven pairs (chiitoitsu) — a legal special hand', correct: true, why: 'Fourteen tiles in seven distinct pairs is its own yaku, worth two han, and it can only be won closed. It is the one ordinary-looking hand that does not follow the four-sets-and-a-pair rule.' },
-                { label: 'Seven pairs, worth nothing unless opened', why: 'The opposite: seven pairs cannot be opened at all — a call breaks the pattern. It must stay concealed to be declared.' },
-                { label: 'Not a legal hand — hands need sets', why: 'It is legal by explicit exception. Four-sets-and-a-pair is the normal form, but seven pairs is the well-known alternative.' },
+                { label: 'A normal hand one set short — not winnable yet', why: 'This is not an unfinished four-sets hand. Seven pairs is a complete, legal form in its own right; it scores without a single triplet or run.' },
+                { label: 'Seven pairs, and it can be called into shape', why: 'A call opens the hand and breaks the pattern — seven pairs is strictly closed. It must be assembled entirely from your own draws.' },
               ],
             },
             {
@@ -448,7 +448,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               options: [
                 { label: 'All triplets (toitoi), with the dragons and winds stacking on top', correct: true, why: 'Four triplets and a pair is toitoi for two han, and every honour triplet — the Easts and the whites — adds its own yakuhai han. This is exactly how toitoi hands quietly become big.' },
                 { label: 'Tanyao, because triplets are efficient', why: 'The hand is full of honours and a 9p terminal, so tanyao fails outright. Toitoi is the shape yaku; yakuhai is the value.' },
-                { label: 'Nothing — triplets do not form sets', why: 'A triplet is one of the two legal kinds of set. Four of them plus a pair is fourteen tiles and a textbook winning form.' },
+                { label: 'Yakuhai only — just the Easts and whites, with nothing for the all-triplet shape', why: 'The honour triplets each add yakuhai, but the all-triplet arrangement is itself a yaku: toitoi for two han. Reading only the dragon and wind misses the shape.' },
               ],
             },
           ]),
@@ -563,7 +563,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               options: [
                 { label: 'Nothing — it cannot even be declared a win', correct: true, why: 'Dora add han to a hand that already wins on a yaku; they are not a yaku themselves. Three dora with no yaku is a legal-shaped hand that scores zero and cannot be declared, which is why keeping at least one route to a yaku matters all game.' },
                 { label: 'Three han for the dora', why: 'Only after a yaku exists. No yaku means the hand is not legally won, so its bonus tiles never get counted.' },
-                { label: 'One reduced han, since it is open', why: 'There is no consolation prize. Winning requires a pattern; dora are a multiplier on a win, never the base requirement.' },
+                { label: 'It still wins, just with no han added', why: 'A hand with no yaku cannot be declared a win at all, dora or not. Dora only multiply the value of a legal winning hand; they never make an illegal hand legal.' },
               ],
             },
             {
@@ -625,8 +625,8 @@ export const BASICS_CHAPTERS: Chapter[] = [
               prompt: 'Why is declaring riichi on a closed tenpai hand usually right, even with a small wait?',
               options: [
                 { label: 'It adds a han, bonus chances, and makes opponents play safely', correct: true, why: 'The han multiplies the score, the next-turn and hidden-dora bonuses add free chances, and opponents under riichi pressure discard proven-safe tiles — which sometimes hands you exactly your wait. Silent tenpai gives away most of that.' },
-                { label: 'It guarantees you will win the hand', why: 'Nothing guarantees a win. Riichi raises the value and applies pressure; it does not change which tiles the wall holds.' },
-                { label: 'It refunds your stick if anyone else wins', why: 'The thousand-point stick stays in the pool until someone wins a hand, and it goes to that winner. You are betting it, not depositing it for later.' },
+                { label: 'It is better to stay silent so opponents keep discarding your tile', why: 'The opposite usually holds: declared riichi makes players reach for safe, proven tiles, some of which are exactly your wait, while silent tenpai forfeits the han and bonuses for an uncertain edge.' },
+                { label: 'It is not worth it on a small wait — you should wait for a better shape first', why: 'The han and bonus chances usually more than pay for a thin wait, and waiting to improve often means never declaring at all. Even a narrow wait benefits from the value and pressure riichi brings.' },
               ],
             },
           ]),
@@ -674,7 +674,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               options: [
                 { label: 'You are furiten: you cannot win on anyone else’s discard', correct: true, why: 'A wait whose tile you have previously discarded cannot be claimed by ron — the game will not let you win a hand on a tile you already refused once. You can still finish on your own draw, and you should avoid declaring riichi into permanent furiten carelessly.' },
                 { label: 'Nothing — discards do not affect your wait', why: 'They absolutely do: your pond is public record, and a matching wait turns ron off. This is the furiten rule that turns up constantly at high level.' },
-                { label: 'Your hand is instantly disqualified from winning', why: 'You are not disqualified. Self-draw still wins, and once your wait changes the furiten clears. It blocks ron, not the hand itself.' },
+                { label: 'Only the discarder’s seat is affected — you can still ron the others', why: 'Furiten applies to every player at the table equally. Once your wait includes a tile you threw, no opponent’s discard of 6s or 9s can be claimed; only your own draw wins.' },
               ],
             },
             {
@@ -741,7 +741,7 @@ export const BASICS_CHAPTERS: Chapter[] = [
               options: [
                 { label: 'Which tiles form your blocks, and which of them is weakest', correct: true, why: 'The five-block method is the engine room of early play: a hand is four sets and a pair, so five blocks, and most discards are about keeping five strong blocks and shedding what does not earn its place. From there the course adds value, riichi, calls and defence.' },
                 { label: 'The exact point value of every possible yaku table', why: 'Point arithmetic is reference material, not strategy. The course teaches judgement from the shapes and the ponds; the scoring table lives in the linked book.' },
-                { label: 'How to force rare seven-figure special hands', why: 'Special hands are rare and chasing them is usually a trap the course teaches you to avoid. Everyday value from efficient, riichi-ready hands is where the points are.' },
+                { label: 'How to aim for the biggest special hands every deal', why: 'Limit hands are rare and cannot be forced; building toward them discards the ordinary wins that actually pay the rent. The course starts with everyday efficiency, value and riichi, and covers the rare hands only so you can recognise them.' },
               ],
             },
             {
