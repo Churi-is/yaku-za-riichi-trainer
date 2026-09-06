@@ -1136,53 +1136,56 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
       },
       {
         id: 'ryanpeikou',
-        title: 'Ryanpeikou: twice the identical run',
-        summary: 'Two pairs of the exact same run (four runs, two duplicated). Closed only, three han.',
+        title: 'Iipeiko and ryanpeikou: duplicated runs',
+        summary: 'One duplicated pair of identical runs is iipeiko, one han open or closed; two pairs are ryanpeikou, two closed, one open.',
         steps: [
           {
             kind: 'teach',
             text: [
-              'Peikou is two identical runs — 345m twice, which needs 345m and another 345m. Ryanpeikou is that done twice: four runs made up as two pairs of duplicates, such as 345m twice and 234p twice. Three han, closed only.',
-              'It requires the copies: a duplicated run uses six tiles of three adjacent kinds, and there are only four copies of each tile, so the pattern is specific.',
+              'Peikou is a duplicated run — the exact same sequence twice, 345m and another 345m. When a four-run hand contains one such duplicated pair it is iipeiko: one han, and it works open or closed, because nothing about it requires concealment.',
+              'The duplicate needs copies: a duplicated 345m uses six tiles of three adjacent kinds, and there are only four of each, so a run can appear at most twice as a pair. Three identical runs is still just ONE duplicated pair — the third run has no partner.',
             ],
             figures: [
-              { tiles: '345m 345m 234p 234p 55s', caption: 'The 345m run twice and the 234p run twice — two duplicated run-pairs, ryanpeikou, three han closed.' },
+              { tiles: '345m 345m 234p 789s 55s', caption: 'One duplicated run, the 345m twice: iipeiko, one han, open or closed.' },
             ],
           },
           {
             kind: 'teach',
             text: [
-              'Ryanpeikou and chiitoitsu are mutually exclusive: two duplicated runs could be misread as pairs, but the hand is decomposed as runs here. A single pair of identical runs (one peikou) deliberately scores nothing in this ruleset; only the doubled ryanpeikou counts.',
-              'It only works on a closed, four-run hand, so it tends to be recognised rather than chased.',
+              'Ryanpeikou is that duplication done twice: four runs made up as two duplicated pairs — 345m twice and 234p twice, or the same run four times. Two han in a closed hand, one han open. It supersedes iipeiko: a hand with two duplicated pairs is ryanpeikou, not iipeiko twice.',
+              'Both survive calls, which is rare for a shape yaku — a melded 345m still pairs with a concealed 345m for iipeiko. And the duplicated runs are still decomposed as runs, so they never become seven pairs.',
+            ],
+            figures: [
+              { tiles: '345m 345m 234p 234p 55s', caption: 'Two duplicated run-pairs, the 345m twice and the 234p twice: ryanpeikou, two han closed, one open.' },
             ],
             note: {
               title: 'Recognition cue',
-              text: 'Four runs consisting of two pairs of identical runs (the same run twice, twice) = ryanpeikou, three han, closed. One duplicated run alone scores nothing here.'
+              text: 'Count the duplicated pairs among your four runs. One pair: iipeiko, one han, open or closed. Two pairs — the same run four times, or two different runs twice each: ryanpeikou, two closed, one open — and iipeiko is not added on top.'
             },
           },
           ...drills([
             {
               prompt: 'Which complete hand scores ryanpeikou?',
               options: [
-                { label: '345m 345m 234p 234p with a 55s pair', correct: true, why: 'The hand is four runs, and they form two duplicated pairs: 345 twice in man and 234 twice in pin. That is ryanpeikou, three han closed — the runs themselves are pinfu-shaped as well.' },
+                { label: '345m 345m 234p 234p with a 55s pair', correct: true, why: 'The hand is four runs, and they form two duplicated pairs: 345 twice in man and 234 twice in pin. That is ryanpeikou, two han closed — the runs themselves are pinfu-shaped as well.' },
                 { label: '11m 33m 55p 77p 99p 22s FF', why: 'Seven pairs is chiitoitsu. Ryanpeikou duplicates RUNS (sequences), not isolated pairs; seven pairs of single tiles is the other pattern.' },
-                { label: '345m 234p 234p 789s with a pair', why: 'Only one run is duplicated (the 234p twice), with two other different runs. A single duplicated run (one peikou) scores nothing in this ruleset; ryanpeikou needs TWO duplicated pairs.' },
+                { label: '345m 234p 234p 789s with a pair', why: 'Only one run is duplicated (the 234p twice), with two other different runs. That is iipeiko, one han — not ryanpeikou, which needs TWO duplicated pairs.' },
               ],
             },
             {
-              prompt: 'A hand contains the run 234s twice and otherwise three unrelated runs and a pair. Does it score ryanpeikou?',
+              prompt: 'A hand contains the run 234s twice and otherwise two different runs and a pair. What does the duplication score?',
               options: [
-                { label: 'No — one duplicated run is a single peikou, which scores nothing here', correct: true, why: 'Ryanpeikou means “two peikou”: two SEPARATE pairs of identical runs. One duplicated run (234s twice) is just iipeiko, deliberately not counted in this yaku set; you need another duplicated pair of runs as well.' },
-                { label: 'Yes, three han', why: 'A lone duplicated run would be iipeiko, not ryanpeikou, and this ruleset awards only the doubled ryanpeikou — so it scores nothing for that one duplication.' },
-                { label: 'Yes, but one han', why: 'There is no half-credit here: single peikou is intentionally absent from the yaku list, and ryanpeikou is a three-han closed yaku that requires both duplications.' },
+                { label: 'Iipeiko, one han', correct: true, why: 'One duplicated pair of identical runs is iipeiko: one han, and it scores open or closed. It is not ryanpeikou, which needs two duplicated pairs.' },
+                { label: 'Nothing — one duplicated run scores nothing', why: 'The single duplicated pair is iipeiko, a real one-han yaku in standard riichi. It is not ryanpeikou — that needs two pairs — but it is not worth zero either.' },
+                { label: 'Ryanpeikou, two han', why: 'Ryanpeikou needs TWO duplicated pairs among the four runs. One duplicated pair (the 234s twice) is a single peikou: iipeiko, one han.' },
               ],
             },
             {
-              prompt: 'Can an open hand score ryanpeikou after a call?',
+              prompt: '345m appears three times in a closed hand (345m 345m 345m plus a fourth run). What do the copies score?',
               options: [
-                { label: 'No — ryanpeikou, like pinfu, is closed-only', correct: true, why: 'The repeated-run pattern is a concealed-hand yaku; melding opens the hand and forfeits it. It is recognised in a closed four-run hand, not built by calling.' },
-                { label: 'Yes, for two han', why: 'Ryanpeikou does not survive a call — it is three han closed and not available open at all, unlike sanshoku or ittsu.' },
-                { label: 'Yes, if the duplicated runs are melded', why: 'Melded runs are open melds; the concealed ryanpeikou pattern requires the runs to be in the closed hand. Calling disqualifies it.' },
+                { label: 'Iipeiko, one han', correct: true, why: 'Three identical runs make only ONE duplicated pair — two of the 345m form the pair and the third has no partner. One pair is iipeiko, one han; it does not reach ryanpeikou.' },
+                { label: 'Ryanpeikou, two han', why: 'Ryanpeikou needs two duplicated pairs: the same run four times, or two different runs twice each. Three identical runs form a single pair.' },
+                { label: 'Iipeiko twice, two han', why: 'The duplicated PAIRS are counted, not the runs: three copies make one pair, with one leftover, so it is a single iipeiko, one han.' },
               ],
             },
           ]),

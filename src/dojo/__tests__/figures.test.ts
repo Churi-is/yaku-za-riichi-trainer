@@ -40,6 +40,7 @@ const CLAIMED: Record<string, YakuId[]> = {
   '333m 333p 333s 123m 55s': ['sanshokuDoukou'],
   'PPP FFF CC 123m 456s': ['shousangen'],
   '123m 456m 789m 111m 22m': ['chinitsu', 'ittsu'],
+  '345m 345m 234p 789s 55s': ['iipeiko'],
   '345m 345m 234p 234p 55s': ['ryanpeikou'],
   '19m 19p 19s E S W N P F C 1m': ['kokushi'],
   '111m 555p 999s 777s 22m': ['suuankou'],

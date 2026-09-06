@@ -43,6 +43,7 @@ const COVERED_BY: Record<string, string> = {
   sanshokuDoukou: 'sanshoku-doukou',
   honitsu: 'honitsu-codex',
   chinitsu: 'chinitsu-codex',
+  iipeiko: 'ryanpeikou',
   ryanpeikou: 'ryanpeikou',
   kokushi: 'kokushi',
   suuankou: 'suuankou',

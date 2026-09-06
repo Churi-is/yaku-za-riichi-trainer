@@ -33,8 +33,10 @@ export function basePoints(fu: number, han: number, yakumanCount = 0): number {
   if (han >= 8) return 4000; // baiman
   if (han >= 6) return 3000; // haneman
   if (han >= 5) return 2000; // mangan
+  // Counted hands are cut to mangan when the raw base reaches 2000
+  // (4 han 40+ fu, 3 han 70+ fu, ...) — otherwise they pay by fu.
   const raw = fu * Math.pow(2, han + 2);
-  return raw >= 2000 ? 2000 : raw; // mangan cutoff
+  return raw >= 2000 ? 2000 : raw;
 }
 
 export function limitNameFor(han: number, yakumanCount = 0): ScoreResult['limitName'] {

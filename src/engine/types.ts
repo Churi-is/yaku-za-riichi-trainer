@@ -242,7 +242,7 @@ export type YakuId =
   | 'chiitoitsu' | 'toitoi' | 'sanshokuDoujun' | 'ittsu' | 'chanta'
   | 'honroutou' | 'shousangen' | 'sanankou' | 'sankantsu'
   | 'sanshokuDoukou'
-  | 'honitsu' | 'junchan' | 'ryanpeikou'
+  | 'honitsu' | 'junchan' | 'iipeiko' | 'ryanpeikou'
   | 'chinitsu'
   | 'renhou'
   | 'kokushi' | 'suuankou' | 'daisangen' | 'shousuushi' | 'daisuushii'

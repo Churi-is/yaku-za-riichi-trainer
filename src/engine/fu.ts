@@ -3,7 +3,7 @@
  *
  * Rules implemented:
  *   base 20; +10 concealed ron; +2 tsumo (not on pinfu); +10 closed wait
- *   (kanchan/penchan/tanki); open triplet +2 simples / +4 yaochuu;
+ *   (kanchan/penchan/tanki/shanpon); open triplet +2 simples / +4 yaochuu;
  *   concealed triplet +4 / +8; open kan +8 / +16; closed kan +16 / +32;
  *   yakuhai pair +10; chiitoitsu flat 25; an open pinfu-shaped hand is
  *   20 fu (the 20-fu rule); round up to the next 10.
@@ -66,7 +66,7 @@ export function calculateFu(
   if (isClosed && !isTsumo) fu += 10;
   const pinfu = isPinfuShape(d, wait, isClosed, ctx);
   if (isTsumo && !pinfu) fu += 2;
-  if (wait === 'kanchan' || wait === 'penchan' || wait === 'tanki') fu += 10;
+  if (wait === 'kanchan' || wait === 'penchan' || wait === 'tanki' || wait === 'shanpon') fu += 10;
 
   for (const s of effectiveSets(d, wait, isTsumo, winKind)) {
     if (s.type !== 'koutsu') continue;

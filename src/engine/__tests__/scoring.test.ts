@@ -88,7 +88,10 @@ describe('scoring — payment table', () => {
     expect(basePoints(30, 11)).toBe(6000);
     expect(basePoints(30, 12)).toBe(6000);
     expect(basePoints(30, 13)).toBe(8000);
-    expect(basePoints(110, 4)).toBe(2000); // the raw value caps at mangan
+    // Counted hands are cut to mangan once the raw base reaches 2000:
+    // 4 han 40 fu (2560) and 3 han 70 fu (2240) both land on mangan.
+    expect(basePoints(40, 4)).toBe(2000); // 4 han 40 fu is mangan
+    expect(basePoints(70, 3)).toBe(2000); // 3 han 70 fu is mangan
   });
 
   it('names the limits correctly', () => {
@@ -172,6 +175,17 @@ describe('scoring — reference hands', () => {
     const r = score({ hand: '234m567m234p789s55s', win: '4p', loser: 2 });
     expect(yakuIds(r)).toEqual(['pinfu']);
     expect(r.fu).toBe(30);
+  });
+
+  it('a shanpon wait earns its +10 fu even when ron completes the triplet open', () => {
+    // 20 base + 10 menzen ron + 12 three concealed simple triplets
+    // + 2 the 999p (ron-completed, counted open) + 10 the shanpon wait
+    // = 54, rounded to 60. Four han, so mangan anyway.
+    const r = score({ hand: '111m222m333m44p999p', win: '9p', loser: 2 });
+    expect(yakuIds(r)).toEqual(ids(['sanankou', 'toitoi']));
+    expect(r.fu).toBe(60);
+    expect(r.han).toBe(4);
+    expect(r.points).toBe(8000);
   });
 
   it('chiitoitsu is a flat 25 fu', () => {
@@ -600,10 +614,40 @@ describe('scoring — situational yaku and table rules', () => {
     const ryan = score({
       hand: '112233m112233p99s', win: '9s', tsumo: true, roundWind: 'south',
     });
-    // 123m 123m 123p 123p + 99s: ryanpeikou, and every run touches a terminal
-    // so junchan applies on top.
+    // 123m 123m 123p 123p + 99s: ryanpeikou (2, closed) and junchan (every
+    // run touches a terminal); the iipeiko inside it is not counted again.
     expect(yakuIds(ryan)).toEqual(['junchan', 'menzenTsumo', 'ryanpeikou']);
-    expect(ryan.han).toBe(7);
+    expect(ryan.han).toBe(6); // junchan 3 + menzen 1 + ryanpeikou 2
+  });
+
+  it('a single duplicated pair is iipeiko, one han, closed or open', () => {
+    const closed = score({
+      hand: '345m345m234p789s55s', win: '5s', tsumo: true, roundWind: 'south',
+    });
+    // 345m 345m 234p 789s + 55s: one duplicated pair.
+    expect(yakuIds(closed)).toEqual(['iipeiko', 'menzenTsumo']);
+    expect(closed.han).toBe(2);
+
+    const open = score({
+      hand: '345m234p789s55s', win: '5s', tsumo: true, roundWind: 'south',
+      melds: [meld('chi', '345m')],
+    });
+    // The melded 345m still pairs with the concealed one: iipeiko survives calls.
+    expect(yakuIds(open)).toEqual(['iipeiko']);
+    expect(open.han).toBe(1);
+  });
+
+  it('three copies of a run with one melded are one iipeiko, not ryanpeikou', () => {
+    // Chi'd 345m + concealed 345m 345m: the third run is a call, so no
+    // triplet reading exists, and the two concealed copies make one pair.
+    const r = score({
+      hand: '345m345m456p77p', win: '7p', tsumo: true, roundWind: 'south',
+      melds: [meld('chi', '345m')],
+    });
+    // Sets: chi 345m, 345m, 345m, 456p + 77p head, tanki win on 7p.
+    // Three 345m make one duplicated pair (iipeiko), not two (ryanpeikou).
+    expect(yakuIds(r)).toEqual(['iipeiko', 'tanyao']);
+    expect(r.han).toBe(2);
   });
 
   it('honroutou suppresses chanta but stacks with toitoi', () => {
@@ -620,7 +664,8 @@ describe('scoring — situational yaku and table rules', () => {
     const r = score({ hand: '1112345678999m5m', win: '5m', tsumo: true });
     expect(yakuIds(r)).toContain('chuurenPoutou'); // yakuman wins outright
     const plain = score({ hand: '123456789m123m55m', win: '5m', tsumo: true });
-    expect(yakuIds(plain)).toEqual(ids(['menzenTsumo', 'ittsu', 'chinitsu'].sort()));
+    // 123m appears twice, so iipeiko rides along with ittsu and chinitsu.
+    expect(yakuIds(plain)).toEqual(ids(['menzenTsumo', 'ittsu', 'chinitsu', 'iipeiko'].sort()));
   });
 
   it('junchan suppresses chanta', () => {
