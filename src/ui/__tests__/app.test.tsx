@@ -85,8 +85,13 @@ describe('modes', () => {
   it('walks a lesson turn by turn and will not skip a drill', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /The Dojo/i }));
-    expect(screen.getByText(/of 14 lessons/i)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Start the course/i }));
+    // The dojo is the basics track plus the strategy track.
+    expect(screen.getByText(/of 25 lessons/i)).toBeTruthy();
+    expect(screen.getByText('Basics')).toBeTruthy();
+    expect(screen.getByText('Strategy')).toBeTruthy();
+    // The course opens on the first basics lesson; jump into the first
+    // strategy lesson to exercise a table-led tile-efficiency lesson.
+    fireEvent.click(screen.getByRole('button', { name: /Blocks, partial sets and floaters/i }));
 
     // A lesson opens on a live board, not on a wall of prose.
     expect(screen.getByText(/Blocks, partial sets and floaters/i)).toBeTruthy();

@@ -310,7 +310,7 @@ export default function LessonScreen() {
       <header className="lesson-bar">
         <button className="btn btn-ghost btn-sm" aria-label="Back to the dojo" onClick={() => go('dojo')}>←</button>
         <div className="lesson-bar-title">
-          <span className="crumb">{chapter.title}</span>
+          <span className="crumb">{found.track.title} · {chapter.title}</span>
           <strong>{lesson.title}</strong>
         </div>
         <div className="step-dots" aria-label={`Step ${at + 1} of ${steps.length}`}>
