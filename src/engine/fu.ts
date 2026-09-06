@@ -1,5 +1,5 @@
 /**
- * engine/fu — fu (minipoint) calculation. Owned by Worker A.
+ * engine/fu — fu (minipoint) calculation.
  *
  * Rules implemented, per the brief:
  *   base 20; +10 concealed ron; +2 tsumo (not on pinfu); +2 closed wait
@@ -18,13 +18,13 @@ import { isDragon, isTerminalOrHonor, kindOfWind } from './tiles';
 import { allSets, effectiveSets, type Decomposition, type WaitType } from './decompose';
 import type { TileKind, Wind } from './types';
 
-export interface FuContext {
+interface FuContext {
   seatWind: Wind;
   roundWind: Wind;
 }
 
 /** A pair that earns fu: any dragon, the round wind, or the seat wind. */
-export function isYakuhaiPair(kind: TileKind, ctx: FuContext): boolean {
+function isYakuhaiPair(kind: TileKind, ctx: FuContext): boolean {
   return isDragon(kind) || kind === kindOfWind(ctx.seatWind) || kind === kindOfWind(ctx.roundWind);
 }
 

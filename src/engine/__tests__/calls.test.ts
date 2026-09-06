@@ -1,6 +1,6 @@
 /**
  * Game-loop tests: deal, draw/discard, calls, kuikae, riichi, furiten, kan,
- * hand end and hand advance. Worker A.
+ * hand end and hand advance.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -29,7 +29,6 @@ const K_3M = 2;
 const K_4M = 3;
 const K_5M = 4;
 const K_4P = 12;
-const K_5P = 13;
 const K_5S = 22;
 const K_7P = 15;
 const K_6S = 23;
@@ -747,8 +746,8 @@ describe('hand end', () => {
     const drawn = applyAction(s, { type: 'draw', seat: 1 });
     const won = applyAction(drawn, { type: 'tsumo', seat: 1 });
     const r = won.handOver!;
-    // 30 fu / 2 han non-dealer tsumo: dealer 1600, others 800, plus 2 honba (300/100 each).
-    // 2 honba x 300 = 600, split three ways: 200 per payer.
+    // 30 fu / 2 han non-dealer tsumo: dealer 1000, others 500.
+    // 2 honba x 300 = 600 total, split three ways: 200 extra per payer.
     expect(r.deltas[0]).toBe(-1200);
     expect(r.deltas[2]).toBe(-700);
     expect(r.deltas[3]).toBe(-700);
@@ -801,7 +800,7 @@ describe('hand and match advance', () => {
     const r = ended.handOver!;
     const next = nextHand(ended);
     expect(next.dealer).toBe(r.renchan ? ended.dealer : ((ended.dealer + 1) % 4));
-    expect(next.honba).toBe(r.renchan ? ended.honba + 1 : 0);
+    expect(next.honba).toBe(r.reason === 'exhaustiveDraw' || r.renchan ? ended.honba + 1 : 0);
     expect(next.handNumber).toBe(ended.handNumber + 1);
     expect(next.phase).toBe('awaitingDiscard');
     expect(next.handOver).toBeNull();

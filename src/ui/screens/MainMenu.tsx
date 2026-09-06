@@ -1,4 +1,4 @@
-/** MainMenu — the parlour door. Owned by Worker D. */
+/** MainMenu — the parlour door. */
 import { useSession } from '@state/session';
 import { useMatch } from '@state/gameLoop';
 import Tile from '@ui/components/Tile';

@@ -15,9 +15,9 @@ const PROFILES: Record<Archetype, {
 };
 
 const EXECUTION = {
-  easy: { noise: 2.8, call: 1.18, rigor: 0.55, patience: 0.7, awareness: 0.25, subtlety: 0.08 },
-  normal: { noise: 1, call: 1, rigor: 1, patience: 1, awareness: 0.7, subtlety: 0.55 },
-  hard: { noise: 0.2, call: 0.92, rigor: 1.5, patience: 1.25, awareness: 1, subtlety: 0.9 },
+  easy: { noise: 2.8, call: 1.18, rigor: 0.55, patience: 0.7, awareness: 0.25 },
+  normal: { noise: 1, call: 1, rigor: 1, patience: 1, awareness: 0.7 },
+  hard: { noise: 0.2, call: 0.92, rigor: 1.5, patience: 1.25, awareness: 1 },
 } as const;
 
 const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
@@ -34,7 +34,6 @@ export function paramsFor(
     callGreed: clamp01(p.callGreed * e.call),
     defenseThreshold: clamp01(p.defenseThreshold / e.rigor),
     riichiPatience: clamp01(p.riichiPatience * e.patience + (difficulty === 'easy' ? 0.05 : 0)),
-    tellSubtlety: e.subtlety,
     deviation: difficulty === 'hard' ? clamp01(tune.deviation ?? 0.08) : 0,
     valueGreed: clamp01(tune.valueGreed ?? 0.5),
     flushBias: clamp01(tune.flushBias ?? 0),

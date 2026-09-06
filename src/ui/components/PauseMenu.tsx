@@ -5,7 +5,7 @@ import { DIFFICULTY_LABEL } from '@ai/personalities';
 import { useSession } from '@state/session';
 import { useFocusTrap } from '@ui/hooks/useFocusTrap';
 
-export interface PauseMenuProps {
+interface PauseMenuProps {
   onResume: () => void;
   onQuitToMenu: () => void;
 }

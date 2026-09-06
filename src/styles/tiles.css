@@ -28,9 +28,7 @@
 .tile-xs   { --tw: 22px; --th: 30px; }
 .tile-sm   { --tw: 30px; --th: 41px; }
 .tile-md   { --tw: 40px; --th: 54px; }
-.tile-lg   { --tw: 54px; --th: 73px; }
 .tile-rv   { --tw: var(--rv-w, 16px); --th: var(--rv-h, 22px); }
-.tile-bk   { --tw: var(--bk-w, 16px); --th: var(--bk-h, 22px); }
 
 /* Orientation on the table (top-down: opponents' tiles are rotated).
    The face keeps its own upright box and is rotated about the tile's centre,

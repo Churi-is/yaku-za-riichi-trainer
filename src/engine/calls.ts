@@ -1,5 +1,5 @@
 /**
- * engine/calls — chi/pon/kan options and the kuikae rule. Owned by Worker A.
+ * engine/calls — chi/pon/kan options and the kuikae rule.
  *
  * No kuikae: right after a call you may not discard the kind you just called,
  * nor the mirror tile of a chi (chi 3-4-5 on the 3 means you cannot drop the 6).
@@ -12,9 +12,9 @@ import type {
   Action, GameState, PlayerState, SeatIndex, TileId, TileKind,
 } from './types';
 
-export type CallKind = 'ron' | 'pon' | 'minkan' | 'chi';
+type CallKind = 'ron' | 'pon' | 'minkan' | 'chi';
 
-export interface CallOption {
+interface CallOption {
   kind: CallKind;
   action: Action;
   label: string;
@@ -43,7 +43,7 @@ function idChoices(player: PlayerState, kind: TileKind, n: number): TileId[][] {
 }
 
 /** Kuikae: the kinds this seat may not discard immediately after the call. */
-export function kuikaeFor(kind: CallKind, calledKind: TileKind, runLow: TileKind | null): TileKind[] {
+function kuikaeFor(kind: CallKind, calledKind: TileKind, runLow: TileKind | null): TileKind[] {
   if (kind !== 'chi' || runLow === null) return [calledKind];
   const forbidden: TileKind[] = [calledKind];
   const rank = calledKind - runLow; // 0, 1 (kanchan) or 2
@@ -53,7 +53,7 @@ export function kuikaeFor(kind: CallKind, calledKind: TileKind, runLow: TileKind
   return forbidden;
 }
 
-export function chiOptions(state: GameState, seat: SeatIndex): CallOption[] {
+function chiOptions(state: GameState, seat: SeatIndex): CallOption[] {
   const win = state.callWindow;
   if (!win || win.chankan) return [];
   // Chi only from the kamicha — the player immediately to the left.
@@ -85,7 +85,7 @@ export function chiOptions(state: GameState, seat: SeatIndex): CallOption[] {
   return out;
 }
 
-export function ponOptions(state: GameState, seat: SeatIndex): CallOption[] {
+function ponOptions(state: GameState, seat: SeatIndex): CallOption[] {
   const win = state.callWindow;
   if (!win || win.chankan) return [];
   const player = state.players[seat];
@@ -103,7 +103,7 @@ export function ponOptions(state: GameState, seat: SeatIndex): CallOption[] {
   return out;
 }
 
-export function minkanOptions(state: GameState, seat: SeatIndex): CallOption[] {
+function minkanOptions(state: GameState, seat: SeatIndex): CallOption[] {
   const win = state.callWindow;
   if (!win || win.chankan) return [];
   const player = state.players[seat];
@@ -124,16 +124,4 @@ export function minkanOptions(state: GameState, seat: SeatIndex): CallOption[] {
 /** Every call a seat may make on the tile currently in the window. */
 export function callOptionsFor(state: GameState, seat: SeatIndex): CallOption[] {
   return [...ponOptions(state, seat), ...minkanOptions(state, seat), ...chiOptions(state, seat)];
-}
-
-/** Seats with at least one non-ron call available, in turn order from `from`. */
-export function callCandidates(state: GameState): SeatIndex[] {
-  const win = state.callWindow;
-  if (!win) return [];
-  const order: SeatIndex[] = [
-    ((win.from + 1) % 4) as SeatIndex,
-    ((win.from + 2) % 4) as SeatIndex,
-    ((win.from + 3) % 4) as SeatIndex,
-  ];
-  return order;
 }

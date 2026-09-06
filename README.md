@@ -17,44 +17,53 @@ No backend, no accounts, no multiplayer, nothing persisted between sessions.
 Play against **22 Yakuza / Like a Dragon-inspired characters**: six Easy,
 six Medium, six Hard, and four **Special** opponents. Specials have a separate
 label and estimated difficulty in their descriptions—not a tier above Hard.
-Select a seat on the small table, then a character—or drag their card into place. Seated characters swap places; clearing
-one seat never shifts the others. Search, level filters, and quick table presets
-help you build a lineup.
+Select a seat on the small table, then a character—or drag their card into
+place. Seated characters swap places; clearing one seat never shifts the others.
+Search, level filters, and quick table presets help you build a lineup.
 
 Characters use their own difficulty by default, with an optional uniform
 practice level in Table Settings. Distinct preferences cover calls, dora,
 flushes, pairs, kans, defense, and final-round position. Specials add Nugget's
 self-sabotage, Mr. Shakedown's mangan minimum, Komaki's ron-only counters, and
 Pocket Circuit Fighter's alternating racing gears. All bots use public
-information only. See [`docs/BOTS.md`](docs/BOTS.md) for the roster and logic.
+information only. See [the bot guide](docs/BOTS.md) for the roster and logic.
 
-## Getting started
+## Development
+
+Use Node 22 (see `.nvmrc`).
 
 ```bash
-npm install
+npm ci
 npm run dev        # http://localhost:5173
-npm test           # vitest
-npm run typecheck
+npm run typecheck  # includes unused-local/parameter checks
+npm test           # all unit, UI, self-play, and benchmark tests
+npm run build
+```
+
+The full suite includes seeded statistical tests and can take several minutes.
+Run a single suite with, for example:
+
+```bash
+npm test -- src/ai/__tests__/benchmark.test.ts
 ```
 
 ## Layout
 
-```
-src/engine/     rules, yaku detection, scoring   (Worker A) — pure, no UI
-src/ai/         parameterized opponent model     (Worker B) — public info only
+```text
+src/engine/     rules, tile math, yaku detection, scoring — pure, no UI
+src/ai/         parameterized opponents — public information only
 src/dojo/       course content, coach placement, scripted table positions
-src/ui/         screens, table, components        (Worker D)
-src/state/      session store + game loop         (Worker D)
+src/ui/         screens, components, deterministic table geometry
+src/state/      in-memory session store and paced game loop
+src/styles/     theme, tiles, table, and screen styles
+src/shared/     game-independent helpers, including the shared RNG
 ```
 
-## Deploying
+## Docs and deployment
 
-Hosted on Cloudflare Workers at <https://riichi.churi.net>. Setup steps:
-`docs/DEPLOY-CLOUDFLARE.md`.
+- [Architecture and rules](docs/ARCHITECTURE.md) — module boundaries, engine
+  usage, tile encoding, and rule choices.
+- [Opponents and table setup](docs/BOTS.md) — character policies and controls.
+- [Cloudflare deployment](docs/DEPLOY-CLOUDFLARE.md) — build and hosting setup.
 
-## Docs
-
-- `docs/PLAN.md` — how the build is split across four parallel workers
-- `docs/CONTRACTS.md` — the cross-worker seams (read before editing shared types)
-- `docs/worker-{A,B,C,D}-*.md` — per-worker briefs
-- `docs/DEPLOY-CLOUDFLARE.md` — Cloudflare Workers deployment guide
+Hosted on Cloudflare Workers at <https://riichi.churi.net>.

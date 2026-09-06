@@ -23,11 +23,6 @@ import {
 } from './handEval';
 import { placementPressure } from './strategy';
 
-export interface RiichiEval {
-  riichi: boolean;
-  rationale: string;
-}
-
 /**
  * Conservative dama value: every live wait must be a legal ron without riichi.
  * Uses the public scorer on hypothetical completions, never a hidden draw.
@@ -74,11 +69,11 @@ export function shouldRiichi(
   params: AIParams,
   rng: Rng,
   discardTile: TileId,
-): RiichiEval {
+): boolean {
   const seat = view.seats[view.viewer];
 
   // Engine only offers riichi to closed hands; double-guard here.
-  if (!isHandClosed(seat.melds)) return { riichi: false, rationale: 'open hand' };
+  if (!isHandClosed(seat.melds)) return false;
 
   // The tenpai waiting hand after the riichi discard.
   let removed = false;
@@ -91,7 +86,7 @@ export function shouldRiichi(
   });
 
   const waitKinds = waits(waiting, seat.melds);
-  if (waitKinds.length === 0) return { riichi: false, rationale: 'not tenpai' };
+  if (waitKinds.length === 0) return false;
 
   // If someone is already riichi and we're the careful type, riichi commits
   // us to pushing; fold-prone archetypes lean away unless aggressive.
@@ -99,7 +94,7 @@ export function shouldRiichi(
 
   const acceptance = ukeireAcceptance(waiting, seat.melds, view.visibleCounts);
   const wideWait = acceptance.tiles;
-  if (wideWait === 0) return { riichi: false, rationale: 'dama: no live winning tiles' };
+  if (wideWait === 0) return false;
 
   const value = estimateHan(waiting, seat.melds, {
     seatWind: seat.seatWind,
@@ -121,44 +116,37 @@ export function shouldRiichi(
   // nobody but ourselves, and the alternative — dama — only pays when the hand
   // is already big or the wait is hopeless. So this asks what would stop us,
   // not whether to bother.
-  let reason = '';
   let decline = false;
 
   // A hand that is already worth a lot does not need the stick, and dama keeps
   // the option of folding. Only patient archetypes actually take that option.
   if (dama > 0 && (value >= 4 || dora >= 3) && params.riichiPatience >= 0.45 && wideWait <= 8) {
     decline = true;
-    reason = 'dama: already valuable, narrow wait';
   }
 
   if (!decline && pressure < -0.05 && dama > 0 && params.riichiPatience >= 0.4) {
     decline = true;
-    reason = 'dama: protect the final-round lead with a legal winning hand';
   }
 
   // A wait nobody will ever deal into, late, is not worth locking the hand.
   if (!decline && wideWait <= 3 && view.tilesRemaining < 30) {
     decline = true;
-    reason = 'dama: dead wait, late';
   }
 
   // Somebody else is committed. Pushing a cheap hand on a thin wait into a
   // declared riichi is how careful players lose their stack.
   if (!decline && someoneRiichi && params.riichiPatience >= 0.45 && value <= 1 && wideWait <= 8) {
     decline = true;
-    reason = 'dama: cheap hand into a live riichi';
   }
 
   // Riichi in the last go-around buys almost no draws but forfeits folding.
   if (!decline && view.tilesRemaining < 8) {
     decline = true;
-    reason = 'dama: no draws left to win on';
   }
 
   // The aggressive archetype declares regardless of all of the above.
   if (params.archetype === 'aggressive') {
     decline = false;
-    reason = '';
   }
 
   // Difficulty noise: a bot that never errs is not a character. The flip is a
@@ -167,10 +155,5 @@ export function shouldRiichi(
   let riichi = !decline;
   if (rng.chance(params.efficiencyNoise * 0.5)) riichi = !riichi;
 
-  return {
-    riichi,
-    rationale: riichi
-      ? `riichi (wait ${wideWait}, han ${value}, dora ${dora})`
-      : `${reason || 'dama'} (wait ${wideWait}, han ${value})`,
-  };
+  return riichi;
 }

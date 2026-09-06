@@ -1,5 +1,5 @@
 /**
- * engine/shanten — shanten, waits, ukeire. Owned by Worker A.
+ * engine/shanten — shanten, waits, ukeire.
  *
  * These run in tight loops (the AI scores candidate discards with them every
  * turn), so they allocate nothing on the hot path and prune aggressively.
@@ -146,7 +146,7 @@ function cacheKey(counts: readonly number[], meldCount: number): string {
 }
 
 /** Shanten number. 0 = tenpai, -1 = complete. */
-export function shanten(hand: TileId[], melds: Meld[]): number {
+export function shanten(hand: TileId[], melds: Meld[] = []): number {
   const counts = countsFromIds(hand);
   const meldCount = melds.length;
   const key = cacheKey(counts, meldCount);
@@ -230,9 +230,4 @@ export function ukeireTotal(
   let tiles = 0;
   for (const entry of list) tiles += entry.count;
   return { kinds: list.length, tiles };
-}
-
-/** Drop the cache (tests use this to keep memory bounded across long runs). */
-export function clearShantenCache(): void {
-  cache.clear();
 }

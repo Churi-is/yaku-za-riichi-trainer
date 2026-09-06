@@ -1,12 +1,12 @@
 /**
- * engine/draw — drawing tiles and flipping dora. Owned by Worker A.
+ * engine/draw — drawing tiles and flipping dora.
  *
  * All randomness happened at deal time, so drawing is a deterministic pop and
  * `applyAction` stays pure. These helpers mutate a state the caller has
  * already cloned.
  */
 import { DORA_SLOTS, URA_SLOTS } from './wall';
-import type { GameState, SeatIndex, TileId } from './types';
+import type { GameState, TileId } from './types';
 
 /** Take the next live tile, or null when the wall is exhausted. */
 export function drawFromWall(state: GameState): TileId | null {
@@ -38,14 +38,4 @@ export function flipKanDora(state: GameState): void {
   const ura = state.deadWall[uraIdx];
   if (dora !== undefined) state.doraIndicators.push(dora);
   if (ura !== undefined) state.uraIndicators.push(ura);
-}
-
-/** True when the tile just drawn was the last one in the live wall. */
-export function isLastLiveTile(state: GameState): boolean {
-  return state.wall.length === 0;
-}
-
-/** Seats in turn order starting at `from` (inclusive). */
-export function turnOrderFrom(from: SeatIndex): SeatIndex[] {
-  return [0, 1, 2, 3].map((i) => ((from + i) % 4) as SeatIndex);
 }

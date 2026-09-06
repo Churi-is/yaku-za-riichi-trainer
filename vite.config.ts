@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
@@ -34,4 +34,4 @@ export default defineConfig({
     environmentMatchGlobs: [['src/ui/**', 'jsdom']],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
-} as never);
+});

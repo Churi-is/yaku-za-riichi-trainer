@@ -7,10 +7,11 @@
  * cost. The dealer 親 mark, the riichi リ mark, the turn glow and each plate's
  * wind letter already carry everything the sort was communicating.
  */
-import type { PublicView, SeatIndex } from '@engine/types';
+import type { PublicView, SeatIndex, Wind } from '@engine/types';
 import { PERSONALITIES } from '@ai/personalities';
 import { specialStatus } from '@ai/specialStyles';
-import { WIND_LETTER } from './SeatPlate';
+
+const WIND_LETTER: Record<Wind, string> = { east: 'E', south: 'S', west: 'W', north: 'N' };
 
 /** where each seat sits relative to the viewer, so the strip maps to the felt */
 const POSITION: Record<SeatIndex, { glyph: string; title: string }> = {
@@ -20,10 +21,9 @@ const POSITION: Record<SeatIndex, { glyph: string; title: string }> = {
   3: { glyph: '◀', title: 'left' },
 };
 
-export interface ScoreStripProps {
+interface ScoreStripProps {
   view: PublicView;
   seatName: (seat: SeatIndex) => string;
-  tools?: React.ReactNode;
 }
 
 /** Fallback for unnamed/custom seats; roster characters have explicit short names. */
@@ -32,7 +32,7 @@ function shortName(name: string): string {
   return first.length >= 3 ? first : name;
 }
 
-export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
+export default function ScoreStrip({ view, seatName }: ScoreStripProps) {
   const seats = [0, 1, 2, 3] as SeatIndex[];
 
   return (
@@ -72,7 +72,6 @@ export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
           );
         })}
       </div>
-      {tools && <div className="strip-tools">{tools}</div>}
     </header>
   );
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Action, Difficulty, LegalAction, PublicView, SeatIndex } from '@engine/types';
 import { createAI, personalityById, SPECIAL_PERSONALITIES, rosterDifficulty } from '../index';
-import { doraCount, evaluateDiscards, kindOf, ownTiles, parseHand, shanten, waits } from '../handEval';
+import { doraCount, evaluateDiscards, kindOf, ownTiles, parseHand, shanten } from '../handEval';
 import { publicWinPoints } from '../specials';
 import { racingGear, specialStatus } from '../specialStyles';
 import { discardsFor, makeView, tileNotationToId } from './fixtures';

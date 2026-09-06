@@ -1,6 +1,6 @@
 /**
  * engine/decompose — enumerate every way a winning hand can be read.
- * Owned by Worker A. Internal to the engine, but shared by fu.ts and yaku.ts
+ * Owned by Internal to the engine, but shared by fu.ts and yaku.ts
  * so scoring and yaku detection always agree on the shape of the hand.
  *
  * A 14-tile concealed shape can often be read more than one way (222345m is
@@ -14,7 +14,7 @@ import type { Meld, TileId, TileKind } from './types';
 
 export type WaitType = 'ryanmen' | 'kanchan' | 'penchan' | 'shanpon' | 'tanki';
 
-export interface SetInfo {
+interface SetInfo {
   type: 'shuntsu' | 'koutsu';
   /** Lowest kind of the set (the run's first tile, or the triplet's kind). */
   kind: TileKind;
@@ -30,8 +30,6 @@ export interface Decomposition {
   meldSets: SetInfo[];
   /** Head. -1 for kokushi. */
   pair: TileKind;
-  /** The seven pair kinds, chiitoitsu only. */
-  pairs: TileKind[];
   chiitoi: boolean;
   kokushi: boolean;
   /** 34-slot counts of the CONCEALED tiles (14 of them), for chuuren etc. */
@@ -110,11 +108,10 @@ export function enumerateWinShapes(
 
   if (melds.length === 0 && total === 14) {
     if (isChiitoiCounts(counts)) {
-      const pairs: TileKind[] = [];
-      for (let k = 0; k < KIND_COUNT; k++) if (counts[k] === 2) pairs.push(k);
+      const pair = counts.findIndex((n) => n === 2);
       shapes.push({
         d: {
-          concealedSets: [], meldSets: [], pair: pairs[0], pairs,
+          concealedSets: [], meldSets: [], pair,
           chiitoi: true, kokushi: false, concealedCounts: counts.slice(),
         },
         wait: 'tanki',
@@ -125,7 +122,7 @@ export function enumerateWinShapes(
       for (const k of YAOCHUU_KINDS) if (counts[k] === 2) pair = k;
       shapes.push({
         d: {
-          concealedSets: [], meldSets: [], pair, pairs: [],
+          concealedSets: [], meldSets: [], pair,
           chiitoi: false, kokushi: true, concealedCounts: counts.slice(),
         },
         wait: 'tanki',
@@ -141,7 +138,6 @@ export function enumerateWinShapes(
       concealedSets: sets,
       meldSets,
       pair,
-      pairs: [],
       chiitoi: false,
       kokushi: false,
       concealedCounts: counts.slice(),

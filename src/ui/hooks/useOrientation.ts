@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 
 export type Orientation = 'portrait' | 'landscape';
 
-export interface ViewportMode {
+interface ViewportMode {
   orient: Orientation;
   /** Landscape on a short viewport (phone sideways): tighter board. */
   compact: boolean;

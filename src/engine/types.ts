@@ -1,7 +1,5 @@
 /**
- * SHARED CONTRACT — owned by Worker A (engine).
- * Workers B/C/D import from here. Changes to exported shapes must be announced
- * in docs/CONTRACTS.md and pushed early so other branches can rebase.
+ * Shared engine data: game state, public views, legal actions, and results.
  */
 
 // ---------------------------------------------------------------------------
@@ -21,16 +19,6 @@ export type TileId = number;
 /** Tile kind, 0..33 (see TileId ordering). Suit+rank identity, ignores copies. */
 export type TileKind = number;
 
-export interface Tile {
-  id: TileId;
-  kind: TileKind;
-  suit: Suit;
-  /** 1-9 for suits; 1-7 for honors. */
-  rank: number;
-  /** True for the red-five copies when aka dora is enabled. */
-  red: boolean;
-}
-
 // ---------------------------------------------------------------------------
 // Seats, winds, rounds
 // ---------------------------------------------------------------------------
@@ -43,7 +31,7 @@ export type Wind = 'east' | 'south' | 'west' | 'north';
 // Melds
 // ---------------------------------------------------------------------------
 
-export type MeldType = 'chi' | 'pon' | 'ankan' | 'minkan' | 'kakan';
+type MeldType = 'chi' | 'pon' | 'ankan' | 'minkan' | 'kakan';
 
 export interface Meld {
   type: MeldType;
@@ -208,8 +196,6 @@ export interface GameState {
   callWindow: CallWindow | null;
   /** True while the current draw came from the dead wall (rinshan). */
   rinshanPending: boolean;
-  /** Set during a kakan tile's call window, for chankan. */
-  chankanTile: TileId | null;
   /**
    * Pao (liability) seat: whoever fed the third dragon or fourth wind meld.
    * Settled at scoring time for daisangen / daisuushii.
@@ -285,7 +271,7 @@ export interface ScoreResult {
   limitName: '' | 'mangan' | 'haneman' | 'baiman' | 'sanbaiman' | 'yakuman';
 }
 
-export type HandEndReason = 'ron' | 'tsumo' | 'exhaustiveDraw';
+type HandEndReason = 'ron' | 'tsumo' | 'exhaustiveDraw';
 
 export interface HandResult {
   reason: HandEndReason;
@@ -300,14 +286,8 @@ export interface HandResult {
   deltas: Record<SeatIndex, number>;
   /** Dealer keeps dealership. */
   renchan: boolean;
-  /** Final concealed hands of every seat, for the replay reveal. */
+  /** Final concealed hands of every seat, for the hand-end reveal. */
   revealedHands: Record<SeatIndex, TileId[]>;
-  /** Pao (liability) seat, if any. */
-  paoSeat: SeatIndex | null;
-  /** Dora indicators in play at hand end. */
-  doraIndicators?: TileId[];
-  /** Ura indicators, populated only when a riichi winner exists. */
-  uraIndicators?: TileId[];
 }
 
 export interface MatchResult {
@@ -365,6 +345,5 @@ export interface PublicSeatView {
   ippatsu: boolean;
   /** Concealed tile count only — never the tiles themselves. */
   concealedCount: number;
-  isClosed: boolean;
   aiPersonalityId: string | null;
 }

@@ -2,7 +2,7 @@
 import type { PublicSeatView } from '@engine/types';
 import type { SpecialStyle } from './types';
 
-export const GEAR_LENGTH = 3;
+const GEAR_LENGTH = 3;
 
 /** Phase comes from the river, so every new hand resets without hidden state. */
 export function racingGear(discards: number): { attack: boolean; step: number; label: string } {

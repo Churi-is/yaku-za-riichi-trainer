@@ -1,18 +1,15 @@
 /**
- * SHARED CONTRACT — public surface of the rules engine. Owned by Worker A.
- * The UI (Worker D) and AI (Worker B) drive the game exclusively through this.
- *
- * `applyAction` is pure: it clones, mutates the clone, and returns it. Worker
- * D's replay depends on every past state staying intact.
+ * Public rules-engine entry point for the UI and AI.
+ * `applyAction` clones its input before applying a legal action; callers can
+ * retain previous states without later decisions changing them.
  */
 import type {
   Action, CallWindow, GameState, HandResult, LegalAction, MatchResult, PlayerState,
   PublicSeatView, PublicView, ScoreResult, SeatIndex, TableSettings, TileId, TileKind,
   Meld, Wind,
 } from './types';
-import { DEFAULT_SETTINGS } from './types';
-import { shanten as shantenImpl, waits as waitsImpl, ukeire as ukeireImpl } from './shanten';
-import { scoreHand as scoreHandImpl, isLegalWin, basePoints, computePayments } from './scoring';
+import { shanten as shantenImpl } from './shanten';
+import { scoreHand as scoreHandImpl, isLegalWin } from './scoring';
 import { dealHand } from './wall';
 import { drawFromWall, rinshanDraw, flipKanDora } from './draw';
 import {
@@ -25,16 +22,15 @@ import { canRiichiAtAll, isDoubleRiichiWindow, leavesTenpai, RIICHI_COST } from 
 
 export * from './types';
 export {
-  kindOf, suitOf, rankOf, isRed, isHonor, isTerminal, isSimple, isTerminalOrHonor,
-  isDragon, isWind, isGreen, countsFromIds, idsFromCounts, tileName, tileNameOfId,
-  tileLabel, kindsLabel, doraKindForIndicator, kindOfWind, windOfKind, yakuhaiKinds,
-  sortIds, makeTile, allTileIds, nextSeat, seatsAfter, SEATS,
-  RED_FIVE_IDS, KIND_COUNT, TILE_COUNT,
+  kindOf, suitOfKind, rankOfKind, isRed, isHonor, isSimple,
+  isDragon, countsFromIds, idsFromCounts, doraKindForIndicator, yakuhaiKinds,
+  sortIds, allTileIds, KIND_COUNT,
 } from './tiles';
 export {
-  shantenFromCounts, isTenpai, isAgari, ukeireTotal, improvingKinds,
-  waitingHandSize, clearShantenCache,
+  shanten, waits, ukeire, shantenFromCounts, isAgari, ukeireTotal,
+  improvingKinds, waitingHandSize,
 } from './shanten';
+export { parseHand } from './notation';
 
 export interface ScoreInput {
   /**
@@ -112,14 +108,13 @@ export function cloneState(state: GameState): GameState {
 // match / hand setup
 // ---------------------------------------------------------------------------
 
-export const WIND_ORDER: Wind[] = ['east', 'south', 'west', 'north'];
+const WIND_ORDER: Wind[] = ['east', 'south', 'west', 'north'];
 
 function windForSeat(seat: SeatIndex, dealer: SeatIndex): Wind {
   return WIND_ORDER[(seat - dealer + 4) % 4];
 }
 
-function freshPlayer(seat: SeatIndex, settings: TableSettings): PlayerState {
-  void settings;
+function freshPlayer(seat: SeatIndex): PlayerState {
   return {
     seat,
     seatWind: 'east',
@@ -144,7 +139,7 @@ function freshPlayer(seat: SeatIndex, settings: TableSettings): PlayerState {
 /** Deal the next hand in place (the caller passes a clone). */
 function startHand(state: GameState): GameState {
   state.handNumber += 1;
-  const deal = dealHand(state.seed, state.handNumber, state.settings);
+  const deal = dealHand(state.seed, state.handNumber);
   state.wall = deal.wall;
   state.deadWall = deal.deadWall;
   state.doraIndicators = [...deal.doraIndicators];
@@ -154,7 +149,6 @@ function startHand(state: GameState): GameState {
   state.lastDiscard = null;
   state.callWindow = null;
   state.rinshanPending = false;
-  state.chankanTile = null;
   state.paoSeat = null;
   state.handOver = null;
 
@@ -196,8 +190,8 @@ export function createMatch(settings: TableSettings, seed = 0): GameState {
     turn: 0,
     phase: 'dealing',
     players: [
-      freshPlayer(0, settings), freshPlayer(1, settings),
-      freshPlayer(2, settings), freshPlayer(3, settings),
+      freshPlayer(0), freshPlayer(1),
+      freshPlayer(2), freshPlayer(3),
     ],
     wall: [],
     deadWall: [],
@@ -208,7 +202,6 @@ export function createMatch(settings: TableSettings, seed = 0): GameState {
     lastDiscard: null,
     callWindow: null,
     rinshanPending: false,
-    chankanTile: null,
     paoSeat: null,
     handOver: null,
     matchOver: null,
@@ -257,7 +250,7 @@ function scoreFor(
 }
 
 /** Is this tile a legal win for `seat` right now? */
-export function canWinOn(
+function canWinOn(
   state: GameState, seat: SeatIndex, tile: TileId, isTsumo: boolean,
   loser: SeatIndex | null = null,
 ): boolean {
@@ -294,9 +287,7 @@ function resolveWin(
   state: GameState, winner: SeatIndex, tile: TileId, isTsumo: boolean,
   loser: SeatIndex | null, chankan: boolean,
 ): void {
-  const p = state.players[winner];
   const score = scoreFor(state, winner, tile, isTsumo, loser, chankan);
-  const winnerIsRiichi = p.riichi || p.doubleRiichi;
   const deltas = zeroDeltas();
   for (const s of SEATS) deltas[s] = score.payments[s];
 
@@ -332,18 +323,15 @@ function resolveWin(
     deltas,
     renchan: state.dealer === winner,
     revealedHands: revealedHands(state),
-    paoSeat: state.paoSeat,
-    doraIndicators: [...state.doraIndicators],
-    uraIndicators: winnerIsRiichi ? [...state.uraIndicators] : [],
   });
 }
 
-/** Standard 3000-point tenpai/noten split, plus 300 per honba. */
+/** Fixed 3000-point tenpai/noten pool. Honba only adds to win payments. */
 function exhaustiveDraw(state: GameState): void {
   const tenpai = tenpaiSeats(state);
   const deltas = zeroDeltas();
   if (tenpai.length > 0 && tenpai.length < 4) {
-    const total = 3000 + 300 * state.honba;
+    const total = 3000;
     const noten = SEATS.filter((s) => !tenpai.includes(s));
     const perTenpai = total / tenpai.length;
     const perNoten = total / noten.length;
@@ -362,9 +350,6 @@ function exhaustiveDraw(state: GameState): void {
     deltas,
     renchan,
     revealedHands: revealedHands(state),
-    paoSeat: null,
-    doraIndicators: [...state.doraIndicators],
-    uraIndicators: [],
   });
 }
 
@@ -392,7 +377,6 @@ function openCallWindow(state: GameState, from: SeatIndex, tile: TileId, chankan
     }
   }
   state.callWindow = { tile, from, passed: [], ronSeats, chankan };
-  state.chankanTile = chankan ? tile : null;
 
   const pending = seatsAfter(from).filter((s) => {
     const o = rawOptions(state, s);
@@ -409,7 +393,6 @@ function openCallWindow(state: GameState, from: SeatIndex, tile: TileId, chankan
 /** Advance to the next player's draw, or end the hand on an empty wall. */
 function afterDiscard(state: GameState): void {
   state.callWindow = null;
-  state.chankanTile = null;
   if (state.wall.length === 0) {
     exhaustiveDraw(state);
     return;
@@ -532,7 +515,6 @@ function applyCall(
     state.rinshanPending = true;
   }
   state.callWindow = null;
-  state.chankanTile = null;
   refreshFuriten(player);
   state.phase = 'awaitingDiscard';
 }
@@ -552,7 +534,6 @@ function completeKakan(state: GameState): void {
   flipKanDora(state);
   const replacement = rinshanDraw(state);
   state.callWindow = null;
-  state.chankanTile = null;
   if (replacement === undefined || replacement === null) {
     exhaustiveDraw(state);
     return;
@@ -648,14 +629,12 @@ function doAnkan(state: GameState, seat: SeatIndex, kind: TileKind): void {
 }
 
 function doKakan(state: GameState, seat: SeatIndex, tile: TileId): void {
-  const kind = kindOf(tile);
   const win: CallWindow = { tile, from: seat, passed: [], ronSeats: [], chankan: true };
   for (const s of SEATS) {
     if (s === seat) continue;
     if (canWinOn(state, s, tile, false, seat)) win.ronSeats.push(s);
   }
   state.callWindow = win;
-  state.chankanTile = tile;
   if (win.ronSeats.length === 0) {
     completeKakan(state);
     return;
@@ -847,7 +826,6 @@ function publicSeat(state: GameState, seat: SeatIndex): PublicSeatView {
     riichiTurn: p.riichiTurn,
     ippatsu: p.ippatsu,
     concealedCount: p.hand.length + (p.drawnTile !== null ? 1 : 0),
-    isClosed: p.isClosed,
     aiPersonalityId: p.aiPersonalityId,
   };
 }
@@ -903,11 +881,11 @@ export function nextHand(state: GameState): GameState {
   const endedWind = next.roundWind;
   const endedNumber = next.roundNumber;
 
-  if (renchan) {
-    next.honba += 1;
-  } else {
+  // Every exhaustive draw adds a counter, regardless of who deals next.
+  // Wins add a counter only when the dealer wins; a non-dealer win resets it.
+  next.honba = result.reason === 'exhaustiveDraw' || renchan ? next.honba + 1 : 0;
+  if (!renchan) {
     next.dealer = nextSeat(next.dealer);
-    next.honba = 0;
     if (next.dealer === 0) {
       if (next.roundWind === 'east') {
         next.roundWind = 'south';
@@ -940,32 +918,5 @@ export function nextHand(state: GameState): GameState {
   return next;
 }
 
-/** Shanten number. 0 = tenpai, -1 = complete. Never below -1. */
-export function shanten(hand: TileId[], melds: Meld[]): number {
-  return shantenImpl(hand, melds);
-}
-
-/** Tiles that improve shanten (ukeire), with remaining-count weights. */
-export function ukeire(
-  hand: TileId[], melds: Meld[], visibleCounts: number[],
-): { kind: number; count: number }[] {
-  return ukeireImpl(hand, melds, visibleCounts);
-}
-
-/** Winning tile kinds for a tenpai hand (empty if not tenpai). */
-export function waits(hand: TileId[], melds: Meld[]): number[] {
-  return waitsImpl(hand, melds);
-}
-
-/** Score a complete hand. Used by the engine and by replay grading. */
-export function scoreHand(input: ScoreInput): ScoreResult {
-  return scoreHandImpl(input);
-}
-
-export { isLegalWin, basePoints, computePayments };
-export type { YakuFlags, YakuContext } from './yaku';
-export { YAKU_NAMES, YAKU_HAN, detectYaku } from './yaku';
-export type { WinShape, Decomposition, SetInfo, WaitType } from './decompose';
-export { enumerateWinShapes } from './decompose';
-export { RIICHI_COST };
-export { tenpaiSeats, windForSeat };
+export { isLegalWin, scoreHand } from './scoring';
+export { windForSeat };

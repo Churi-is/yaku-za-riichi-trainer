@@ -1,5 +1,5 @@
 /**
- * engine/shanten tests — reference hands + property tests. Worker A.
+ * engine/shanten tests — reference hands + property tests.
  *
  * Every expected shanten/wait below was worked out by hand against the
  * standard formula: shanten = 2*(4 - melds - sets) - partials - pair.

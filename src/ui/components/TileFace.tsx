@@ -2,10 +2,11 @@
  * TileFace — hand-drawn SVG tile art (man kanji, pin circles, sou bamboo,
  * honors). Rendering the faces as vectors keeps them crisp at every tile size
  * on the board and in the hand, and reads far more like a real set than a
- * glyph in a box. Owned by Worker D.
+ * glyph in a box.
  */
 import type { TileId } from '@engine/types';
-import { decodeTile, isRedFiveId } from '@ui/tiles';
+import { isRed } from '@engine/index';
+import { decodeTile } from '@ui/tiles';
 
 const INK = '#232733';
 const BLUE = '#1d5aa8';
@@ -76,13 +77,13 @@ function Bird() {
   );
 }
 
-export interface TileFaceProps {
+interface TileFaceProps {
   id: TileId;
 }
 
 export default function TileFace({ id }: TileFaceProps) {
   const { suit, rank } = decodeTile(id);
-  const red = isRedFiveId(id);
+  const red = isRed(id);
   let art: React.ReactNode = null;
 
   if (suit === 'm') {

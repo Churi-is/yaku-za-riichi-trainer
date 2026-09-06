@@ -9,7 +9,6 @@
   --lacquer: #14100b;
   --lacquer-2: #1d1610;
   --lacquer-3: #261d13;
-  --panel: rgba(20, 15, 10, 0.94);
   --panel-border: #453723;
   --hairline: rgba(216, 180, 90, 0.28);
 
@@ -21,20 +20,14 @@
 
   --red: #9c2222;
   --red-hi: #c73434;
-  --red-deep: #6d1616;
 
   --felt: #1d5c42;
   --felt-mid: #17503a;
   --felt-dark: #0d3527;
 
-  --ivory: #f2ecdc;
   --ink: #efe8d8;
   /* brightened from #a2977f so 10–11px muted text clears 4.5:1 on lacquer */
   --muted: #b9ae96;
-
-  --good: #4cb877;
-  --warn: #e0a63c;
-  --bad: #d95c5c;
 
   --radius: 6px;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -93,7 +86,6 @@ svg { display: block; }
   color: var(--muted); white-space: nowrap;
 }
 .pill.gold { border-color: var(--gold-dim); color: var(--gold); }
-.pill.red { border-color: var(--red-hi); color: #f0b6b6; }
 .pill-error {
   border-color: var(--red-hi); color: #f3b9b9;
   background: rgba(125, 29, 29, 0.35);

@@ -32,7 +32,7 @@ function drawsLeft(view: PublicView): number {
   return Math.ceil(view.tilesRemaining / 4);
 }
 
-export interface DiscardChoice {
+interface DiscardChoice {
   tile: TileId;
   kind: TileKind;
   rationale: string;
@@ -43,7 +43,7 @@ function ownSeat(view: PublicView) {
 }
 
 /** Set of dora kinds currently indicated (face-up indicators only). */
-export function indicatedDoraKinds(view: PublicView): Set<TileKind> {
+function indicatedDoraKinds(view: PublicView): Set<TileKind> {
   const set = new Set<TileKind>();
   for (const ind of view.doraIndicators) set.add(doraKindForIndicator(kindOf(ind)));
   return set;

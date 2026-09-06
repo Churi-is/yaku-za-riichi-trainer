@@ -8,7 +8,7 @@
  * when the engine says otherwise.
  */
 import { describe, expect, it } from 'vitest';
-import { parseHand } from '@ai/handEval';
+import { parseHand } from '@engine/index';
 import { getLegalActions, improvingKinds, isAgari, kindOf, shanten, ukeire, waits } from '@engine/index';
 import { scriptedState, scriptedView, tilesInHand, tilesInRivers } from '../table';
 import { ALL_LESSONS, CHAPTERS, lessonById, nextLesson, type Step } from '../course';
@@ -97,7 +97,7 @@ describe('course tiles', () => {
   it('every hand, draw and diagram parses to real tiles', () => {
     for (const { lesson } of ALL_LESSONS) {
       for (const s of lesson.steps) {
-        for (const notation of [s.hand, s.draw, s.meld]) {
+        for (const notation of [s.hand, s.draw]) {
           if (!notation) continue;
           const ids = parseHand(notation);
           expect(ids.length, `${lesson.id}: "${notation}"`).toBeGreaterThan(0);
@@ -115,8 +115,7 @@ describe('course tiles', () => {
     for (const { lesson } of ALL_LESSONS) {
       for (const s of lesson.steps) {
         const held = parseHand(s.hand ?? '').length
-          + parseHand(s.draw ?? '').length
-          + parseHand(s.meld ?? '').length;
+          + parseHand(s.draw ?? '').length;
         expect(held, `${lesson.id} holds ${held} tiles`).toBeLessThanOrEqual(14);
       }
     }

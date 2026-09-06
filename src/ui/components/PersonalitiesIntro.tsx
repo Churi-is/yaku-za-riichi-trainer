@@ -5,7 +5,7 @@ import { DIFFICULTY_LABEL, rosterDifficulty } from '@ai/personalities';
 import type { SeatPersonality } from '@state/gameLoop';
 import { useFocusTrap } from '@ui/hooks/useFocusTrap';
 
-export interface PersonalitiesIntroProps {
+interface PersonalitiesIntroProps {
   personalities: SeatPersonality[];
   onStart: () => void;
 }

@@ -5,7 +5,7 @@
  * Design goals:
  *  - AI seats decide from ONLY toPublicView(state, seat) + getLegalActions.
  *  - AI turns are paced with a short delay; the UI thread never blocks.
- *  - The loop is guarded against a throwing engine (the adapter handles that).
+ *  - Unexpected engine errors stop the pump and surface a recovery message.
  *  - Human seat (0) surfaces legal actions as UI options and waits.
  *  - Nothing advances while the pause menu is open or the pre-match intro is
  *    still on screen: the pump gates on both flags so "Paused" really is, and
@@ -20,12 +20,12 @@ import {
 } from '@ai/index';
 import type {
   Action, GameState, HandResult, LegalAction, MatchResult, PublicView,
-  SeatIndex, TableSettings, TileId, TileKind, Difficulty,
+  SeatIndex, TableSettings, Difficulty
 } from '@engine/types';
 import { completeOpponents } from './opponents';
 import {
   applyAction, createMatch, getLegalActions, nextHand, pendingSeats, toPublicView,
-} from './engineAdapter';
+} from '@engine/index';
 
 export interface SeatPersonality {
   seat: SeatIndex;
@@ -33,16 +33,14 @@ export interface SeatPersonality {
   name: string;
   tagline: string;
   title: string;
-  tell: string;
   difficulty: Difficulty;
   special?: SpecialPersonality;
 }
 
-export interface HandEndBanner {
+interface HandEndBanner {
   result: HandResult;
   roundLabel: string;
 }
-
 
 interface MatchStore {
   state: GameState | null;
@@ -77,7 +75,6 @@ const AI_MAX_DELAY = 780;
 // Module-scoped, non-reactive controller data (avoids re-render churn).
 let ais: Record<number, AIPlayer> = {};
 let pumpToken = 0; // invalidates in-flight timers when we reset/restart
-let handCounter = 0;
 
 function roundLabel(state: GameState): string {
   const wind = state.roundWind[0].toUpperCase() + state.roundWind.slice(1);
@@ -90,7 +87,6 @@ function delay(ms: number): Promise<void> {
 function randDelay(): number {
   return AI_MIN_DELAY + Math.floor(Math.random() * (AI_MAX_DELAY - AI_MIN_DELAY));
 }
-
 
 export const useMatch = create<MatchStore>((set, get) => ({
   state: null,
@@ -107,7 +103,6 @@ export const useMatch = create<MatchStore>((set, get) => ({
   start(settings, seed, opponents) {
     pumpToken++;
     const token = pumpToken;
-    handCounter = 0;
 
     let state = createMatch(settings, seed);
 
@@ -122,7 +117,7 @@ export const useMatch = create<MatchStore>((set, get) => ({
       ais[seat] = createAI(personality, difficulty, (seed ?? 1) + seat);
       seatPersonalities.push({
         seat, id: personality.id, name: personality.name, tagline: personality.tagline,
-        title: personality.title, tell: personality.tell, difficulty, special: personality.special,
+        title: personality.title, difficulty, special: personality.special,
       });
     }
 
@@ -147,7 +142,7 @@ export const useMatch = create<MatchStore>((set, get) => ({
     const { state, paused, introDismissed } = get();
     if (!state || paused || !introDismissed) return;
     let next = applyAction(state, action);
-    commit(next, set, get);
+    commit(next, set);
     // resume the pump after a human action
     const token = pumpToken;
     void pump(token, get, set);
@@ -163,7 +158,7 @@ export const useMatch = create<MatchStore>((set, get) => ({
       return;
     }
     set({ handEnd: null });
-    commit(next, set, get);
+    commit(next, set);
     const token = pumpToken;
     void pump(token, get, set);
   },
@@ -201,7 +196,7 @@ export const useMatch = create<MatchStore>((set, get) => ({
 
 // --- internals -------------------------------------------------------------
 
-function commit(next: GameState, set: (p: Partial<MatchStore>) => void, get: () => MatchStore) {
+function commit(next: GameState, set: (p: Partial<MatchStore>) => void) {
   // A clean state after a handled step clears any earlier engine-error notice.
   const humanLegal = safeLegal(next, 0);
   set({
@@ -268,7 +263,7 @@ async function pump(token: number, get: () => MatchStore, set: (p: Partial<Match
       await delay(randDelay());
       if (token !== pumpToken) return;
       const decided = decideAI(state, seat);
-      await stepApply(token, get, set, seat, decided);
+      await stepApply(token, get, set, decided);
       continue;
     }
 
@@ -284,7 +279,7 @@ async function pump(token: number, get: () => MatchStore, set: (p: Partial<Match
         await delay(randDelay());
         if (token !== pumpToken) return;
       }
-      await stepApply(token, get, set, seat, draw.action);
+      await stepApply(token, get, set, draw.action);
       continue;
     }
 
@@ -297,7 +292,7 @@ async function pump(token: number, get: () => MatchStore, set: (p: Partial<Match
     await delay(randDelay());
     if (token !== pumpToken) return;
     const decided = decideAI(state, seat);
-    await stepApply(token, get, set, seat, decided);
+    await stepApply(token, get, set, decided);
   }
 }
 
@@ -335,10 +330,8 @@ async function stepApply(
   token: number,
   get: () => MatchStore,
   set: (p: Partial<MatchStore>) => void,
-  seat: SeatIndex,
   action: Action,
 ) {
-  void seat;
   const state = get().state;
   if (!state) return;
   let next: GameState;
@@ -355,7 +348,7 @@ async function stepApply(
     return;
   }
   if (token !== pumpToken) return;
-  commit(next, set, get);
+  commit(next, set);
   // brief settle so consecutive AI discards are legible
   await delay(90);
 }
@@ -366,15 +359,6 @@ function showHandEnd(state: GameState, set: (p: Partial<MatchStore>) => void) {
 }
 
 function finalizeMatch(state: GameState, set: (p: Partial<MatchStore>) => void) {
-  // Recompute an accurate ranking from accumulated points (fallback match
-  // handsPlayed is 0; the summary uses the log anyway).
-  const finalPoints: Record<number, number> = {};
-  for (let s = 0; s < 4; s++) finalPoints[s] = state.players[s].points;
-  const ranking = ([0, 1, 2, 3] as SeatIndex[]).sort((a, b) => finalPoints[b] - finalPoints[a]);
-  const result: MatchResult = {
-    ranking,
-    finalPoints: finalPoints as Record<SeatIndex, number>,
-    handsPlayed: state.matchOver?.handsPlayed ?? handCounter,
-  };
-  set({ matchResult: result, aiThinking: false, humanLegal: [], state, handEnd: null });
+  if (!state.matchOver) return;
+  set({ matchResult: state.matchOver, aiThinking: false, humanLegal: [], state, handEnd: null });
 }

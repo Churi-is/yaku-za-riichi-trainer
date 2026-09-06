@@ -1,9 +1,8 @@
-/** MatchScreen — the live table, top-down. Owned by Worker D. */
+/** MatchScreen — the live table, top-down. */
 import { useEffect, useMemo, useState } from 'react';
 import type { Action, SeatIndex, TileId } from '@engine/types';
 import { useSession } from '@state/session';
 import { useMatch } from '@state/gameLoop';
-import { usingFallback } from '@state/engineAdapter';
 import { useOrientation } from '@ui/hooks/useOrientation';
 import { useFocusTrap } from '@ui/hooks/useFocusTrap';
 
@@ -176,7 +175,6 @@ export default function MatchScreen() {
         <div className="felt-wrap">
           <TableBoard
             view={view}
-            seatName={seatName}
             aiThinking={aiThinking}
             orient={orient}
             compact={compact}
@@ -215,9 +213,6 @@ export default function MatchScreen() {
             <span className="pill pill-error" role="alert" style={{ flex: 1, whiteSpace: 'normal' }}>
               {engineMessage}
             </span>
-          )}
-          {usingFallback() && !engineMessage && (
-            <span className="pill" title="Worker A's engine has not merged yet; using Worker D's built-in fallback rules engine.">demo</span>
           )}
           <span className="spacer" />
           <button

@@ -1,5 +1,5 @@
 /**
- * engine/riichi — declaration rules. Owned by Worker A.
+ * engine/riichi — declaration rules.
  *
  * Closed hands only, 1000-point stick, never after a call, must leave the hand
  * tenpai, and not available when fewer than 4 tiles remain in the live wall
@@ -10,7 +10,7 @@ import { shanten } from './shanten';
 import type { GameState, PlayerState, SeatIndex, TileId } from './types';
 
 export const RIICHI_COST = 1000;
-export const MIN_WALL_FOR_RIICHI = 4;
+const MIN_WALL_FOR_RIICHI = 4;
 
 /** Basic eligibility, before looking at which tile is being discarded. */
 export function canRiichiAtAll(state: GameState, seat: SeatIndex): boolean {
@@ -23,7 +23,7 @@ export function canRiichiAtAll(state: GameState, seat: SeatIndex): boolean {
 }
 
 /** The 13-tile shape that would remain after discarding `tile`. */
-export function shapeAfterDiscard(p: PlayerState, tile: TileId): TileId[] {
+function shapeAfterDiscard(p: PlayerState, tile: TileId): TileId[] {
   const pool = [...p.hand, ...(p.drawnTile !== null ? [p.drawnTile] : [])];
   const idx = pool.indexOf(tile);
   if (idx < 0) return [];
@@ -41,12 +41,4 @@ export function leavesTenpai(p: PlayerState, tile: TileId): boolean {
 export function isDoubleRiichiWindow(state: GameState, seat: SeatIndex): boolean {
   if (state.turnNumber > seat) return false;
   return state.players.every((pl) => pl.melds.length === 0);
-}
-
-/** Every tile this seat could discard while declaring riichi. */
-export function riichiDiscards(state: GameState, seat: SeatIndex): TileId[] {
-  if (!canRiichiAtAll(state, seat)) return [];
-  const p = state.players[seat];
-  const pool = [...p.hand, ...(p.drawnTile !== null ? [p.drawnTile] : [])];
-  return [...new Set(pool)].filter((tile) => leavesTenpai(p, tile));
 }

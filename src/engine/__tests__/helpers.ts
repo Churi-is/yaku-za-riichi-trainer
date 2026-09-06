@@ -1,5 +1,5 @@
 /**
- * Shared test helpers for the engine suite. Worker A.
+ * Shared test helpers for the engine suite.
  *
  * Notation: `123m 45p 789s ESWN PFC`, digits run until a suit letter.
  *   m/p/s = man/pin/sou. `z` also works (`1z` = East ... `7z` = Chun).
@@ -7,7 +7,7 @@
  *   `0m` / `0p` / `0s` = the RED five. A plain `5m` is always a NON-red five,
  *   so tests never hit an aka dora by accident.
  */
-import { idOf, kindOf, RED_FIVE_KINDS } from '../tiles';
+import { idOf, RED_FIVE_KINDS } from '../tiles';
 import type { Meld, TileId, TileKind } from '../types';
 
 const SUIT_BASE: Record<string, number> = { m: 0, p: 9, s: 18, z: 27 };
@@ -69,11 +69,6 @@ export function parse(text: string): TileId[] {
   return ids.sort((a, b) => a - b);
 }
 
-/** Parse notation into tile kinds (sorted ascending). */
-export function parseKinds(text: string): TileKind[] {
-  return parseTokens(text).map((t) => t.kind).sort((a, b) => a - b);
-}
-
 /** Parse notation into a 34-slot count array. */
 export function parseCounts(text: string): number[] {
   const counts = new Array<number>(34).fill(0);
@@ -92,12 +87,4 @@ export function meld(type: Meld['type'], text: string, calledFrom: 0 | 1 | 2 | 3
     calledTile: type === 'ankan' ? null : tiles[0],
     concealed: type === 'ankan',
   };
-}
-
-export function kindsOf(ids: TileId[]): TileKind[] {
-  return ids.map(kindOf);
-}
-
-export function show(ids: TileId[]): string {
-  return ids.join(',');
 }

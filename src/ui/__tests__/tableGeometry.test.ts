@@ -75,7 +75,6 @@ function makeView(sc: Scenario): PublicView {
       riichiTurn: null,
       ippatsu: false,
       concealedCount: 13 - 3 * nMelds,
-      isClosed: nMelds === 0,
       aiPersonalityId: s === 0 ? null : 'x',
     };
   }
@@ -209,7 +208,7 @@ describe('board geometry', () => {
     for (const variant of VARIANTS) {
       for (const seat of [0, 1, 2, 3] as SeatIndex[]) {
         const L = layoutBoard(makeView({ name: 'x', rivers: [8, 8, 8, 8], riichi: [seat] }), variant);
-        const turned = L.ponds[seat].filter((t, i) => i === 4);
+        const turned = L.ponds[seat].filter((_, i) => i === 4);
         expect(turned).toHaveLength(1);
         // it is rotated a quarter turn from that seat's other discards
         const others = L.ponds[seat].filter((_, i) => i !== 4).map((t) => t.rot);

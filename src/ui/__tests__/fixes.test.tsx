@@ -7,7 +7,7 @@ import { act, render, cleanup, fireEvent, screen } from '@testing-library/react'
 import App from '@ui/App';
 import { useSession } from '@state/session';
 import { useMatch } from '@state/gameLoop';
-import { createMatch, toPublicView } from '@state/engineAdapter';
+import { createMatch, toPublicView } from '@engine/index';
 import { DEFAULT_SETTINGS } from '@engine/types';
 import type { GameState } from '@engine/types';
 
@@ -42,7 +42,6 @@ describe('pause really pauses', () => {
     act(() => { useMatch.getState().humanAct(discard.action); });
     await tick(1500);
 
-    const before = useMatch.getState();
     const rivers = () => ([0, 1, 2, 3] as const)
       .reduce((n: number, s) => n + useMatch.getState().view!.seats[s].river.length, 0);
     const frozen = rivers();
@@ -64,7 +63,6 @@ describe('pause really pauses', () => {
       if (d) act(() => { st.humanAct(d.action); });
     }
     expect(rivers() > frozen || useMatch.getState().handEnd !== null).toBe(true);
-    void before;
   });
 
   it('asks before abandoning a match', async () => {

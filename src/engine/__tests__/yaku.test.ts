@@ -1,6 +1,6 @@
 /**
  * engine/yaku tests — the yaku the scoring suite does not reach directly,
- * plus the win-legality gate. Worker A.
+ * plus the win-legality gate.
  */
 import { describe, it, expect } from 'vitest';
 import {

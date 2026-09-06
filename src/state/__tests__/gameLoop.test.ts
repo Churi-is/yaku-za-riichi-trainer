@@ -4,7 +4,7 @@
  * `state.turn` itself — otherwise the table stalls on the first discard.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { DEFAULT_SETTINGS } from '@engine/types';
+import { createMatch, DEFAULT_SETTINGS } from '@engine/index';
 import { useMatch } from '@state/gameLoop';
 
 afterEach(() => {
@@ -90,7 +90,6 @@ describe('game loop flow', () => {
     const after = useMatch.getState();
     const moved = discardsNow() > frozenAt || after.handEnd !== null;
     expect(moved).toBe(true);
-    void beforePause;
   });
 
   it('holds the pump until the intro is dismissed', async () => {
@@ -106,6 +105,31 @@ describe('game loop flow', () => {
     st.dismissIntro();
     await advance(10);
     expect(useMatch.getState().humanLegal.some((l) => l.action.type === 'discard')).toBe(true);
+  });
+
+  it('uses the engine’s final result, preserving tie order and hands played', () => {
+    const state = createMatch({ ...DEFAULT_SETTINGS, gameLength: 'east' }, 19);
+    state.phase = 'handOver';
+    state.roundNumber = 4;
+    state.dealer = 3;
+    state.handNumber = 17;
+    state.players.forEach((p, i) => { p.points = [15000, 30000, 30000, 25000][i]; });
+    state.handOver = {
+      reason: 'exhaustiveDraw', winner: null, loser: null, score: null, winningTile: null,
+      tenpaiSeats: [], deltas: { 0: 0, 1: 0, 2: 0, 3: 0 }, renchan: false,
+      revealedHands: { 0: [], 1: [], 2: [], 3: [] },
+    };
+    useMatch.setState({ state });
+
+    useMatch.getState().advanceHand();
+
+    const store = useMatch.getState();
+    expect(store.matchResult).toBe(store.state!.matchOver);
+    expect(store.matchResult).toEqual({
+      ranking: [1, 2, 3, 0],
+      finalPoints: { 0: 15000, 1: 30000, 2: 30000, 3: 25000 },
+      handsPlayed: 17,
+    });
   });
 
   it('survives a full hand without dead-ending (no exception, phase progresses)', async () => {

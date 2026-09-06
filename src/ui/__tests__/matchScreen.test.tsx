@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { act, render, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, render, cleanup, fireEvent, screen } from '@testing-library/react';
 import App from '@ui/App';
 import { useSession } from '@state/session';
 import { useMatch } from '@state/gameLoop';

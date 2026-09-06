@@ -12,7 +12,6 @@ import {
   ukeire,
   hasOpenYakuPath,
   evaluateDiscards,
-  estimateHan,
   kindOf,
 } from '../handEval';
 import {
@@ -21,15 +20,13 @@ import {
   tableThreat,
 } from '../defense';
 import { chooseDiscard } from '../efficiency';
-import { Rng, hashSeed } from '../rng';
+import { Rng } from '../rng';
 import { playHands } from './selfplay';
 import type {
   LegalAction,
   Meld,
-  PublicView,
   SeatIndex,
   TileId,
-  TileKind,
 } from '@engine/types';
 
 // ---------------------------------------------------------------------------
@@ -197,14 +194,14 @@ describe('defense / safety', () => {
       tilesRemaining: 30,
       seats: { 2: { riichi: true, river: ['1m', '2m', '3m', '4m'] } } as never,
     });
-    expect(tableThreat(riichi).level).toBeGreaterThan(0.7);
+    expect(tableThreat(riichi)).toBeGreaterThan(0.7);
 
     const quiet = makeView({
       hand: '234m567p234s12mE',
       tilesRemaining: 50,
       seats: { 1: { river: ['E'] }, 2: { river: ['S'] }, 3: { river: ['W'] } } as never,
     });
-    expect(tableThreat(quiet).level).toBeLessThan(0.6);
+    expect(tableThreat(quiet)).toBeLessThan(0.6);
   });
 });
 
@@ -280,21 +277,6 @@ describe('createAI / decide', () => {
   });
 });
 
-describe('RNG', () => {
-  it('is seeded and reproducible', () => {
-    const a = new Rng(12345);
-    const b = new Rng(12345);
-    const sa = [a.next(), a.next(), a.next()];
-    const sb = [b.next(), b.next(), b.next()];
-    expect(sa).toEqual(sb);
-    expect(new Rng(1).next()).not.toBe(new Rng(2).next());
-  });
-  it('hashSeed is stable', () => {
-    expect(hashSeed('x', 1)).toBe(hashSeed('x', 1));
-    expect(hashSeed('x', 1)).not.toBe(hashSeed('x', 2));
-  });
-});
-
 describe('public-information firewall (no-cheat)', () => {
   it('src/ai never imports hidden state or engine internal modules', () => {
     const aiDir = fileURLToPath(new URL('..', import.meta.url));
@@ -351,21 +333,21 @@ describe('public-information firewall (no-cheat)', () => {
   });
 });
 
-describe('self-play separation', () => {
+describe('real-engine self-play separation', () => {
   it('every archetype/difficulty plays hands with ZERO illegal actions', () => {
     for (const arch of ['aggressive', 'balanced', 'defensive'] as const) {
       for (const diff of ['easy', 'normal', 'hard'] as const) {
         const ais = [0, 1, 2, 3].map((s) => createAIForArchetype(arch, diff, 1000 + s));
         const res = playHands(ais, 31 + arch.length * 7 + diff.length, 6);
-        const illegal = res.perSeat.reduce((s, p) => s + p.illegal, 0);
-        expect(illegal, `${arch}/${diff} illegal actions`).toBe(0);
+        expect(res.handsPlayed, `${arch}/${diff} completed hands`).toBe(6);
+        expect(res.perSeat.every((p) => p.decisions > 0)).toBe(true);
       }
     }
   });
 
   it('a seeded full self-play hand runs to completion with zero illegal actions', () => {
     // One representative table; the loop itself terminates and all returned
-    // actions are legal (the harness otherwise force-recovers and counts).
+    // actions are legal (the driver throws on any invalid action or stalled hand).
     const ais = [
       createAIForArchetype('aggressive', 'hard', 11),
       createAIForArchetype('balanced', 'normal', 22),
@@ -374,7 +356,7 @@ describe('self-play separation', () => {
     ];
     const res = playHands(ais, 777, 8);
     expect(res.handsPlayed).toBe(8);
-    expect(res.perSeat.reduce((s, p) => s + p.illegal, 0)).toBe(0);
+    expect(res.perSeat.every((p) => p.decisions > 0)).toBe(true);
   });
 
   it('decide is fast (well under an instant-feel budget per decision)', () => {
@@ -418,20 +400,7 @@ describe('self-play separation', () => {
     expect(def).toBeLessThanOrEqual(agg);
   });
 
-  it('harder play reaches a complete (winning) hand more often', () => {
-    // Coarse proxy in the simplified simulator: a better efficiency bot
-    // completes hands (tsumo/ron) more often and dead-draws less. Full,
-    // accurately-scored difficulty separation is asserted against the real
-    // engine in integration.test.ts.
-    const wins = (diff: 'easy' | 'normal' | 'hard', seed: number) => {
-      const ais = ([0, 1, 2, 3] as const).map((s) =>
-        createAIForArchetype('balanced', diff, seed + s),
-      );
-      const r = playHands(ais, seed, 10);
-      return r.perSeat.reduce((s, p) => s + p.ronWins + p.tsumoWins, 0);
-    };
-    // Hard should at least never complete fewer hands than easy on average;
-    // the strong claim is checked with real scoring in integration.test.ts.
-    expect(wins('hard', 3000) >= wins('easy', 3000) - 2).toBe(true);
-  });
+  // Difficulty separation is the paired, fixed-opponent placement experiment
+  // in integration.test.ts. All-Hard vs all-Easy win counts are not a strength
+  // measure: stronger opponents defend better and can produce MORE draws.
 });

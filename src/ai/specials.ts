@@ -26,7 +26,7 @@ const isWin = (action: Action): boolean => action.type === 'ron' || action.type 
 const decision = (offer: LegalAction, rationale: string): AIDecision => ({ action: offer.action, rationale });
 
 function ordinary(view: PublicView, legal: LegalAction[], params: AIParams, rng: Rng): AIDecision {
-  return decideAction(view, legal, { params, archetype: params.archetype, rng });
+  return decideAction(view, legal, { params, rng });
 }
 
 /** Keep physical-copy choices (including red fives) and respect kuikae. */

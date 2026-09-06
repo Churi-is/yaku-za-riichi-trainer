@@ -7,8 +7,6 @@ import type { PublicView, SeatIndex, TileKind } from '@engine/types';
 import { kindOf, suitOf, rankOf, isHonor, doraCount, yakuhaiKinds, KIND_COUNT } from './handEval';
 
 interface SeatSafety {
-  seat: SeatIndex;
-  threat: number;
   genbutsu: Set<TileKind>;
   suji: Set<TileKind>;
   valueHonors: Set<TileKind>;
@@ -18,11 +16,8 @@ interface SeatSafety {
 export interface SafetyContext {
   /** Intersection: safe against EVERY active threat, not just one seat. */
   genbutsu: Set<TileKind>;
-  suji: Set<TileKind>;
   /** Four copies visible. A suited tile can still complete a sequence! */
   dead: Set<TileKind>;
-  oneChance: Set<TileKind>;
-  early: Set<TileKind>;
   visibleCounts: readonly number[];
   threats: SeatSafety[];
 }
@@ -61,26 +56,23 @@ export function seatThreat(view: PublicView, seat: SeatIndex): number {
   return clamp01(t);
 }
 
-export function tableThreat(view: PublicView): { level: number; seat: SeatIndex | null; perSeat: number[] } {
+export function tableThreat(view: PublicView): number {
   const perSeat = [0, 0, 0, 0];
   let level = 0;
-  let seat: SeatIndex | null = null;
   for (const s of [0, 1, 2, 3] as const) {
     if (s === view.viewer) continue;
     const th = seatThreat(view, s);
     perSeat[s] = th;
-    if (th > level) { level = th; seat = s; }
+    level = Math.max(level, th);
   }
   const extraThreats = Math.max(0, perSeat.filter((t) => t >= 0.55).length - 1);
-  return { level: clamp01(level + extraThreats * 0.07), seat, perSeat };
+  return clamp01(level + extraThreats * 0.07);
 }
 
 export function buildSafetyContext(view: PublicView): SafetyContext {
   const dead = new Set<TileKind>();
-  const oneChance = new Set<TileKind>();
   for (let k = 0; k < KIND_COUNT; k++) {
     if (view.visibleCounts[k] >= 4) dead.add(k);
-    else if (view.visibleCounts[k] === 3) oneChance.add(k);
   }
   const opponents = ([0, 1, 2, 3] as const).filter((s) => s !== view.viewer);
   const active = opponents.filter((s) => view.seats[s].riichi || seatThreat(view, s) >= 0.5);
@@ -110,17 +102,15 @@ export function buildSafetyContext(view: PublicView): SafetyContext {
       if (lowerCovered && upperCovered) suji.add(k);
     }
     return {
-      seat: s, threat: seatThreat(view, s), genbutsu, suji,
+      genbutsu, suji,
       valueHonors: new Set(yakuhaiKinds(info.seatWind, view.roundWind)),
       flushSuit: exposedFlushSuit(view, s),
     };
   });
-  const intersection = (key: 'genbutsu' | 'suji'): Set<TileKind> => new Set(
-    [...(threats[0]?.[key] ?? [])].filter((k) => threats.every((t) => t[key].has(k))),
+  const genbutsu = new Set(
+    [...(threats[0]?.genbutsu ?? [])].filter((k) => threats.every((t) => t.genbutsu.has(k))),
   );
-  const early = new Set<TileKind>();
-  for (const s of targets) for (const r of view.seats[s].river.slice(0, 6)) early.add(kindOf(r.tile));
-  return { genbutsu: intersection('genbutsu'), suji: intersection('suji'), dead, oneChance, early, threats, visibleCounts: view.visibleCounts };
+  return { genbutsu, dead, threats, visibleCounts: view.visibleCounts };
 }
 
 function dangerAgainst(kind: TileKind, opponent: SeatSafety, ctx: SafetyContext): number {
@@ -149,4 +139,4 @@ export function dangerOf(kind: TileKind, ctx: SafetyContext): number {
   return Math.max(0, ...ctx.threats.map((t) => dangerAgainst(kind, t, ctx)));
 }
 
-export function clamp01(x: number): number { return Math.max(0, Math.min(1, x)); }
+function clamp01(x: number): number { return Math.max(0, Math.min(1, x)); }

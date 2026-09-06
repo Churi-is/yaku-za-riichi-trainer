@@ -23,8 +23,6 @@ export interface AIParams {
   defenseThreshold: number;
   /** Higher = more willing to keep a valuable hand in dama. */
   riichiPatience: number;
-  /** Higher = less exaggerated play at higher execution levels. */
-  tellSubtlety: number;
   /** Chance of varying between near-equivalent, same-shanten discards. */
   deviation: number;
   /** Retain dora and value honors rather than always choosing maximum speed. */
@@ -67,7 +65,6 @@ export interface AIDecision {
 }
 
 export interface AIPlayer {
-  personality: Personality;
   params: AIParams;
   decide(view: PublicView, legal: LegalAction[]): AIDecision;
 }

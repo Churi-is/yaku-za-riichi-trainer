@@ -9,7 +9,7 @@
  */
 import { useEffect, useState, type RefObject } from 'react';
 
-export interface BoxSize { w: number; h: number }
+interface BoxSize { w: number; h: number }
 
 export function useBoxSize(ref: RefObject<HTMLElement | null>): BoxSize {
   const [box, setBox] = useState<BoxSize>({ w: 0, h: 0 });
