@@ -92,6 +92,7 @@ function makeView(sc: Scenario): PublicView {
     phase: 'awaitingDiscard',
     hand: Array.from({ length: handN }).map((_, i) => ((i * 3) % 34) * 4),
     drawnTile: sc.drawn === false ? null : 30 * 4,
+    furiten: false,
     seats,
     doraIndicators: Array.from({ length: sc.dora ?? 1 }).map((_, i) => i * 5 * 4),
     tilesRemaining: 42,

@@ -86,7 +86,14 @@ export default function TableCenter({ view, center, thinking = false }: TableCen
             <span className="n">{view.riichiSticks}</span>
           </span>
         )}
-        <span className="wall-count" title="tiles left in the live wall">{view.tilesRemaining}</span>
+        <span
+          className="wall-count"
+          role="img"
+          aria-label={`${view.tilesRemaining} tiles left in the live wall`}
+          title={`${view.tilesRemaining} tiles left in the live wall`}
+        >
+          <span className="wall-kanji jp" aria-hidden="true">残</span>{view.tilesRemaining}
+        </span>
       </div>
     </div>
   );

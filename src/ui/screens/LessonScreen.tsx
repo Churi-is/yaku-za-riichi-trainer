@@ -34,6 +34,11 @@ import { useSession } from '@state/session';
 
 const NO_NAME = (s: SeatIndex) => (s === 0 ? 'You' : `Seat ${s}`);
 
+/** True when a step is a drill whose options are tile discards. */
+function isTileDrillStep(s: Step): boolean {
+  return s.kind === 'drill' && (s.options ?? []).some((o) => o.tile);
+}
+
 function TileRow({ notation, size = 'sm' }: { notation: string; size?: 'sm' | 'md' }) {
   const ids = useMemo<TileId[]>(() => {
     try { return parseHand(notation); } catch { return []; }
@@ -86,10 +91,13 @@ export default function LessonScreen() {
   const [picked, setPicked] = useState<number | null>(null);
   // Every step opens with its instructions visible; the player can put them away.
   const [cardCollapsed, setCardCollapsed] = useState(false);
+  // A tap on a tile that is NOT one of the drill's choices does not burn the
+  // drill: it nudges instead, so a fat finger never costs the question.
+  const [nudge, setNudge] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const contentId = useId();
 
-  useEffect(() => { setAt(0); setPicked(null); setCardCollapsed(false); }, [lessonId]);
+  useEffect(() => { setAt(0); setPicked(null); setCardCollapsed(false); setNudge(false); }, [lessonId]);
 
   const found = lessonId ? lessonById(lessonId) : null;
   if (!found) {
@@ -131,6 +139,36 @@ export default function LessonScreen() {
     [table],
   );
 
+  // In a tile drill only the coach's choice tiles may be tapped: every other
+  // hand tile is disabled, so a fat-fingered tap cannot answer -1. Choices are
+  // tile KINDS — when the hand holds several copies of the answer (e.g. a
+  // triplet), every copy is the same discard and every copy must be tappable.
+  const drillChoiceKinds = useMemo(() => {
+    if (step.kind !== 'drill') return null;
+    const out = new Set<number>();
+    for (const o of step.options ?? []) {
+      if (!o.tile) continue;
+      try {
+        for (const id of parseHand(o.tile)) out.add(kindOf(id));
+      } catch { /* ignore bad script */ }
+    }
+    return out;
+  }, [step]);
+
+  const discardActionsForBoard: LegalAction[] = useMemo(() => {
+    if (!isTileDrillStep(step)) return legal;
+    return legal.filter((l) => {
+      if (l.action.type !== 'discard') return false;
+      return drillChoiceKinds?.has(kindOf(l.action.tile)) ?? true;
+    });
+  }, [legal, drillChoiceKinds, step]);
+
+  const choiceTileIds = useMemo(() => {
+    if (!table || drillChoiceKinds === null) return [];
+    const held = [...table.view.hand, ...(table.view.drawnTile !== null ? [table.view.drawnTile] : [])];
+    return held.filter((t) => drillChoiceKinds.has(kindOf(t)));
+  }, [table, drillChoiceKinds]);
+
   const answered = picked !== null;
   const chosen = answered ? step.options?.[picked!] : null;
   const isTileDrill = step.kind === 'drill' && (step.options ?? []).some((o) => o.tile);
@@ -152,6 +190,7 @@ export default function LessonScreen() {
     setAt(index);
     setPicked(null);
     setCardCollapsed(false);
+    setNudge(false);
   };
 
   const focusTiles = useMemo(() => {
@@ -164,14 +203,24 @@ export default function LessonScreen() {
     // rest keeps the felt readable. After the answer the board lights the
     // correct discard while the coach explains itself.
     if (isTileDrill && !answered) {
-      return (step.options ?? []).flatMap((o) => (o.tile ? tilesInHand(table.view, o.tile) : []));
+      // Light EVERY copy of each choice tile kind: the choice is a kind, and a
+      // hand holding several copies of it offers that same discard several
+      // places on the felt.
+      return choiceTileIds;
     }
     if (answered) {
-      const right = (step.options ?? []).find((o) => o.correct && o.tile);
-      if (right) return tilesInHand(table.view, right.tile!);
+      // Light every copy of the correct kind too, for the same reason.
+      const rightKinds = new Set<number>();
+      for (const o of step.options ?? []) {
+        if (o.correct && o.tile) {
+          try { for (const id of parseHand(o.tile)) rightKinds.add(kindOf(id)); } catch { /* bad script */ }
+        }
+      }
+      const held = [...table.view.hand, ...(table.view.drawnTile !== null ? [table.view.drawnTile] : [])];
+      return held.filter((t) => rightKinds.has(kindOf(t)));
     }
     return [];
-  }, [table, step, answered, isTileDrill]);
+  }, [table, step, answered, isTileDrill, choiceTileIds]);
 
   /** Tapping a tile on the felt answers a discard drill. */
   const tapTile = (tile: TileId | null) => {
@@ -179,7 +228,16 @@ export default function LessonScreen() {
     const i = (step.options ?? []).findIndex(
       (o) => o.tile && kindOf(parseHand(o.tile)[0]) === kindOf(tile),
     );
-    answer(i >= 0 ? i : -1);
+    if (i < 0) {
+      // Not one of the choices: tell the player and let them retry, instead of
+      // marking the drill wrong. Tiles outside the choices are disabled
+      // anyway (the board only enables the lit options); this covers the
+      // raised drawn tile and any edge case.
+      setNudge(true);
+      return;
+    }
+    setNudge(false);
+    answer(i);
   };
 
   const advance = () => {
@@ -196,10 +254,17 @@ export default function LessonScreen() {
     () => coachPlacement(step, table?.view ?? null, wide),
     [step, table, wide],
   );
+  // Judgement drills show word options that can wrap to several lines; make
+  // sure the card is tall enough for the whole list so no option hides behind
+  // the bottom fade waiting for a scroll the player doesn't know exists.
+  const isJudgementDrill = step.kind === 'drill' && !isTileDrill;
+  const effectiveBand = !wide && isJudgementDrill
+    ? Math.max(place.band, answered ? 0.72 : 0.62)
+    : place.band;
   // In portrait, every explanation collapses UP into a fixed-height strip.
   // Landscape keeps its rail (or the existing band on very narrow windows).
   const slot = portrait && collapsed ? 'top' : place.slot;
-  const band = collapsed ? 0.075 : answered ? 0.62 : place.band;
+  const band = collapsed ? 0.075 : effectiveBand;
   const coachStyle = slot === 'rail' || (portrait && collapsed)
     ? undefined
     : { maxHeight: `${band * 100}%` };
@@ -267,12 +332,18 @@ export default function LessonScreen() {
               aiThinking={false}
               orient={orient}
               compact={compact}
-              discardActions={isTileDrill && !answered ? legal : []}
+              discardActions={isTileDrill && !answered ? discardActionsForBoard : []}
               onDiscard={() => undefined}
               selected={null}
               onSelect={tapTile}
               riichiMode={false}
-              locked={!isTileDrill || answered || shadeTable}
+              // In an open, collapsed tile drill the board is NOT locked: the
+              // choice tiles are enabled via discardActions (already narrowed
+              // to the coach's options) and every other hand tile is disabled
+              // by that, so a tap outside the choices is inert instead of
+              // failing the drill. Everywhere else the board is locked — the
+              // shade catches taps while the card is open.
+              locked={!(isTileDrill && !answered && !shadeTable)}
               highlight={focusTiles}
               focusCentre={step.focusCentre}
               tapToAnswer
@@ -319,15 +390,17 @@ export default function LessonScreen() {
                 <>
                   {answered && (
                     <div className={`verdict-line ${chosen?.correct ? 'ok' : 'no'}`} role="status">
-                      {chosen?.correct ? 'Correct' : picked === -1 ? 'Not one of the choices' : 'Not the best answer'}
+                      {chosen?.correct ? 'Correct' : 'Not the best answer'}
                     </div>
                   )}
                   <p className="lesson-p prompt">{step.prompt}</p>
                   {isTileDrill && !answered && (
-                    <p className="tap-hint">
-                      {shadeTable
-                        ? 'Tap the table to close this card, then choose a lit tile.'
-                        : 'Tap a lit tile on the table.'}
+                    <p className={`tap-hint${nudge ? ' nudge' : ''}`} role={nudge ? 'alert' : undefined}>
+                      {nudge
+                        ? 'Tap one of the lit tiles — those are the choices.'
+                        : shadeTable
+                          ? 'Tap the table to close this card, then choose a lit tile.'
+                          : 'Tap a lit tile on the table.'}
                     </p>
                   )}
                   {(!isTileDrill || answered) && (

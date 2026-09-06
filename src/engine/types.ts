@@ -334,6 +334,12 @@ export interface PublicView {
   /** Viewer's own concealed hand + drawn tile. */
   hand: TileId[];
   drawnTile: TileId | null;
+  /**
+   * The viewer's own furiten state (permanent, temporary, or riichi). A player
+   * always knows their own furiten at a real table — it is private to them but
+   * they hold the information — so the UI may show it. Opponents' never appears.
+   */
+  furiten: boolean;
   /** Per-seat public info. */
   seats: Record<SeatIndex, PublicSeatView>;
   doraIndicators: TileId[];

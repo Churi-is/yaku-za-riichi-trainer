@@ -142,7 +142,7 @@ describe('mobile lesson coach', () => {
     expect(container.querySelector('.drill-why')).not.toBeNull();
   });
 
-  it('also opens feedback for a wrong choice and a tile outside the choices', () => {
+  it('opens feedback for a wrong choice, but ignores taps on tiles outside the choices', () => {
     const { container } = firstDrill();
     tapTable();
     fireEvent.click(playable(container)); // 2p is lit, but not the right discard.
@@ -151,10 +151,16 @@ describe('mobile lesson coach', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     tapTable();
-    const unlit = container.querySelector<HTMLButtonElement>('.hand-tile:not(.tile-focus):not(:disabled)')!;
-    fireEvent.click(unlit);
-    expect(screen.getByText('Not one of the choices')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Collapse the coach card' })).toBeTruthy();
+    // Only the coach's choice tiles are enabled: every other hand tile is
+    // disabled, so a fat-finger tap cannot burn the drill.
+    const unlit = container.querySelector<HTMLButtonElement>('.hand-tile:not(.tile-focus):not(:disabled)');
+    expect(unlit).toBeNull();
+    const litTiles = container.querySelectorAll<HTMLButtonElement>('.hand-tile.tile-focus:not(:disabled)');
+    expect(litTiles.length).toBeGreaterThan(1);
+    // The drill is still unanswered and ready for the real choice.
+    expect(container.querySelector('.verdict-line')).toBeNull();
+    fireEvent.click(litTiles[0]);
+    expect(container.querySelector('.verdict-line')).not.toBeNull();
   });
 
   it('collapses even bottom-docked teaching and drills up to the top', () => {

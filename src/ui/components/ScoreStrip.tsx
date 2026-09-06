@@ -1,8 +1,14 @@
-/** ScoreStrip — every seat's points across the top, in turn (wind) order. */
-import type { PublicView, SeatIndex, Wind } from '@engine/types';
+/**
+ * ScoreStrip — every seat's points across the top.
+ *
+ * Seats are ALWAYS in fixed table order (you, right, across, left). The strip
+ * used to re-sort by wind each hand, which cycled your plate across positions
+ * as the winds rotated — position is learned by location, so that was pure
+ * cost. The dealer 親 mark, the riichi リ mark, the turn glow and each plate's
+ * wind letter already carry everything the sort was communicating.
+ */
+import type { PublicView, SeatIndex } from '@engine/types';
 import { WIND_LETTER } from './SeatPlate';
-
-const WIND_ORDER: Wind[] = ['east', 'south', 'west', 'north'];
 
 /** where each seat sits relative to the viewer, so the strip maps to the felt */
 const POSITION: Record<SeatIndex, { glyph: string; title: string }> = {
@@ -25,9 +31,7 @@ function shortName(name: string): string {
 }
 
 export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
-  const seats = ([0, 1, 2, 3] as SeatIndex[])
-    .slice()
-    .sort((a, b) => WIND_ORDER.indexOf(view.seats[a].seatWind) - WIND_ORDER.indexOf(view.seats[b].seatWind));
+  const seats = [0, 1, 2, 3] as SeatIndex[];
 
   return (
     <header className="score-strip">
@@ -47,7 +51,7 @@ export default function ScoreStrip({ view, seatName, tools }: ScoreStripProps) {
                 <span className="name" title={s === 0 ? 'You' : seatName(s)}>
                   {s === 0 ? 'You' : shortName(seatName(s))}
                 </span>
-                <span className="pos" aria-hidden="true" title={POSITION[s].title}>{POSITION[s].glyph}</span>
+                <span className="pos" aria-label={`position: ${POSITION[s].title}`}>{POSITION[s].glyph}</span>
               </div>
               <div className="l2">
                 <span className="pts">{seat.points.toLocaleString()}</span>

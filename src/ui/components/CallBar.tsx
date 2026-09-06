@@ -22,6 +22,8 @@ export interface CallBarProps {
   onAct: (action: Action) => void;
   /** shown when the player has nothing to decide */
   status?: React.ReactNode;
+  /** the human seat is furiten: ron is blocked until it clears */
+  furiten?: boolean;
 }
 
 const KANJI: Record<string, string> = {
@@ -30,7 +32,7 @@ const KANJI: Record<string, string> = {
 
 export default function CallBar({
   legal, riichiMode, selected, onEnterRiichiMode, onCancelRiichi,
-  onConfirmDiscard, onClearSelection, onAct, status,
+  onConfirmDiscard, onClearSelection, onAct, status, furiten = false,
 }: CallBarProps) {
   const tsumo = legal.find((l) => l.action.type === 'tsumo');
   const ron = legal.find((l) => l.action.type === 'ron');
@@ -43,6 +45,8 @@ export default function CallBar({
   const hasRiichi = legal.some((l) => l.action.type === 'discard' && (l.action as { riichi?: boolean }).riichi);
   const canDiscard = legal.some((l) => l.action.type === 'discard');
 
+  // ✕ puts a lifted tile back; with nothing lifted in riichi mode it leaves
+  // riichi mode directly, so exiting never costs a second tap.
   const confirm = selected !== null && (
     <div className="discard-confirm">
       <Tile id={selected} size="sm" />
@@ -53,7 +57,13 @@ export default function CallBar({
         {riichiMode ? 'Riichi + discard' : 'Discard'}
         <span className="kan">{tileFace(selected).label}</span>
       </button>
-      <button className="call-btn pass slim" onClick={onClearSelection} aria-label="Put the tile back">✕</button>
+      <button
+        className="call-btn pass slim"
+        onClick={riichiMode ? onCancelRiichi : onClearSelection}
+        aria-label={riichiMode ? 'Exit riichi choice' : 'Put the tile back'}
+      >
+        ✕
+      </button>
     </div>
   );
 
@@ -61,6 +71,9 @@ export default function CallBar({
     return (
       <div className="call-bar">
         {confirm || <span className="call-hint">Pick the tile you'll declare riichi on</span>}
+        {/* A live tsumo beats riichi: don't let the mode hide the winning button. */}
+        {tsumo && <button className="call-btn win" onClick={() => onAct(tsumo.action)}>Tsumo<span className="kan">{KANJI.tsumo}</span></button>}
+        {furiten && <FuritenChip />}
         {!confirm && (
           <button className="call-btn pass" onClick={onCancelRiichi}>Cancel<span className="kan">戻</span></button>
         )}
@@ -89,10 +102,30 @@ export default function CallBar({
     <div className="call-bar">
       {confirm}
       {buttons}
-      {!confirm && buttons.length === 0 && canDiscard && (
+      {furiten && legal.length > 0 && <FuritenChip />}
+      {!confirm && buttons.length === 0 && !furiten && canDiscard && (
         <span className="call-hint">Tap a tile, then tap again to discard</span>
       )}
       {!confirm && buttons.length === 0 && !canDiscard && status}
     </div>
+  );
+}
+
+/**
+ * Why is there no Ron button? The seat is furiten — a wait of theirs is in
+ * their own river (or they passed on a ron chance this turn), so ron is
+ * blocked while tsumo remains legal. At a real table you know your own
+ * furiten; the chip says what the table isn't showing.
+ */
+function FuritenChip() {
+  return (
+    <span
+      className="call-chip furiten"
+      role="status"
+      title="One of your waits is in your own discard pond (or you passed a ron chance this turn). Ron is blocked until it clears — tsumo still wins."
+    >
+      <span className="kan jp">振聴</span>
+      Furiten — ron blocked, tsumo still wins
+    </span>
   );
 }

@@ -15,7 +15,9 @@
 
   --gold: #d8b45a;
   --gold-hi: #f0d38a;
-  --gold-dim: #8a6f2f;
+  /* brightened from #8a6f2f: small gold text (10–12px) must clear 4.5:1
+     contrast on the near-black lacquer (WCAG 1.4.3) */
+  --gold-dim: #c9a960;
 
   --red: #9c2222;
   --red-hi: #c73434;
@@ -27,7 +29,8 @@
 
   --ivory: #f2ecdc;
   --ink: #efe8d8;
-  --muted: #a2977f;
+  /* brightened from #a2977f so 10–11px muted text clears 4.5:1 on lacquer */
+  --muted: #b9ae96;
 
   --good: #4cb877;
   --warn: #e0a63c;
@@ -68,6 +71,14 @@ svg { display: block; }
 
 .jp { font-family: var(--font-jp); }
 
+/* Screen-reader-only text that still reaches assistive technology. Used for
+   the match's live turn/result announcements. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
 /* ---------- primitives ---------- */
 .muted { color: var(--muted); }
 .center { text-align: center; }
@@ -83,6 +94,15 @@ svg { display: block; }
 }
 .pill.gold { border-color: var(--gold-dim); color: var(--gold); }
 .pill.red { border-color: var(--red-hi); color: #f0b6b6; }
+.pill-error {
+  border-color: var(--red-hi); color: #f3b9b9;
+  background: rgba(125, 29, 29, 0.35);
+  font-size: 11.5px; line-height: 1.4; text-align: left; white-space: normal;
+}
+
+/* Dialogs take focus via the focus-trap hook; don't show a focus ring on the
+   inert card itself, only on real controls inside it. */
+[role="dialog"]:focus, [role="alertdialog"]:focus { outline: none; }
 
 .card {
   background: linear-gradient(180deg, var(--lacquer-2), var(--lacquer));

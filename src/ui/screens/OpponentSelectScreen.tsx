@@ -53,6 +53,8 @@ export default function OpponentSelectScreen() {
 
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>
         Pick three opponents. Seats fill in the order you tap them: right, across, then left.
+        {' '}When all three seats are taken, tapping a fourth player swaps out the one chosen longest ago —
+        tap a seated player to remove them instead.
       </p>
 
       <div className="roster">

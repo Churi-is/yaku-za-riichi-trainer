@@ -119,6 +119,7 @@ function makeView(opts: {
     phase: 'awaitingDiscard',
     hand,
     drawnTile: null,
+    furiten: false,
     seats,
     doraIndicators: dora,
     tilesRemaining: opts.tilesRemaining ?? 40,

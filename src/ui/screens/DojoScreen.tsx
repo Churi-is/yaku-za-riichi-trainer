@@ -9,11 +9,13 @@
  */
 import { CHAPTERS, ALL_LESSONS, lessonShape } from '@dojo/course';
 import { useSession } from '@state/session';
+import { useMatch } from '@state/gameLoop';
 
 export default function DojoScreen() {
   const go = useSession((s) => s.go);
   const openLesson = useSession((s) => s.openLesson);
   const completed = useSession((s) => s.completed);
+  const resetMatch = useMatch((s) => s.reset);
 
   const done = ALL_LESSONS.filter((x) => completed.includes(x.lesson.id)).length;
   const total = ALL_LESSONS.length;
@@ -38,9 +40,17 @@ export default function DojoScreen() {
             <span className="cta-title">{next.lesson.title}</span>
           </button>
         ) : (
-          <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-            Every lesson done. Play a match and see how much of it survives contact.
-          </p>
+          <div className="stack" style={{ gap: 10 }}>
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+              Every lesson done. Take it to the table and see how much of it survives contact.
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => { resetMatch(); go('opponents'); }}
+            >
+              Play a Match<span className="kan jp" style={{ marginLeft: 8, opacity: 0.85 }}>対局</span>
+            </button>
+          </div>
         )}
       </div>
 

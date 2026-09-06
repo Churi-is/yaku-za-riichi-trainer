@@ -25,11 +25,21 @@ function Toggle({ on, onClick, label, hint }: { on: boolean; onClick: () => void
 }
 
 function Segmented<T extends string>({
-  label, value, options, onChange,
-}: { label: string; value: T; options: { v: T; l: string }[]; onChange: (v: T) => void }) {
+  label, hint, value, options, onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: T;
+  options: { v: T; l: string; hint?: string }[];
+  onChange: (v: T) => void;
+}) {
+  const activeHint = options.find((o) => o.v === value)?.hint;
   return (
     <div className="setting-row seg-row">
-      <span className="lab">{label}</span>
+      <span className="lab">
+        {label}
+        {(hint || activeHint) && <span className="hint">{activeHint ?? hint}</span>}
+      </span>
       <div className="seg" role="group" aria-label={label}>
         {options.map((o) => (
           <button
@@ -37,6 +47,7 @@ function Segmented<T extends string>({
             type="button"
             className={value === o.v ? 'on' : ''}
             aria-pressed={value === o.v}
+            title={o.hint}
             onClick={() => onChange(o.v)}
           >
             {o.l}
@@ -80,8 +91,8 @@ export default function TableSettingsScreen() {
         <div className="settings-grid">
           <div>
             <Toggle
-              label="Red fives (aka dora)"
-              hint="One red five per suit adds bonus han"
+              label="Red fives"
+              hint="One red five per suit; each one drawn counts as one bonus han"
               on={settings.redDora}
               onClick={() => setSettings({ redDora: !settings.redDora })}
             />
@@ -102,13 +113,20 @@ export default function TableSettingsScreen() {
             <Segmented<GameLength>
               label="Game length"
               value={settings.gameLength}
-              options={[{ v: 'east', l: 'East only' }, { v: 'hanchan', l: 'Hanchan' }]}
+              options={[
+                { v: 'east', l: 'East only', hint: 'East round: about 4 hands · ~15 minutes' },
+                { v: 'hanchan', l: 'Hanchan', hint: 'East + South rounds: about 8 hands · ~30 minutes' },
+              ]}
               onChange={(v) => setSettings({ gameLength: v })}
             />
             <Segmented<Difficulty>
               label="Opponent difficulty"
               value={settings.difficulty}
-              options={[{ v: 'easy', l: 'Easy' }, { v: 'normal', l: 'Normal' }, { v: 'hard', l: 'Hard' }]}
+              options={[
+                { v: 'easy', l: 'Easy', hint: 'Bots overcall, rarely fold, and play with readable mistakes' },
+                { v: 'normal', l: 'Normal', hint: 'Competent efficiency and defense, with small errors' },
+                { v: 'hard', l: 'Hard', hint: 'Tight suji defense, sharp riichi timing, and subtle tells' },
+              ]}
               onChange={(v) => setSettings({ difficulty: v })}
             />
           </div>

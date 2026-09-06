@@ -881,6 +881,7 @@ export function toPublicView(state: GameState, seat: SeatIndex): PublicView {
     phase: state.phase,
     hand: [...me.hand],
     drawnTile: me.drawnTile,
+    furiten: blocksRon(me),
     seats,
     doraIndicators: [...state.doraIndicators],
     tilesRemaining: state.wall.length,

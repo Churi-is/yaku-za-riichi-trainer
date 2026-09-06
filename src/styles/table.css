@@ -170,9 +170,16 @@
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
 }
 .wall-count {
+  display: inline-flex; align-items: center; gap: 3px;
   font-size: 9.5px; letter-spacing: 0.06em; color: rgba(240, 236, 220, 0.85);
   background: rgba(6, 30, 21, 0.75); border: 1px solid rgba(216, 180, 90, 0.25);
   padding: 1px 6px; border-radius: 999px; font-variant-numeric: tabular-nums;
+}
+/* 残 ("remaining") labels the bare wall count, which had a tooltip that
+   touch devices can never see. */
+.wall-count .wall-kanji {
+  font-family: var(--font-jp); font-size: 10px; color: var(--gold);
+  letter-spacing: 0;
 }
 
 /* a riichi stick laid on the cloth in front of a declared seat */
@@ -222,6 +229,19 @@
 .call-btn.slim { min-width: 46px; padding: 6px 10px; font-size: 15px; }
 .call-hint { color: var(--gold); font-size: 12.5px; letter-spacing: 0.04em; text-align: center; }
 .call-hint.muted { color: var(--muted); }
+
+/* The furiten explanation chip: why no Ron button is offered. */
+.call-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 999px;
+  font-size: 12px; letter-spacing: 0.02em; line-height: 1.2;
+  border: 1px solid; cursor: default;
+}
+.call-chip .kan { font-family: var(--font-jp); font-size: 13px; font-weight: 700; }
+.call-chip.furiten {
+  color: #f3c98f; border-color: rgba(224, 166, 60, 0.55);
+  background: rgba(224, 166, 60, 0.12);
+}
 
 .discard-confirm { display: flex; align-items: center; gap: 8px; }
 
