@@ -10,36 +10,30 @@ import type {
   LegalAction,
   PublicView,
 } from '@engine/types';
-import type { AIDecision, AIParams, AIPlayer, Archetype, Personality } from './types';
+import type { AIDecision, AIPlayer, Archetype, Personality } from './types';
 import { paramsFor } from './params';
 import { PERSONALITIES } from './personalities';
 import { Rng, hashSeed } from './rng';
 import { decideAction } from './player';
+import { decideSpecial } from './specials';
 
 export * from './types';
 export {
   PERSONALITIES, personalityById, ARCHETYPE_SAMPLE, DEFAULT_OPPONENTS,
+  opponentDifficulty, DIFFICULTY_LABEL, rosterDifficulty, REGULAR_PERSONALITIES, SPECIAL_PERSONALITIES,
 } from './personalities';
 export { paramsFor } from './params';
 
 /**
  * Create an AI player. `seed` makes the RNG stream deterministic; the same
- * seed + the same PublicView always yields the same decision.
+ * seed + the same sequence of public views yields the same decisions.
  */
 export function createAI(
   personality: Personality,
-  difficulty: Difficulty,
+  difficulty: Difficulty = personality.difficulty,
   seed = 0,
 ): AIPlayer {
-  // Archetype × difficulty sets the baseline; the personality's own tuning is
-  // applied on top, clamped, so a named opponent always plays like themselves.
-  const base = paramsFor(personality.archetype, difficulty);
-  const params: AIParams = { ...base };
-  for (const [k, v] of Object.entries(personality.tune ?? {})) {
-    if (typeof v === 'number') {
-      (params as unknown as Record<string, number>)[k] = Math.max(0, Math.min(1, v));
-    }
-  }
+  const params = paramsFor(personality.archetype, difficulty, personality.tune);
   // Each seat gets an independent, reproducible RNG stream.
   const rng = new Rng(hashSeed('ai', personality.id, difficulty, seed));
 
@@ -47,6 +41,7 @@ export function createAI(
     personality,
     params,
     decide(view: PublicView, legal: LegalAction[]): AIDecision {
+      if (personality.special) return decideSpecial(personality.special.style, view, legal, params, rng);
       const { action, rationale } = decideAction(view, legal, {
         params,
         archetype: personality.archetype,
@@ -58,7 +53,7 @@ export function createAI(
   return player;
 }
 
-/** Convenience: build an AI by archetype (rotates through personalities). */
+/** Convenience: build the first roster representative of an archetype. */
 export function createAIForArchetype(
   archetype: Archetype,
   difficulty: Difficulty,

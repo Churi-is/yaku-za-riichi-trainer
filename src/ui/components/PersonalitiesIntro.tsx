@@ -1,5 +1,7 @@
 /** PersonalitiesIntro — shown at match start so the player learns each seat.
  *  The three opponents are introduced in their table positions. */
+import SpecialDescription from './SpecialDescription';
+import { DIFFICULTY_LABEL, rosterDifficulty } from '@ai/personalities';
 import type { SeatPersonality } from '@state/gameLoop';
 
 export interface PersonalitiesIntroProps {
@@ -23,7 +25,10 @@ export default function PersonalitiesIntro({ personalities, onStart }: Personali
           {personalities.map((p) => (
             <div className={`card intro-seat ${AREA[p.seat] ?? 's2'}`} key={p.seat} style={{ padding: 10 }}>
               <div className="nm">{p.name}</div>
+              <div className="character-title">{p.title}</div>
               <div className="wd jp">{POSITION[p.seat] ?? ''}</div>
+              <span className={`level level-${rosterDifficulty(p)}`} style={{ marginTop: 5 }}>{DIFFICULTY_LABEL[rosterDifficulty(p)]}</span>
+              {p.special && <SpecialDescription special={p.special} />}
               <div className="tl">{p.tagline}</div>
             </div>
           ))}

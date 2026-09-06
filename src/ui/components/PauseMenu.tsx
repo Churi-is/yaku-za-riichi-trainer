@@ -1,4 +1,5 @@
 /** PauseMenu — mid-match menu: table legend, rules reminder, resume or quit. */
+import { DIFFICULTY_LABEL } from '@ai/personalities';
 import { useSession } from '@state/session';
 
 export interface PauseMenuProps {
@@ -38,7 +39,7 @@ export default function PauseMenu({ onResume, onQuitToMenu }: PauseMenuProps) {
           <span className="pill">{settings.kuitan ? 'Kuitan on' : 'Kuitan off'}</span>
           <span className="pill">{settings.twoHanMinimum ? '2-han minimum' : '1-han ok'}</span>
           <span className="pill">{settings.gameLength === 'east' ? 'East only' : 'Hanchan'}</span>
-          <span className="pill">{settings.difficulty} opponents</span>
+          <span className="pill">{settings.opponentDifficulty === 'uniform' ? `All ${DIFFICULTY_LABEL[settings.difficulty]}` : 'Character levels'}</span>
         </div>
 
         <div className="row" style={{ gap: 10 }}>
