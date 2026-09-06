@@ -92,7 +92,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             kind: 'teach',
             text: [
               'Riichi (1 han) you have met: declare on any closed tenpai hand. Double riichi (2 han) is the same declaration made on your very first discard — before the hand has really started — when you are dealt a tenpai opening hand.',
-              'Ippatsu (1 han) is a bonus that rides on a riichi: if you win by ron on a discard thrown between your declaration and your next draw, with no call by anyone in between, the hand gains an extra han. The window is one go-around — it closes the moment you draw again — and it is a discard win: drawing your own winning tile does not carry it in this game.',
+              'Ippatsu (1 han) is a bonus that rides on a riichi: if you win within the single go-around that follows your declaration — on a discard by ron, or even by self-drawing your own winning tile — with no call by anyone in between, the hand gains an extra han. The window ends at your next DISCARD: a tsumo on your next drawn tile still scores it, but any win after you have thrown a tile does not.',
             ],
             figures: [
               { tiles: '123m 456m 234p 78p 88s', caption: 'A thirteen-tile deal that is already tenpai: declare on your opening discard and the declaration is double riichi, two han.' },
@@ -102,11 +102,11 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             kind: 'teach',
             text: [
               'These stack. A double riichi that wins by ron on the first discard of the hand is double riichi plus ippatsu, before you even count the hand’s shapes and any dora.',
-              'A call by anyone — chi, pon or a kan on a discard — between your riichi and your win closes the ippatsu window, because the win no longer happens immediately. The window also dies at your next draw, so ippatsu is a fast bonus: it pays when the table feeds you before you can act again.',
+              'A call by anyone — chi, pon, or an open kan on a discard, including kakan — between your riichi and your win closes the ippatsu window, because the win no longer happens immediately. (An ankan comes from your own hand and is not a call, so it leaves the window open.) The window also dies at your next discard, so ippatsu is a fast bonus: it pays when the hand completes inside the single go-around after the declaration.',
             ],
             note: {
               title: 'Recognition cues',
-              text: 'Declare on your first discard = double riichi. Ron on a discard before your next draw, no calls in between = ippatsu. Declare later = ordinary riichi. All require a closed tenpai hand.',
+              text: 'Declare on your first discard = double riichi. A win within one go-around of the declaration, no calls in between = ippatsu — on a discard before your next discard, or on your next draw itself. Declare later = ordinary riichi. All require a closed tenpai hand.',
             },
           },
           ...drills([
@@ -121,7 +121,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             {
               prompt: 'You declare riichi. Before your next turn, an opponent discards the exact tile you are waiting on, and nobody calls it. You ron. What extra han do you gain?',
               options: [
-                { label: 'Ippatsu — the discard landed inside the one-go-around window', correct: true, why: 'A ron on a discard between the declaration and your next draw, with no call in between, is exactly ippatsu, one han. In this game ippatsu is a discard win: had you drawn the tile yourself instead, the self-draw would carry menzen tsumo, not ippatsu.' },
+                { label: 'Ippatsu — the discard landed inside the one-go-around window', correct: true, why: 'A ron on a discard between the declaration and your next discard, with no call in between, is exactly ippatsu, one han — the win happened inside the single go-around after you declared. Had you self-drawn the tile on that same go-around, ippatsu would still have scored.' },
                 { label: 'Double riichi', why: 'Double riichi is about WHEN you declare (your very first discard), not about winning quickly. A riichi declared on turn six that wins fast is still ordinary riichi.' },
                 { label: 'Rinshan kaihou', why: 'Rinshan is a win on the dead-wall replacement tile after a kan. Nothing here involved a kan.' },
               ],
@@ -129,8 +129,8 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             {
               prompt: 'You declare riichi. Your very next draw is the winning tile, and nobody called in between. You win on your own draw. What does that win carry besides the hand’s own yaku?',
               options: [
-                { label: 'Menzen tsumo — but not ippatsu', correct: true, why: 'A closed self-draw always carries menzen tsumo. But the ippatsu window closes the moment you draw, and ippatsu pays only on a discard — so a self-draw on your next turn is menzen tsumo, not ippatsu, in this game.' },
-                { label: 'Ippatsu — the draw followed the declaration with nothing in between', why: 'The timing looks right and the rule is one word narrower: ippatsu is a win on a DISCARD inside the window, and the window dies at your next draw. A self-draw carries no ippatsu here.' },
+                { label: 'Menzen tsumo only — the window closed the moment you drew', why: 'It looks close, but ippatsu does not die on the draw — it dies on your NEXT DISCARD. The winning draw sits inside the go-around, so the self-draw scores ippatsu as well.' },
+                { label: 'Menzen tsumo and ippatsu — the window still covers your next draw', correct: true, why: 'A closed self-draw carries menzen tsumo, and a tsumo on the tile drawn right after the declaration is still inside the ippatsu window: it ends at your next discard, which never came. Two bonus han on one tile.' },
                 { label: 'Double riichi', why: 'Double riichi depends on declaring on your first discard, which has nothing to do with this turn.' },
               ],
             },
@@ -205,7 +205,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             kind: 'teach',
             text: [
             'Both are rare because both need a kan to happen. Rinshan is a self-draw (a tsumo), chankan is a ron on the kan-adding tile.',
-            'Note the interaction with ippatsu: ippatsu pays only on a win by discard, and a rinshan win is a self-draw — so the two never combine in this game. A chankan win, being a ron on someone else’s tile, does not disturb your own hand’s closed status at all.',
+            'Note the interaction with ippatsu: a rinshan win is a self-draw, and ippatsu covers self-draws too — so when the kan was an ankan (not a call, so the window stayed open) and the win lands inside the go-around, the two stack. An open kan, by contrast, is itself a call that closes the ippatsu window first. A chankan win, being a ron on someone else’s tile, does not disturb your own hand’s closed status at all.',
             ],
             note: {
               title: 'Recognition cues',
@@ -305,12 +305,12 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
       {
         id: 'pinfu-codex',
         title: 'Pinfu',
-        summary: 'All runs, a plain pair, a two-sided wait — the clean closed hand, one han.',
+        summary: 'All runs, a plain pair, a two-sided wait — a clean shape worth one han, closed or open.',
         steps: [
           {
             kind: 'teach',
             text: [
-              'Pinfu is what an efficient closed hand looks like for free. Four runs, a pair that is neither a dragon nor a valued wind, and a winning wait that is two-sided — nothing that earns fu. Closed only, one han.',
+              'Pinfu is what an efficient hand looks like for free. Four runs, a pair that is neither a dragon nor a valued wind, and a winning wait that is two-sided — nothing that earns fu. One han. The SHAPE is the test: calls do not disqualify it, so the same pinfu shape scores whether the hand is closed or open.',
               'The pair must be “plain”: not a dragon, not the round wind, not your seat wind. The wait must be a ryanmen (two-sided), never a pair wait or an edge or closed wait.',
             ],
             figures: [
@@ -321,18 +321,18 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             kind: 'teach',
             text: [
               'Because pinfu hands are made entirely of runs with a two-sided wait, they almost always also have tanyao when they avoid terminals — pinfu and tanyao together are the classic fast two-han closed hand.',
-              'It vanishes the moment you open the hand: no pinfu after a call, which is why a clean pinfu hand usually goes in via riichi rather than via melding.',
+              'Opening the hand does NOT take the pinfu away: the conditions are four runs, a plain pair and a two-sided wait, and a call simply supplies one of the runs. What openness changes is the fu — an open pinfu hand is worth exactly the base 20 fu, while the closed version adds the 10 fu of concealedness on a ron. That is why a clean pinfu hand usually goes in via riichi instead of melding: the extra riichi han beats the few fu the concealment was worth.',
             ],
             note: {
               title: 'Recognition cue',
-              text: 'Closed, four runs, simple/non-yakuhai pair, winning on a two-sided wait = pinfu. It deliberately excludes triplets, valued pairs and narrow waits.',
+              text: 'Four runs, simple/non-yakuhai pair, winning on a two-sided wait = pinfu, closed or open. It deliberately excludes triplets, valued pairs and narrow waits.',
             },
           },
           ...drills([
             {
               prompt: 'Which of these complete hands scores pinfu?',
               options: [
-                { label: '123m 456m 234p 234s with a 55s pair, won on 1s/4s', correct: true, why: 'Four runs, a plain simple pair, a two-sided winning wait and fully closed: every pinfu condition is met, with tanyao stacked on top. This is the defining shape.' },
+                { label: '123m 456m 234p 234s with a 55s pair, won on 1s/4s', correct: true, why: 'Four runs, a plain simple pair and a two-sided winning wait: every pinfu condition is met — closedness is not one of them — with tanyao stacked on top. This is the defining shape.' },
                 { label: '123m 456m 234p 234s with a PP (white dragon) pair', why: 'The dragon pair is a valued pair — it earns fu for being yakuhai adjacent — so the hand is not “no-fu”, which is what pinfu requires. A dragon pair breaks pinfu.' },
                 { label: 'Three runs and a triplet of Easts, with a simple pair', why: 'Pinfu requires four RUNS; any triplet (koutsu) earns fu and disqualifies the no-fu shape. A triplet hand is not pinfu.' },
               ],
@@ -341,16 +341,16 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
               prompt: 'You complete a closed pinfu hand by drawing the tile yourself. Which yaku does it score beyond pinfu itself?',
               options: [
                 { label: 'Menzen tsumo (and tanyao if all simples)', correct: true, why: 'A closed self-draw always adds menzen tsumo, and when the runs and pair avoid terminals and honours — as pinfu hands usually do — tanyao stacks too. Pinfu + tanyao + menzen tsumo is the bread-and-butter three-han hand.' },
-                { label: 'Nothing else can stack with pinfu', why: 'Pinfu stacks freely with tanyao, menzen tsumo, riichi, ippatsu and the run-based yaku. It is only open hands that lose it.' },
+                { label: 'Nothing else can stack with pinfu', why: 'Pinfu stacks freely with tanyao, menzen tsumo, riichi, ippatsu and the run-based yaku. Being open does not change any of that either.' },
                 { label: 'Yakuhai for the pair', why: 'A plain pinfu pair is by definition not a dragon or valued wind, so it carries no yakuhai. A yakuhai pair is exactly what pinfu forbids.' },
               ],
             },
             {
-              prompt: 'You melded an early chi and your hand is now four runs and a plain 55s pair, with a two-sided wait. You expected pinfu, but your score has none. What happened?',
+              prompt: 'You melded an early chi and your hand is now four runs and a plain 55s pair, with a two-sided wait. Which of these describes the pinfu situation?',
               options: [
-                { label: 'Pinfu is closed-only — that one chi opened the hand and forfeited it', correct: true, why: 'Pinfu rewards a perfectly concealed, zero-fu hand. The very first meld breaks that: even though the four runs, plain pair and two-sided wait are all still there, the chi introduced fu and an open hand can never be pinfu. The same hand closed would score it.' },
-                { label: 'An open hand can no longer hold four runs and a pair', why: 'Open four-runs-and-a-pair hands are common — a chi just supplies one of the runs. The shape survived; it is the closed/no-fu condition that the meld violated, not the arrangement of sets.' },
-                { label: 'The chi turned the pair into a valued pair', why: 'Melding does not change which tile the pair is made of, and a 5s pair was never valued anyway. The disqualifier is openness itself, not any change to the pair.' },
+                { label: 'It still scores pinfu — the calls do not disqualify the shape', correct: true, why: 'The pinfu conditions are four runs, a plain pair and a two-sided wait, and this hand meets all of them. The chi simply supplied one of the runs, so the open hand keeps its one han — worth a flat 20 fu, the base with no concealedness bonus.' },
+                { label: 'No pinfu — it is closed-only, and the chi forfeited it', why: 'The opposite is true: closedness is NOT a pinfu condition. Treating pinfu as concealed-only is exactly the mistake the flat 20-fu rule exists to correct — an open hand with the shape scores it.' },
+                { label: 'The chi introduced fu, so the hand is no longer fu-free', why: 'Melding does not add fu — a chi is not a fu source. The hand’s fu is the base 20 plus the wait, and an open pinfu hand settles at exactly 20 fu.' },
               ],
             },
           ]),
@@ -1433,7 +1433,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
           {
             kind: 'teach',
             text: [
-              'It absorbs several smaller patterns — daisangen and the wind yaku frequently sit inside it — but tsuuiisou as a yakuman supersedes them. An opponent who only ever keeps and pons honours is building it.',
+              'It frequently contains smaller patterns — daisangen and the wind yaku sit inside it — and the table now shows every one of them: a tsuuiisou with a three-dragon triplet inside is a double yakuman, and so is the all-honour version of daisuushii. An opponent who only ever keeps and pons honours is building it.',
               'Against it, every numbered tile is perfectly safe; the only danger is discarding a wind or dragon.',
             ],
             note: {
@@ -1445,7 +1445,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             {
               prompt: 'Which complete hand is tsuuiisou?',
               options: [
-                { label: 'PPP FFF EEE SSS with a WW pair', correct: true, why: 'Every tile is a dragon or a wind — there are no numbered tiles at all. That all-honour hand is tsuuiisou, a yakuman. (Had three dragon triplets sat inside it, the table would show daisangen instead — one yakuman, no stacking.)' },
+                { label: 'PPP FFF EEE SSS with a WW pair', correct: true, why: 'Every tile is a dragon or a wind — there are no numbered tiles at all. That all-honour hand is tsuuiisou, a yakuman. (Had three dragon triplets sat inside it, the table would show daisangen AND tsuuiisou — multiple yakuman stack, so that is a double.)' },
                 { label: '111m 999m PPP FFF with a 11p pair', why: 'Terminals are present (1m, 9m, 1p), so it is honroutou, not tsuuiisou. Tsuuiisou excludes ALL numbered tiles, terminals included.' },
                 { label: '123m 456m 789p 234s with a pair', why: 'Entirely numbered with middle tiles — an ordinary run hand, nowhere near the all-honour requirement.' },
               ],
@@ -1596,7 +1596,7 @@ export const YAKU_CODEX_CHAPTERS: Chapter[] = [
             kind: 'teach',
             text: [
               'It is like an extreme chinitsu that demands the terminal triplets and every middle rank, all in one suit and all closed. The nine-sided wait on the thirteen-tile base is one of the broadest in the game.',
-              'It must be concealed; opening the hand disqualifies it. It stacks with nothing as a yakuman, but it is among the most celebrated hands in mahjong.',
+              'It must be concealed; opening the hand disqualifies it. It can even double up: a three-dragon triplet sitting inside the nine gates makes it chuuren poutou plus daisangen, a two-yakuman hand. It is among the most celebrated hands in mahjong.',
             ],
             note: {
               title: 'Recognition cue',

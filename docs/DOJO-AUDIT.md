@@ -7,6 +7,33 @@ against the engine's own rules (`src/engine/`), and every figure that depicts
 a complete 14-tile hand was scored by the real `scoreHand` to verify what the
 caption says it scores.
 
+> **Errata (after the engine fix).** This audit judged the content against
+> the engine as it then was. A later pass established that where the engine
+> deviated from normal riichi, the ENGINE was wrong, and fixed it. The
+> affected items were re-resolved to the standard rules:
+>
+> - **E11 / E5 (ippatsu)** — the engine now follows the standard window:
+>   ippatsu ends at the declarant's next *discard*, so a tsumo on the next
+>   drawn tile scores it, and any call (chi, pon, minkan or kakan by anyone)
+>   closes the window (a chankan is a win, not a call). The "ron only"
+>   conclusion above was the engine's deviation; the `riichi-family` and
+>   `kan-draws` lessons were rewritten to the standard rule.
+> - **E9 (yakuman names)** — the engine now stacks multiple yakuman
+>   cumulatively (each pattern counts: daisangen + tsuuiisou is a double,
+>   96,000 dealer / 64,000 child; han shown as 13 per yakuman). "First
+>   matching yakuman wins" was the engine's suppression, not a rule.
+> - **Pinfu** — open hands can score pinfu (the 20-fu rule; a flat 20 fu
+>   for an open pinfu shape). The closed-only wording in the pinfu chapter
+>   was the engine's deviation and has been rewritten.
+> - **Fu values** — the engine now uses standard fu: closed waits
+>   (kanchan/penchan/tanki) +10, a yakuhai pair +10, tsumo +2, open pinfu
+>   flat 20. Figures in the course were re-verified after the change.
+> - **Pao** — void when the winner declared riichi (the discarder pays in
+>   full), as in standard play.
+> - **Nagashi mangan** — now settled on an exhaustive draw (dealer 4,000 /
+>   other 2,000 from each non-nagashi seat; nagashi-vs-nagashi cancels; the
+>   tenpai pool is skipped).
+
 **Materials audited:**
 
 | Track | File | Lessons | Drills | Tile-choice drills | Label-only options |
@@ -320,6 +347,9 @@ case). E5's "any kan breaks ippatsu" was re-verified against the engine and
 retracted: only a chi/pon/kan **on a discard** closes the window; the
 declarant's own ankan/kakan do not, and the window dies at the declarant's
 next draw, so ippatsu is a discard-win (ron) only — never a self-draw.
+(Now superseded by the errata above: that was the engine's deviation — in
+standard play a kakan closes the window, and a tsumo inside the window
+scores ippatsu.)
 
 1. E1 — `menzen-tsumo` figure: either swap in a hand that really has tanyao
    (the drill figure `234m 345m 345p 234s 88p` is verified pinfu+tanyao) or

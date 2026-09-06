@@ -52,9 +52,9 @@ describe('strict real-engine self-play driver', () => {
     });
     const played = playHand(table(), initial);
     expect(played.actions).toEqual([{ type: 'tsumo', seat: 1 }]);
-    expect(played.result.score!.points).toBe(2000);
-    expect(played.result.deltas).toEqual({ 0: -1200, 1: 2600, 2: -700, 3: -700 });
-    expect(played.state.players.map((p, i) => p.points - initial.players[i].points)).toEqual([-1200, 2600, -700, -700]);
+    expect(played.result.score!.points).toBe(2700); // 40 fu / 2 han + 2 honba
+    expect(played.result.deltas).toEqual({ 0: -1500, 1: 3300, 2: -900, 3: -900 });
+    expect(played.state.players.map((p, i) => p.points - initial.players[i].points)).toEqual([-1500, 3300, -900, -900]);
   });
 
   it.each(['tile', 'seat'] as const)('rejects an invalid action %s without recovering', (invalid) => {

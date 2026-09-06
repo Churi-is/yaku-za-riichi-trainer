@@ -15,7 +15,8 @@ import { describe, expect, it } from 'vitest';
 import { enumerateWinShapes } from '@engine/decompose';
 import { kindOf, parseHand, shanten } from '@engine/index';
 import { DEFAULT_SETTINGS } from '@engine/types';
-import { detectYaku, type YakuId } from '@engine/yaku';
+import { detectYaku } from '@engine/yaku';
+import type { YakuId } from '@engine/types';
 import { ALL_LESSONS } from '../course';
 
 /**

@@ -7,9 +7,19 @@ import {
   scoreHand, isLegalWin, createMatch, applyAction, getLegalActions,
   type ScoreInput,
 } from '../index';
+import { kindOf } from '../tiles';
 import { basePoints, ceil100 } from '../scoring';
-import { DEFAULT_SETTINGS, type GameState, type Meld, type SeatIndex, type TableSettings } from '../types';
+import { DEFAULT_SETTINGS, type GameState, type Meld, type SeatIndex, type TableSettings, type TileId } from '../types';
 import { parse, meld } from './helpers';
+import { setupGame } from './loop';
+
+// kind values used below: 1m=0, 7m=6, 9m=8, 1p=9, 4p=12, 2s=19.
+const K_1M = 0;
+const K_7M = 6;
+const K_9M = 8;
+const K_1P = 9;
+const K_4P = 12;
+const K_2S = 19;
 
 const CLEAN: TableSettings = { ...DEFAULT_SETTINGS, redDora: false };
 
@@ -197,12 +207,14 @@ describe('yaku — win legality', () => {
   });
 
   it('open tanyao is illegal with kuitan off, legal with it on', () => {
+    // The concealed triplet keeps this off pinfu, so tanyao is the only
+    // possible yaku here (a pinfu-shaped hand would win legally either way).
     const melds = [meld('chi', '234m')];
-    const off = score('567m234p678p55s', '8p', {
+    const off = score('567m234p666p55s', '6p', {
       loserSeat: 2, melds, settings: { ...CLEAN, kuitan: false },
     });
     expect(isLegalWin(off, { ...CLEAN, kuitan: false })).toBe(false);
-    const on = score('567m234p678p55s', '8p', {
+    const on = score('567m234p666p55s', '6p', {
       loserSeat: 2, melds, settings: { ...CLEAN, kuitan: true },
     });
     expect(isLegalWin(on, { ...CLEAN, kuitan: true })).toBe(true);
@@ -285,7 +297,7 @@ describe('ippatsu expiry', () => {
     return null;
   }
 
-  it('is live the moment riichi is declared and dies on the declarer\'s next draw', () => {
+  it('is live the moment riichi is declared and dies on the declarer\'s next discard', () => {
     let found = false;
     for (let seed = 1; seed < 40 && !found; seed++) {
       const got = declareRiichi(seed);
@@ -295,9 +307,12 @@ describe('ippatsu expiry', () => {
       const seat = got.seat;
       expect(state.players[seat].ippatsu).toBe(true);
 
-      // Walk forward with no calls until that seat draws again.
-      let drewAgain = false;
-      for (let i = 0; i < 40 && !state.handOver && !drewAgain; i++) {
+      // Walk forward with no calls until the declarer discards AGAIN —
+      // ippatsu is still alive through that player's next draw (tsumo
+      // ippatsu is legal), it only dies on the next discard.
+      let sawDraw = false;
+      let died = false;
+      for (let i = 0; i < 80 && !died && !state.handOver; i++) {
         for (const s2 of [0, 1, 2, 3] as SeatIndex[]) {
           const legal = getLegalActions(state, s2);
           if (!legal.length) continue;
@@ -306,15 +321,95 @@ describe('ippatsu expiry', () => {
           const disc = legal.find((l) => l.action.type === 'discard');
           const pick = draw ?? pass ?? disc;
           if (!pick) continue;
-          const wasDraw = pick.action.type === 'draw' && s2 === seat;
           state = applyAction(state, pick.action);
-          if (wasDraw) drewAgain = true;
+          if (s2 === seat) {
+            if (pick.action.type === 'draw') sawDraw = true;
+            if (pick.action.type === 'discard' && sawDraw) died = true;
+          }
           break;
         }
       }
-      expect(drewAgain).toBe(true);
+      expect(died).toBe(true);
       expect(state.players[seat].ippatsu).toBe(false);
     }
     expect(found).toBe(true);
+  });
+
+  it('still scores on a tsumo with the declarer\'s next drawn tile', () => {
+    // Declarer: 234m 123p 789s + 99m + 44p, riichi on the 9m, shanpon
+    // wait 9m/4p. The opponents hold no manzu and cannot claim the 1p,
+    // 7m or 1m the wall deals them, so the lap runs clean to the draw.
+    const s = setupGame({
+      hands: [
+        '234m123p789s99m44p', // 0: declarer
+        '123s456s789s99p22s',
+        '234s567s899s33p77p',
+        '111s222p456p78p99p',
+      ],
+      wall: '1p7m1m4p',
+      dealer: 0,
+      turn: 0,
+      phase: 'awaitingDiscard',
+      drawn: '9m',
+    });
+    const tileOf = (st: GameState, seat: SeatIndex, kind: number): TileId => {
+      const drawn = st.players[seat].drawnTile;
+      if (drawn !== null && kindOf(drawn) === kind) return drawn;
+      return st.players[seat].hand.find((t) => kindOf(t) === kind)!;
+    };
+    const declared = applyAction(s, { type: 'discard', seat: 0, tile: tileOf(s, 0, K_9M), riichi: true });
+    expect(declared.players[0].riichi).toBe(true);
+    expect(declared.players[0].ippatsu).toBe(true);
+
+    // One full lap, then the declarer draws.
+    const d1 = applyAction(declared, { type: 'draw', seat: 1 });
+    const d2 = applyAction(d1, { type: 'discard', seat: 1, tile: tileOf(d1, 1, K_1P) });
+    const d3 = applyAction(d2, { type: 'draw', seat: 2 });
+    const d4 = applyAction(d3, { type: 'discard', seat: 2, tile: tileOf(d3, 2, K_7M) });
+    const d5 = applyAction(d4, { type: 'draw', seat: 3 });
+    const d6 = applyAction(d5, { type: 'discard', seat: 3, tile: tileOf(d5, 3, K_1M) });
+    const d7 = applyAction(d6, { type: 'draw', seat: 0 });
+    expect(kindOf(d7.players[0].drawnTile!)).toBe(K_4P);
+    // The flag is still live on this draw.
+    expect(d7.players[0].ippatsu).toBe(true);
+
+    const tsumo = getLegalActions(d7, 0).find((l) => l.action.type === 'tsumo');
+    expect(tsumo).toBeDefined();
+    const won = applyAction(d7, tsumo!.action);
+    const r = won.handOver!;
+    expect(r.reason).toBe('tsumo');
+    expect(r.score!.yaku.map((y) => y.id)).toContain('ippatsu');
+  });
+
+  it('is broken by a kakan from another player', () => {
+    const s = setupGame({
+      hands: [
+        '234m123p789s99m44p', // 0: declarer
+        '345m678p2s99s1s', // 1: holds the 4th 2s over a called pon
+        '123m456p789p11s44s',
+        '234m567p89s11m22p88p',
+      ],
+      melds: [undefined, [{ type: 'pon', text: '222s', calledFrom: 0 }]],
+      wall: '4p5p',
+      dealer: 0,
+      turn: 0,
+      phase: 'awaitingDiscard',
+      drawn: '9m',
+    });
+    const tileOf = (st: GameState, seat: SeatIndex, kind: number): TileId => {
+      const drawn = st.players[seat].drawnTile;
+      if (drawn !== null && kindOf(drawn) === kind) return drawn;
+      return st.players[seat].hand.find((t) => kindOf(t) === kind)!;
+    };
+    const declared = applyAction(s, { type: 'discard', seat: 0, tile: tileOf(s, 0, K_9M), riichi: true });
+    expect(declared.players[0].ippatsu).toBe(true);
+
+    const d1 = applyAction(declared, { type: 'draw', seat: 1 });
+    const kakanTile = d1.players[1].hand.find((t) => kindOf(t) === K_2S)!;
+    const kakan = applyAction(d1, { type: 'kakan', seat: 1, tile: kakanTile });
+    // Any tile call ends ippatsu — a kan is no exception (a chankan is a
+    // win, not a call, so it does not reach this path).
+    expect(kakan.players[0].ippatsu).toBe(false);
+    expect(kakan.players[1].melds.some((m) => m.type === 'kakan')).toBe(true);
   });
 });

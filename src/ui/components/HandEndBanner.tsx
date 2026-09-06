@@ -14,6 +14,20 @@ interface HandEndBannerProps {
   meldsOf?: (seat: SeatIndex) => Meld[];
 }
 
+const LIMIT_LABELS: Record<string, string> = {
+  mangan: 'Mangan',
+  haneman: 'Haneman',
+  baiman: 'Baiman',
+  sanbaiman: 'Sanbaiman',
+  yakuman: 'Yakuman',
+  doubleYakuman: 'Double yakuman',
+  tripleYakuman: 'Triple yakuman',
+};
+
+function limitLabel(limitName: string, han: number, fu: number): string {
+  return limitName ? LIMIT_LABELS[limitName] ?? limitName.toUpperCase() : `${han} han ${fu} fu`;
+}
+
 export default function HandEndBanner({ result, roundLabel, seatName, onContinue, continueLabel, meldsOf }: HandEndBannerProps) {
   const { reason, winner, loser, score } = result;
   const cardRef = useFocusTrap<HTMLDivElement>(true);
@@ -52,7 +66,7 @@ export default function HandEndBanner({ result, roundLabel, seatName, onContinue
               {score.uraDora > 0 && <div className="score-line"><span>Ura dora</span><span className="muted">{score.uraDora}</span></div>}
             </div>
             <div className="score-line" style={{ fontWeight: 700, borderTop: '1px solid var(--panel-border)', paddingTop: 6 }}>
-              <span>{score.limitName ? score.limitName.toUpperCase() : `${score.han} han ${score.fu} fu`}</span>
+              <span>{limitLabel(score.limitName, score.han, score.fu)}</span>
               <span style={{ color: 'var(--gold)' }}>{score.points.toLocaleString()} pts</span>
             </div>
           </div>

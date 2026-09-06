@@ -14,6 +14,7 @@ import { dealHand } from './wall';
 import { drawFromWall, rinshanDraw, flipKanDora } from './draw';
 import {
   kindOf, nextSeat, SEATS, seatsAfter, sortIds, tileName, isDragon, isWind,
+  isTerminalOrHonor,
 } from './tiles';
 import { blocksRon, onDraw, refreshFuriten, applyPassedRon, tenpaiSeats } from './furiten';
 import { callOptionsFor } from './calls';
@@ -326,11 +327,40 @@ function resolveWin(
   });
 }
 
-/** Fixed 3000-point tenpai/noten pool. Honba only adds to win payments. */
+/**
+ * Nagashi mangan: the hand ran to an exhaustive draw, every discard by the
+ * player was a terminal or honour, and no tile was ever called from their
+ * river. (No closed-hand requirement — the online-client standard.)
+ */
+function nagashiManganSeats(state: GameState): SeatIndex[] {
+  return SEATS.filter((s) => {
+    const river = state.players[s].river;
+    if (river.length === 0) return false;
+    if (!river.every((e) => isTerminalOrHonor(kindOf(e.tile)))) return false;
+    return !river.some((e) => e.calledBy !== null);
+  });
+}
+
+/**
+ * Exhaustive draw. Standard settlement: a 3000-point noten→tenpai pool — or,
+ * when someone played nagashi mangan, mangan-tsumo payments instead: the
+ * dealer pays 4000, other non-dealers 2000, to each nagashi winner
+ * (nagashi-vs-nagashi cancels) and the tenpai pool is skipped.
+ */
 function exhaustiveDraw(state: GameState): void {
   const tenpai = tenpaiSeats(state);
+  const nagashi = nagashiManganSeats(state);
   const deltas = zeroDeltas();
-  if (tenpai.length > 0 && tenpai.length < 4) {
+  if (nagashi.length > 0) {
+    for (const w of nagashi) {
+      for (const s of SEATS) {
+        if (s === w || nagashi.includes(s)) continue;
+        const amount = s === state.dealer || w === state.dealer ? 4000 : 2000;
+        deltas[s] -= amount;
+        deltas[w] += amount;
+      }
+    }
+  } else if (tenpai.length > 0 && tenpai.length < 4) {
     const total = 3000;
     const noten = SEATS.filter((s) => !tenpai.includes(s));
     const perTenpai = total / tenpai.length;
@@ -457,12 +487,20 @@ function removeTiles(player: PlayerState, ids: TileId[]): void {
 }
 
 /** Mark the river entry for the called tile, and break everyone's ippatsu. */
-function consumeCalledTile(state: GameState, seat: SeatIndex, from: SeatIndex): void {
+function consumeCalledTile(state: GameState, seat: SeatIndex): void {
   const win = state.callWindow;
   if (!win) return;
+  claimDiscardTile(state, seat, win.from, win.tile);
+}
+
+/**
+ * Standard ippatsu: any call on a discard (chi, pon, minkan or kakan, by
+ * anyone) ends the window. Marks the river entry and clears the flags.
+ */
+function claimDiscardTile(state: GameState, seat: SeatIndex, from: SeatIndex, tile: TileId): void {
   const discarder = state.players[from];
   for (let i = discarder.river.length - 1; i >= 0; i--) {
-    if (discarder.river[i].tile === win.tile && discarder.river[i].calledBy === null) {
+    if (discarder.river[i].tile === tile && discarder.river[i].calledBy === null) {
       discarder.river[i].calledBy = seat;
       break;
     }
@@ -473,6 +511,8 @@ function consumeCalledTile(state: GameState, seat: SeatIndex, from: SeatIndex): 
 /** Pao: whoever fed the third dragon or fourth wind is liable. */
 function checkPao(state: GameState, seat: SeatIndex, from: SeatIndex | null): void {
   if (from === null) return;
+  // A riichi win voids the pao: the discarder pays in full.
+  if (state.players[seat].riichi) return;
   const melds = state.players[seat].melds;
   const pungs = melds.filter((m) => m.type !== 'chi').map((m) => kindOf(m.tiles[0]));
   const dragons = pungs.filter(isDragon).length;
@@ -489,7 +529,7 @@ function applyCall(
   const player = state.players[seat];
   const tiles = sortIds([...fromHand, win.tile]);
   removeTiles(player, fromHand);
-  consumeCalledTile(state, seat, win.from);
+  consumeCalledTile(state, seat);
   player.melds.push({
     type,
     tiles,
@@ -527,6 +567,9 @@ function completeKakan(state: GameState): void {
   const kind = kindOf(win.tile);
   const meld = player.melds.find((m) => m.type === 'pon' && kindOf(m.tiles[0]) === kind);
   if (!meld) throw new Error('kakan with no matching pon');
+  // A kakan is a kan call: like chi/pon/minkan it ends every ippatsu window
+  // (a concealed ankan does not).
+  for (const p of state.players) p.ippatsu = false;
   removeTiles(player, [win.tile]);
   meld.type = 'kakan';
   meld.tiles = sortIds([...meld.tiles, win.tile]);
@@ -554,10 +597,10 @@ function doDraw(state: GameState, seat: SeatIndex): void {
     return;
   }
   const p = state.players[seat];
-  // Ippatsu survives exactly one uninterrupted go-around: it dies here, when
-  // the declarer draws again, and in applyCall when anyone calls a tile. Any
-  // win before this point is inside the window.
-  if (p.ippatsu) p.ippatsu = false;
+  // Ippatsu survives exactly one uninterrupted go-around, ending at the
+  // declarant's next DISCARD: a tsumo win on the drawn tile is decided before
+  // that discard, so the flag is deliberately left live here. The flag is
+  // cleared in doDiscard and in claimDiscardTile when anyone calls a tile.
   p.drawnTile = drawFromWall(state);
   state.rinshanPending = false;
   state.phase = 'awaitingDiscard';
@@ -569,6 +612,9 @@ function doDiscard(
 ): void {
   const p = state.players[seat];
   const tsumogiri = p.drawnTile === tile;
+  // The ippatsu window ends at the declarant's next discard; a tsumo win on
+  // the drawn tile was already decided, so clearing here loses nothing.
+  if (p.ippatsu) p.ippatsu = false;
   removeTiles(p, [tile]);
   // Whatever was drawn and not discarded folds back into the concealed hand;
   // after a discard nobody is holding a drawn tile.

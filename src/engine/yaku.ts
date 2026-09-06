@@ -2,7 +2,9 @@
  * engine/yaku — yaku detection.
  *
  * Full set from the brief. Exclusions handled here:
- *   - any yakuman suppresses every non-yakuman yaku (single yakuman, no stack)
+ *   - any yakuman suppresses every non-yakuman yaku; multiple yakuman stack
+ *     (cumulative single yakuman — each pattern counts once, the count
+ *     multiplies the payment)
  *   - chinitsu suppresses honitsu
  *   - junchan suppresses chanta
  *   - honroutou suppresses chanta and junchan
@@ -19,7 +21,7 @@ import {
   isTerminalOrHonor, isWind, kindOfWind, KIND_COUNT,
 } from './tiles';
 import { allKinds, allSets, concealedTriplets, effectiveSets, type WinShape } from './decompose';
-import { isPinfuShape } from './fu';
+import { isPinfuShapeBody } from './fu';
 import type { TableSettings, Wind, YakuId, YakuHit } from './types';
 
 export const YAKU_NAMES: Record<YakuId, string> = {
@@ -202,8 +204,10 @@ export function detectYaku(shape: WinShape, ctx: YakuContext): YakuHit[] {
   if (ctx.flags.tenhou) yakuman.push(yakumanHit('tenhou'));
   if (ctx.flags.chiihou) yakuman.push(yakumanHit('chiihou'));
 
-  // A single yakuman, no stacking: everything else is dropped.
-  if (yakuman.length > 0) return [yakuman[0]];
+  // Standard (cumulative) multiple yakuman: every pattern counts — a hand
+  // with two yakuman is a double yakuman and pays double, and so on.
+  // Non-yakuman yaku are still dropped.
+  if (yakuman.length > 0) return yakuman;
 
   // ------------------------------------------------------------- context yaku
   if (ctx.isClosed && ctx.isTsumo) add('menzenTsumo');
@@ -224,7 +228,8 @@ export function detectYaku(shape: WinShape, ctx: YakuContext): YakuHit[] {
   if (d.chiitoi) {
     add('chiitoitsu');
   } else {
-    if (isPinfuShape(d, wait, ctx.isClosed, { seatWind: ctx.seatWind, roundWind: ctx.roundWind })) {
+    // Pinfu may be scored by an open hand (20-fu rule).
+    if (isPinfuShapeBody(d, wait, { seatWind: ctx.seatWind, roundWind: ctx.roundWind })) {
       add('pinfu');
     }
     if (sets.every((s) => s.type === 'koutsu')) add('toitoi');

@@ -190,7 +190,7 @@ describe('scoring — reference hands', () => {
     expect(r.points).toBe(2000);
   });
 
-  it('open honitsu with ittsu is 3 han 30 fu = 3900', () => {
+  it('open honitsu with ittsu is 3 han 40 fu = 5200', () => {
     const r = score({
       hand: '123456789m11m',
       melds: [meld('pon', 'EEE')],
@@ -201,11 +201,11 @@ describe('scoring — reference hands', () => {
     });
     expect(yakuIds(r)).toEqual(ids(['honitsu', 'ittsu']));
     expect(r.han).toBe(3); // 2 open honitsu + 1 open ittsu
-    expect(r.fu).toBe(30); // 20 + 2 tanki + 4 open honor pung
-    expect(r.points).toBe(3900);
+    expect(r.fu).toBe(40); // 20 + 10 tanki + 4 open yakuhai = 34 -> 40
+    expect(r.points).toBe(5200);
   });
 
-  it('a kan-heavy closed hand stacks fu to 80', () => {
+  it('a kan-heavy closed hand stacks fu to 90', () => {
     const r = score({
       hand: '234p567p99s',
       melds: [meld('ankan', '2222m'), meld('ankan', 'PPPP')],
@@ -214,10 +214,10 @@ describe('scoring — reference hands', () => {
       roundWind: 'south',
     });
     expect(yakuIds(r)).toEqual(['yakuhaiHaku']);
-    // 20 + 10 menzen ron + 2 tanki + 16 (simple concealed kan) + 32 (honor) = 78
-    expect(r.fu).toBe(80);
+    // 20 + 10 menzen ron + 10 tanki + 16 (simple concealed kan) + 32 (honor) = 88
+    expect(r.fu).toBe(90);
     expect(r.han).toBe(1);
-    expect(r.points).toBe(2600);
+    expect(r.points).toBe(2900);
   });
 
   it('dealer ron pays 1.5x what a non-dealer would', () => {
@@ -317,7 +317,11 @@ describe('scoring — yakuman', () => {
       hand: 'WWWNNNSSSCC', melds: [meld('pon', 'EEE')],
       win: 'C', tsumo: true, roundWind: 'south',
     });
-    expect(yakuIds(daisuushii)).toEqual(['daisuushii']);
+    // Four wind pungs + an all-honor hand: daisuushii AND tsuuiisou, a
+    // double yakuman in standard scoring.
+    expect(yakuIds(daisuushii)).toEqual(['daisuushii', 'tsuuiisou']);
+    expect(daisuushii.limitName).toBe('doubleYakuman');
+    expect(daisuushii.points).toBe(64000); // child tsumo, double
   });
 
   it('tsuuiisou, chinroutou and ryuuiisou are yakuman', () => {
@@ -351,7 +355,10 @@ describe('scoring — yakuman', () => {
       ],
       win: '9s', tsumo: true,
     });
-    expect(yakuIds(suu)).toEqual(['suukantsu']);
+    // Four concealed kantsu are also four concealed pungs: suukantsu AND
+    // suuankou, a double yakuman.
+    expect(yakuIds(suu)).toEqual(['suuankou', 'suukantsu']);
+    expect(suu.limitName).toBe('doubleYakuman');
 
     const san = score({
       hand: '123s99s',
@@ -370,14 +377,15 @@ describe('scoring — yakuman', () => {
     }))).toEqual(['chiihou']);
   });
 
-  it('a true yakuman never stacks, even with tenhou and dora', () => {
+  it('a shape yakuman plus tenhou is a double yakuman', () => {
     const r = score({
       hand: '19m19p19sESWNPFCF', win: 'F', tsumo: true, dealer: true, dealerSeat: 0,
       dora: ['8s', 'E'], flags: { tenhou: true },
     });
-    expect(r.yaku).toHaveLength(1);
-    expect(r.points).toBe(48000); // single yakuman, not double
-    expect(r.han).toBe(13);
+    expect(r.yaku.map((y) => y.id)).toEqual(['kokushi', 'tenhou']);
+    expect(r.points).toBe(96000); // double yakuman, dealer tsumo
+    expect(r.han).toBe(26);
+    expect(r.limitName).toBe('doubleYakuman');
   });
 
   it('kazoe yakuman: 13 han from ordinary yaku scores as one yakuman', () => {
@@ -535,24 +543,26 @@ describe('scoring — situational yaku and table rules', () => {
   });
 
   it('open tanyao needs kuitan', () => {
+    // The concealed triplet keeps this off pinfu, so tanyao is the only
+    // possible yaku here.
     const melds = [meld('chi', '234m')];
     const on = score({
-      hand: '567m234p678p55s', melds, win: '8p', loser: 1,
+      hand: '567m234p666p55s', melds, win: '6p', loser: 1,
       settings: { ...CLEAN, kuitan: true },
     });
     expect(yakuIds(on)).toContain('tanyao');
     const off = score({
-      hand: '567m234p678p55s', melds, win: '8p', loser: 1,
+      hand: '567m234p666p55s', melds, win: '6p', loser: 1,
       settings: { ...CLEAN, kuitan: false },
     });
     expect(off.yaku).toEqual([]);
   });
 
-  it('an open pinfu shape floors at 30 fu', () => {
+  it('an open pinfu shape is a flat 20 fu (the 20-fu rule)', () => {
     const r = score({
       hand: '567m234p678p55s', melds: [meld('chi', '234m')], win: '8p', loser: 1,
     });
-    expect(r.fu).toBe(30);
+    expect(r.fu).toBe(20);
   });
 
   it('a hand with no yaku scores nothing (the engine must reject the win)', () => {
@@ -577,13 +587,13 @@ describe('scoring — situational yaku and table rules', () => {
     expect(both.fu).toBe(40); // 20 + 2 tsumo + 2 tanki + 8 concealed honor pung
   });
 
-  it('a double wind pair scores +2 fu, not +4', () => {
+  it('a double wind pair scores +10 fu, not +20', () => {
     const r = score({
       hand: '234m567m234p789sEE', win: '9s', tsumo: true,
       roundWind: 'east', seatWind: 'east',
     });
-    // 20 base + 2 tsumo + 2 yakuhai pair = 24 -> 30
-    expect(r.fu).toBe(30);
+    // 20 base + 2 tsumo + 10 yakuhai pair = 32 -> 40
+    expect(r.fu).toBe(40);
   });
 
   it('ryanpeikou supersedes a lone iipeiko and excludes chiitoitsu', () => {
